@@ -1,0 +1,15 @@
+name: master-ci
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  test:
+    uses: ./.github/workflows/shared-ci.yml
+    with:
+      test_command: ""
