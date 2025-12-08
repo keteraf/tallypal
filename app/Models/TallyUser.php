@@ -6,6 +6,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property float|int $default_share_percentage
+ */
 class TallyUser extends Model
 {
     public const string TABLE_NAME = 'tally_user';

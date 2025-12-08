@@ -8,18 +8,15 @@ covers(TallyShareController::class);
 
 it('has store method', function () {
     $controller = new TallyShareController();
-    $controller->store();
-    expect(true)->toBeTrue();
+    expect(method_exists($controller, 'store'))->toBeTrue();
 });
 
 it('has update method', function () {
     $controller = new TallyShareController();
-    $controller->update();
-    expect(true)->toBeTrue();
+    expect(method_exists($controller, 'update'))->toBeTrue();
 });
 
 it('has destroy method', function () {
     $controller = new TallyShareController();
-    $controller->destroy();
-    expect(true)->toBeTrue();
+    expect(method_exists($controller, 'destroy'))->toBeTrue();
 });

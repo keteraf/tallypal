@@ -11,10 +11,9 @@ covers(TallyShareController::class);
 it('returns tally shares collection', function () {
     $tally = Tally::factory()->create();
     $request = Request::create('/');
-    $request->tally = $tally;
 
     $controller = new TallyShareController();
-    $response = $controller->index($request);
+    $response = $controller->index($request, $tally);
 
     expect($response)->toBeInstanceOf(Illuminate\Http\Resources\Json\AnonymousResourceCollection::class);
 });

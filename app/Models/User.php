@@ -22,6 +22,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property string|null $remember_token
  * @property-read Collection<int, Tally> $ownedTallies
  * @property-read Collection<int, Tally> $tallies
+ * @property-read TallyUser|null $pivot
  */
 final class User extends Authenticatable implements MustVerifyEmail
 {

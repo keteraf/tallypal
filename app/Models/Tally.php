@@ -51,7 +51,9 @@ class Tally extends Model
      */
     public function users(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, self::KEYS_PREFIX . '_' . User::KEYS_PREFIX, self::PRIMARY_KEY, 'user_id');
+        return $this->belongsToMany(User::class, self::KEYS_PREFIX . '_' . User::KEYS_PREFIX, self::PRIMARY_KEY, 'user_id')
+            ->withPivot('default_share_percentage')
+            ->withTimestamps();
     }
 
     /**

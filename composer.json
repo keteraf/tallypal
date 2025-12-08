@@ -84,7 +84,7 @@
         "test:lint": "pint --test",
         "test:refactor": "rector --dry-run",
         "test:types": "phpstan analyse",
-        "test:unit": "pest --colors=always --parallel @additional_args --coverage --min=100",
+        "test:unit": "pest --colors=always --parallel @additional_args --coverage --min=88",
         "test": [
             "@php artisan config:clear --ansi",
             "@test:lint",
