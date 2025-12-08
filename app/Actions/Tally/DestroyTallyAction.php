@@ -16,6 +16,7 @@ final readonly class DestroyTallyAction
     public function handle(Tally $tally): void
     {
         DB::transaction(function () use ($tally): void {
+            $tally->transactions()->delete();
             $tally->users()->detach();
             $tally->delete();
         });

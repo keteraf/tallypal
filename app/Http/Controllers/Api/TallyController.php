@@ -18,6 +18,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Symfony\Component\HttpFoundation\Response;
+use Throwable;
 
 class TallyController extends Controller
 {
@@ -37,6 +38,8 @@ class TallyController extends Controller
 
     /**
      * Store a newly created resource in storage.
+     *
+     * @throws Throwable
      */
     public function store(StoreTallyRequest $request, StoreTallyAction $createTallyAction): TallyResource
     {

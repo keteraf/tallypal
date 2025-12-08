@@ -17,11 +17,7 @@ final readonly class StoreTallyAction
     public function handle(TallyDTO $tallyDTO): Tally
     {
         return DB::transaction(function () use ($tallyDTO): Tally {
-            $tally = Tally::query()->create([
-                'owner_id' => $tallyDTO->getOwnerId(),
-                'name' => $tallyDTO->getName(),
-                'description' => $tallyDTO->getDescription(),
-            ]);
+            $tally = Tally::query()->create($tallyDTO->toArray());
 
             $tally->users()->attach($tallyDTO->getOwnerId(), [
                 'default_share_percentage' => 100.00,
