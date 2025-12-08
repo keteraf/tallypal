@@ -46,7 +46,9 @@ class TallyController extends Controller
         /** @var User $user */
         $user = auth()->user();
 
-        $tallyDTO = TallyDTO::fromArray(['owner_id' => $user->getKey(), ...$request->validated()]);
+        /** @var array{owner_id: int, name: string, description?: string|null} $data */
+        $data = ['owner_id' => $user->getKey(), ...$request->validated()];
+        $tallyDTO = TallyDTO::fromArray($data);
 
         $tally = $createTallyAction->handle($tallyDTO);
 
@@ -66,9 +68,12 @@ class TallyController extends Controller
      */
     public function update(UpdateTallyRequest $request, Tally $tally, UpdateTallyAction $updateTallyAction): TallyResource
     {
+        /** @var User $user */
         $user = auth()->user();
 
-        $tallyDTO = TallyDTO::fromArray(['owner_id' => $user->getKey(), ...$request->validated()]);
+        /** @var array{owner_id: int, name: string, description?: string|null} $data */
+        $data = ['owner_id' => $user->getKey(), ...$request->validated()];
+        $tallyDTO = TallyDTO::fromArray($data);
         $tally = $updateTallyAction->handle($tally, $tallyDTO);
 
         return new TallyResource($tally->load(['owner', 'users']));

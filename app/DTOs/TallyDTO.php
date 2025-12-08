@@ -12,15 +12,21 @@ final class TallyDTO
         private ?string $description,
     ) {}
 
+    /**
+     * @param array{owner_id: int|numeric-string, name: string, description?: string|null} $data
+     */
     public static function fromArray(array $data): self
     {
         return new self(
-            owner_id: $data['owner_id'],
+            owner_id: (int) $data['owner_id'],
             name: $data['name'],
-            description: $data['description'],
+            description: $data['description'] ?? null,
         );
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function toArray(): array
     {
         return [

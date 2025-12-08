@@ -19,9 +19,9 @@ class TallyShareController
         return TallyShareResource::collection($tally->with('users')->get());
     }
 
-    public function store() {}
+    public function store(): void {}
 
-    public function update() {}
+    public function update(): void {}
 
-    public function destroy() {}
+    public function destroy(): void {}
 }

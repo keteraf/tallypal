@@ -15,6 +15,7 @@ use App\Http\Requests\Transactions\UpdateTransactionRequest;
 use App\Http\Resources\TransactionResource;
 use App\Models\Tally;
 use App\Models\Transaction;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -37,7 +38,9 @@ class TransactionController extends Controller
      */
     public function store(StoreTransactionRequest $request, Tally $tally, StoreTransactionAction $action): TransactionResource
     {
-        $transactionDTO = TransactionDTO::fromArray($request->validated());
+        /** @var array{party_id: int|numeric-string, currency_id: int|numeric-string, category_id: int|numeric-string, type: string, title: string, description?: string|null, amount: float|numeric-string, transaction_date: string} $data */
+        $data = $request->validated();
+        $transactionDTO = TransactionDTO::fromArray($data);
         $transaction = $action->handle($transactionDTO, $tally);
 
         return new TransactionResource($transaction);
@@ -56,7 +59,9 @@ class TransactionController extends Controller
      */
     public function update(UpdateTransactionRequest $request, Tally $tally, Transaction $transaction, UpdateTransactionAction $action): TransactionResource
     {
-        $transactionDTO = TransactionDTO::fromArray($request->validated());
+        /** @var array{party_id: int|numeric-string, currency_id: int|numeric-string, category_id: int|numeric-string, type: string, title: string, description?: string|null, amount: float|numeric-string, transaction_date: string} $data */
+        $data = $request->validated();
+        $transactionDTO = TransactionDTO::fromArray($data);
         $transaction = $action->handle($transaction, $transactionDTO);
 
         return new TransactionResource($transaction);
@@ -65,7 +70,7 @@ class TransactionController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(DestroyTransactionRequest $request, Tally $tally, Transaction $transaction, DestroyTransactionAction $action)
+    public function destroy(DestroyTransactionRequest $request, Tally $tally, Transaction $transaction, DestroyTransactionAction $action): JsonResponse
     {
         $action->handle($transaction);
 

@@ -17,20 +17,26 @@ final class TransactionDTO
         private string $transaction_date,
     ) {}
 
+    /**
+     * @param array{party_id: int|numeric-string, currency_id: int|numeric-string, category_id: int|numeric-string, type: string, title: string, description?: string|null, amount: float|numeric-string, transaction_date: string} $data
+     */
     public static function fromArray(array $data): self
     {
         return new self(
-            party_id: $data['party_id'],
-            currency_id: $data['currency_id'],
-            category_id: $data['category_id'],
+            party_id: (int) $data['party_id'],
+            currency_id: (int) $data['currency_id'],
+            category_id: (int) $data['category_id'],
             type: $data['type'],
             title: $data['title'],
-            description: $data['description'],
-            amount: $data['amount'],
+            description: $data['description'] ?? null,
+            amount: (float) $data['amount'],
             transaction_date: $data['transaction_date'],
         );
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function toArray(): array
     {
         return [

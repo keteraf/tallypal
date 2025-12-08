@@ -19,11 +19,11 @@ final readonly class StoreTransactionAction
      */
     public function handle(TransactionDTO $transactionDTO, Tally $tally): Transaction
     {
-        DB::transaction(function () use ($transactionDTO, $tally): void {
-            $tally->transactions()->create($transactionDTO->toArray());
+        return DB::transaction(function () use ($transactionDTO, $tally): Transaction {
+            /** @var Transaction $transaction */
+            $transaction = $tally->transactions()->create($transactionDTO->toArray());
+
+            return $transaction;
         });
-
-        return $tally->transactions()->latest()->first();
-
     }
 }

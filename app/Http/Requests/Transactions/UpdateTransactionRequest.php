@@ -20,7 +20,7 @@ class UpdateTransactionRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, ValidationRule|array|string>
+     * @return array<string, ValidationRule|string>
      */
     public function rules(): array
     {
@@ -38,6 +38,13 @@ class UpdateTransactionRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $this->merge(['amount' => (float) str_replace(',', '.', (string) $this->amount)]);
+        if ($this->has('amount')) {
+            $amount = $this->input('amount');
+
+            if (is_numeric($amount)) {
+                $amountString = (string) $amount;
+                $this->merge(['amount' => (float) str_replace(',', '.', $amountString)]);
+            }
+        }
     }
 }

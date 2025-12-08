@@ -6,7 +6,15 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property-read int $tally_id
+ * @property-read string $name
+ * @property-read string|null $description
+ * @property-read Carbon $created_at
+ * @property-read Carbon $updated_at
+ */
 class TallyShareResource extends JsonResource
 {
     /**
