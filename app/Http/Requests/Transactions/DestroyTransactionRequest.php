@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Transactions;
 
-use App\Models\Tally;
 use Illuminate\Foundation\Http\FormRequest;
 
 class DestroyTransactionRequest extends FormRequest
