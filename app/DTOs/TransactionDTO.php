@@ -18,7 +18,7 @@ final class TransactionDTO
     ) {}
 
     /**
-     * @param array{party_id: int|numeric-string, currency_id: int|numeric-string, category_id: int|numeric-string, type: string, title: string, description?: string|null, amount: float|numeric-string, transaction_date: string} $data
+     * @param  array{party_id: int|numeric-string, currency_id: int|numeric-string, category_id: int|numeric-string, type: string, title: string, description?: string|null, amount: float|numeric-string, transaction_date: string}  $data
      */
     public static function fromArray(array $data): self
     {

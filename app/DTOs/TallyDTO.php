@@ -13,7 +13,7 @@ final class TallyDTO
     ) {}
 
     /**
-     * @param array{owner_id: int|numeric-string, name: string, description?: string|null} $data
+     * @param  array{owner_id: int|numeric-string, name: string, description?: string|null}  $data
      */
     public static function fromArray(array $data): self
     {

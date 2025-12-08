@@ -77,7 +77,7 @@ class Transaction extends Model
      */
     public function currency(): BelongsTo
     {
-        return $this->belongsTo(Currency::class, 'currency_id', 'id');
+        return $this->belongsTo(Currency::class, 'currency_id', Currency::PRIMARY_KEY);
     }
 
     /**
@@ -85,6 +85,6 @@ class Transaction extends Model
      */
     public function category(): BelongsTo
     {
-        return $this->belongsTo(Category::class, 'category_id', 'id');
+        return $this->belongsTo(Category::class, 'category_id', Category::PRIMARY_KEY);
     }
 }
