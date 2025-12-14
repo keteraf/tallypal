@@ -1,0 +1,15 @@
+name: dev-ci
+
+on:
+  push:
+    branches:
+      - dev
+  pull_request:
+    branches:
+      - dev
+
+jobs:
+  test:
+    uses: ./.github/workflows/shared-ci.yml
+    with:
+      test_command: "composer test"
