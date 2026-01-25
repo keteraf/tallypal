@@ -1,4 +1,5 @@
 import type { LucideIcon } from 'lucide-vue-next';
+import type { Component } from 'vue';
 import type { Config } from 'ziggy-js';
 
 export interface Auth {
@@ -13,7 +14,7 @@ export interface BreadcrumbItem {
 export interface NavItem {
     title: string;
     href: string;
-    icon?: LucideIcon;
+    icon?: LucideIcon | Component;
     isActive?: boolean;
 }
 

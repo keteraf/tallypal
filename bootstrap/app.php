@@ -20,7 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
-        $middleware->validateCsrfTokens(except: app()->environment('testing') ? ['*'] : []);
+        $middleware->validateCsrfTokens(except: ($_ENV['APP_ENV'] ?? 'production') === 'testing' ? ['*'] : []);
 
         $middleware->web(append: [
             HandleAppearance::class,
