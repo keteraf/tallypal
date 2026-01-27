@@ -15,4 +15,10 @@ class Category extends Model
     public const string PRIMARY_KEY = self::KEYS_PREFIX . '_id';
 
     protected $primaryKey = self::PRIMARY_KEY;
+
+    protected $fillable = [
+        'name',
+        'icon',
+        'color',
+    ];
 }

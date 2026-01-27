@@ -27,7 +27,7 @@ it('lists all users sharing a tally', function () {
 
     Sanctum::actingAs($owner);
 
-    $response = $this->getJson(route('tallies.shares.index', $tally));
+    $response = $this->getJson(route('api.tallies.shares.index', $tally));
 
     $response->assertSuccessful();
     $response->assertJsonCount(2, 'data');
@@ -45,7 +45,7 @@ it('denies stranger from listing shares', function () {
 
     Sanctum::actingAs($stranger);
 
-    $response = $this->getJson(route('tallies.shares.index', $tally));
+    $response = $this->getJson(route('api.tallies.shares.index', $tally));
 
     $response->assertStatus(Response::HTTP_FORBIDDEN);
 });
@@ -57,7 +57,7 @@ it('allows owner to share a tally with a user', function () {
 
     Sanctum::actingAs($owner);
 
-    $response = $this->postJson(route('tallies.shares.store', $tally), [
+    $response = $this->postJson(route('api.tallies.shares.store', $tally), [
         'email' => $user->email,
     ]);
 
@@ -75,7 +75,7 @@ it('denies non-owner from sharing a tally', function () {
 
     Sanctum::actingAs($stranger);
 
-    $response = $this->postJson(route('tallies.shares.store', $tally), [
+    $response = $this->postJson(route('api.tallies.shares.store', $tally), [
         'email' => $user->email,
     ]);
 
@@ -91,7 +91,7 @@ it('allows owner to remove a user from a tally', function () {
 
     Sanctum::actingAs($owner);
 
-    $response = $this->deleteJson(route('tallies.shares.destroy', [$tally, $user]));
+    $response = $this->deleteJson(route('api.tallies.shares.destroy', [$tally, $user]));
 
     $response->assertStatus(Response::HTTP_NO_CONTENT);
 
@@ -108,7 +108,7 @@ it('denies non-owner from removing a user from a tally', function () {
 
     Sanctum::actingAs($stranger);
 
-    $response = $this->deleteJson(route('tallies.shares.destroy', [$tally, $user]));
+    $response = $this->deleteJson(route('api.tallies.shares.destroy', [$tally, $user]));
 
     $response->assertStatus(Response::HTTP_FORBIDDEN);
 });

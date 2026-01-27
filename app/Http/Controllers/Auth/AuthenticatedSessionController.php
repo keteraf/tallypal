@@ -44,7 +44,7 @@ final class AuthenticatedSessionController extends Controller
             return redirect()->intended(route('dashboard'));
         }
 
-        return redirect()->route('home');
+        return redirect()->intended(route('tallies.index'));
     }
 
     /**

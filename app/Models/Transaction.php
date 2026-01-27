@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\TransactionType;
 use Database\Factories\TransactionFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -86,5 +87,26 @@ class Transaction extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class, 'category_id', Category::PRIMARY_KEY);
+    }
+
+    /**
+     * @return Attribute<float, float>
+     */
+    protected function amount(): Attribute
+    {
+        return Attribute::make(
+            get: function ($value): int|float {
+                $decimals = $this->currency?->decimals ?? 2;
+                $factor = 10 ** $decimals;
+
+                return $value / $factor;
+            },
+            set: function ($value): int|float {
+                $decimals = $this->currency?->decimals ?? 2;
+                $factor = 10 ** $decimals;
+
+                return $value * $factor;
+            }
+        );
     }
 }

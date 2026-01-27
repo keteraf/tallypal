@@ -13,9 +13,9 @@ return new class extends Migration
     public function up(): void
     {
         DB::table('roles')->insert([
-            ['name' => 'Super Admin', 'guard_name' => 'web'],
-            ['name' => 'Admin', 'guard_name' => 'web'],
-            ['name' => 'User', 'guard_name' => 'web'],
+            ['name' => 'Super Admin', 'guard_name' => 'web', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Admin', 'guard_name' => 'web', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'User', 'guard_name' => 'web', 'created_at' => now(), 'updated_at' => now()],
         ]);
     }
 
