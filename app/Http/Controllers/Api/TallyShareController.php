@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api;
 use App\Actions\TallyShare\CreateTallyShareAction;
 use App\Actions\TallyShare\DeleteTallyShareAction;
 use App\Actions\TallyShare\UpdateTallySharesAction;
+use App\Http\Controllers\Controller;
 use App\Http\Requests\TallyShare\CreateTallyShareRequest;
 use App\Http\Requests\TallyShare\DeleteTallyShareRequest;
 use App\Http\Requests\TallyShare\UpdateTallySharesRequest;
@@ -18,10 +19,12 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Symfony\Component\HttpFoundation\Response;
 
-class TallyShareController
+class TallyShareController extends Controller
 {
     public function index(Request $request, Tally $tally): AnonymousResourceCollection
     {
+        $this->authorize('view', $tally);
+
         return UserResource::collection($tally->users);
     }
 
