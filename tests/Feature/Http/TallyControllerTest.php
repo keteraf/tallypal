@@ -101,9 +101,8 @@ it('shows a tally with owner and users relations loaded', function (): void {
     $viewer = User::factory()->create();
     Sanctum::actingAs($viewer);
 
-    $owner = User::factory()->create();
     $tally = Tally::factory()->create([
-        'owner_id' => $owner->id,
+        'owner_id' => $viewer->id,
         'name' => 'View Me',
         'description' => 'Details',
     ]);

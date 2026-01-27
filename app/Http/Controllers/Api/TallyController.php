@@ -60,6 +60,8 @@ class TallyController extends Controller
      */
     public function show(Tally $tally): TallyResource
     {
+        $this->authorize('view', $tally);
+
         return new TallyResource($tally->load(['owner', 'users']));
     }
 
@@ -68,11 +70,8 @@ class TallyController extends Controller
      */
     public function update(UpdateTallyRequest $request, Tally $tally, UpdateTallyAction $updateTallyAction): TallyResource
     {
-        /** @var User $user */
-        $user = auth()->user();
-
         /** @var array{owner_id: int, name: string, description?: string|null} $data */
-        $data = ['owner_id' => $user->getKey(), ...$request->validated()];
+        $data = ['owner_id' => $tally->owner_id, ...$request->validated()];
         $tallyDTO = TallyDTO::fromArray($data);
         $tally = $updateTallyAction->handle($tally, $tallyDTO);
 

@@ -26,6 +26,8 @@ class TransactionController extends Controller
      */
     public function index(Tally $tally): AnonymousResourceCollection
     {
+        $this->authorize('viewAny', [Transaction::class, $tally]);
+
         $transactions = $tally->transactions()
             ->latest()
             ->paginate(10);
@@ -51,6 +53,8 @@ class TransactionController extends Controller
      */
     public function show(Tally $tally, Transaction $transaction): TransactionResource
     {
+        $this->authorize('view', $transaction);
+
         return new TransactionResource($transaction);
     }
 

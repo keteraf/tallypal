@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use App\Http\Requests\Transactions\StoreTransactionRequest;
+use App\Models\User;
+use Laravel\Sanctum\Sanctum;
 
 covers(StoreTransactionRequest::class);
 

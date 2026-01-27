@@ -23,9 +23,10 @@ it('requires authentication for all transaction endpoints', function (): void {
 });
 
 it('lists transactions for a tally, newest first, paginated', function (): void {
-    Sanctum::actingAs(User::factory()->create());
+    $me = User::factory()->create();
+    Sanctum::actingAs($me);
 
-    $tally = Tally::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $me->id]);
     // Create 12 so pagination (per 10) applies
     Transaction::factory()->count(12)->forTally($tally)->create();
     // Transactions belonging to a different tally should not appear
@@ -50,9 +51,10 @@ it('lists transactions for a tally, newest first, paginated', function (): void 
 });
 
 it('stores a transaction with valid payload', function (): void {
-    Sanctum::actingAs(User::factory()->create());
+    $me = User::factory()->create();
+    Sanctum::actingAs($me);
 
-    $tally = Tally::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $me->id]);
     $party = User::factory()->create();
     $currency = Currency::query()->firstOrFail();
     $category = Category::query()->firstOrFail();
@@ -91,9 +93,10 @@ it('stores a transaction with valid payload', function (): void {
 });
 
 it('validates store payload - missing party_id', function (): void {
-    Sanctum::actingAs(User::factory()->create());
+    $me = User::factory()->create();
+    Sanctum::actingAs($me);
 
-    $tally = Tally::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $me->id]);
     $currency = Currency::query()->firstOrFail();
     $category = Category::query()->firstOrFail();
 
@@ -113,9 +116,10 @@ it('validates store payload - missing party_id', function (): void {
 });
 
 it('validates store payload - invalid type', function (): void {
-    Sanctum::actingAs(User::factory()->create());
+    $me = User::factory()->create();
+    Sanctum::actingAs($me);
 
-    $tally = Tally::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $me->id]);
     $party = User::factory()->create();
     $currency = Currency::query()->firstOrFail();
     $category = Category::query()->firstOrFail();
@@ -137,9 +141,10 @@ it('validates store payload - invalid type', function (): void {
 });
 
 it('validates store payload - amount not numeric', function (): void {
-    Sanctum::actingAs(User::factory()->create());
+    $me = User::factory()->create();
+    Sanctum::actingAs($me);
 
-    $tally = Tally::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $me->id]);
     $party = User::factory()->create();
     $currency = Currency::query()->firstOrFail();
     $category = Category::query()->firstOrFail();
@@ -161,9 +166,10 @@ it('validates store payload - amount not numeric', function (): void {
 });
 
 it('validates store payload - missing transaction_date', function (): void {
-    Sanctum::actingAs(User::factory()->create());
+    $me = User::factory()->create();
+    Sanctum::actingAs($me);
 
-    $tally = Tally::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $me->id]);
     $party = User::factory()->create();
     $currency = Currency::query()->firstOrFail();
     $category = Category::query()->firstOrFail();
@@ -184,9 +190,10 @@ it('validates store payload - missing transaction_date', function (): void {
 });
 
 it('shows a single transaction', function (): void {
-    Sanctum::actingAs(User::factory()->create());
+    $me = User::factory()->create();
+    Sanctum::actingAs($me);
 
-    $tally = Tally::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $me->id]);
     $transaction = Transaction::factory()->forTally($tally)->create();
 
     $response = $this->getJson(route('tallies.transactions.show', [$tally, $transaction]));
@@ -205,9 +212,10 @@ it('shows a single transaction', function (): void {
 });
 
 it('updates a transaction', function (): void {
-    Sanctum::actingAs(User::factory()->create());
+    $me = User::factory()->create();
+    Sanctum::actingAs($me);
 
-    $tally = Tally::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $me->id]);
     $transaction = Transaction::factory()->forTally($tally)->create();
     $party = User::factory()->create();
     $currency = Currency::query()->firstOrFail();
@@ -239,9 +247,10 @@ it('updates a transaction', function (): void {
 });
 
 it('deletes a transaction', function (): void {
-    Sanctum::actingAs(User::factory()->create());
+    $me = User::factory()->create();
+    Sanctum::actingAs($me);
 
-    $tally = Tally::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $me->id]);
     $transaction = Transaction::factory()->forTally($tally)->create();
 
     $response = $this->deleteJson(route('tallies.transactions.destroy', [$tally, $transaction]));
