@@ -1,0 +1,74 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Policies;
+
+use App\Models\Tally;
+use App\Models\Transaction;
+use App\Models\User;
+
+class TransactionPolicy
+{
+    /**
+     * Determine whether the user can view any models.
+     */
+    public function viewAny(User $user, Tally $tally): bool
+    {
+        return $this->isOwnerOrPartyOfTally($user, $tally);
+    }
+
+    /**
+     * Determine whether the user can view the model.
+     */
+    public function view(User $user, Transaction $transaction): bool
+    {
+        return $this->isOwnerOrPartyOfTally($user, $transaction->tally()->firstOrFail());
+    }
+
+    /**
+     * Determine whether the user can create models.
+     */
+    public function create(User $user, Tally $tally): bool
+    {
+        return $this->isOwnerOrPartyOfTally($user, $tally);
+    }
+
+    /**
+     * Determine whether the user can update the model.
+     */
+    public function update(User $user, Transaction $transaction): bool
+    {
+        return $this->isOwnerOrPartyOfTally($user, $transaction->tally()->firstOrFail());
+    }
+
+    /**
+     * Determine whether the user can delete the model.
+     */
+    public function delete(User $user, Transaction $transaction): bool
+    {
+        return $this->isOwnerOrPartyOfTally($user, $transaction->tally()->firstOrFail());
+    }
+
+    /**
+     * Determine whether the user can restore the model.
+     */
+    public function restore(User $user, Transaction $transaction): bool
+    {
+        return $this->isOwnerOrPartyOfTally($user, $transaction->tally()->firstOrFail());
+    }
+
+    /**
+     * Determine whether the user can permanently delete the model.
+     */
+    public function forceDelete(User $user, Transaction $transaction): bool
+    {
+        return $this->isOwnerOrPartyOfTally($user, $transaction->tally()->firstOrFail());
+    }
+
+    private function isOwnerOrPartyOfTally(User $user, Tally $tally): bool
+    {
+        return $tally->owner_id === $user->id ||
+            $tally->users()->where('user_id', $user->id)->exists();
+    }
+}

@@ -4,23 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Tally;
 
-use App\Models\Tally;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateTallyRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        /** @var Tally|null $tally */
-        $tally = $this->route('tally');
-        $user = auth()->user();
-
-        if (! $tally || ! $user) {
-            return false;
-        }
-
-        return $tally->owner_id === $user->id ||
-            $tally->users()->where('user_id', $user->id)->exists();
+        return (bool) $this->user()?->can('update', $this->route('tally'));
     }
 
     /**
