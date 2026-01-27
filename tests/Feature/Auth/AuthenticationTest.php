@@ -34,6 +34,18 @@ test('users can authenticate using the login screen', function () {
     ]);
 
     $this->assertAuthenticated();
+});
+
+test('Super Admin is redirected to Dashboard page', function () {
+    $user = User::factory()->create();
+    $user->assignRole('Super Admin');
+
+    $response = $this->post('/login', [
+        'email' => $user->email,
+        'password' => 'password',
+    ]);
+
+    $this->assertAuthenticated();
     $response->assertRedirect(route('dashboard', absolute: false));
 });
 

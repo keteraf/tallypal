@@ -26,6 +26,7 @@ it('has fillable attributes', function () {
         'name',
         'email',
         'password',
+        'email_verified_at',
     ]);
 });
 
