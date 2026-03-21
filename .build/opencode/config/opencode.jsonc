@@ -1,0 +1,128 @@
+{
+    "$schema": "https://opencode.ai/config.json",
+    // Theme & auto-update
+    "agent": {
+        "opencode": {
+            "description": "General-purpose assistant for software engineering tasks",
+            "mode": "primary",
+            "model": "openai/gpt-5-nano",
+            "tools": {
+                "bash": true,
+                "edit": true,
+                "glob": true,
+                "grep": true,
+                "question": true,
+                "read": true,
+                "todo": true,
+                "webfetch": true,
+                "websearch": true,
+                "write": true,
+                "codesearch": true
+            }
+        },
+        "build": {
+            "description": "Interactive coding assistant: helps write, refactor and test code",
+            "mode": "primary",
+            "model": "openai/gpt-5-nano",
+            "prompt": "{file:/tmp/prompts/build.txt}",
+            "tools": {
+                "bash": true,
+                "edit": true,
+                "write": true
+            }
+        },
+        "code-reviewer": {
+            "description": "Reviews code for best practices and potential issues",
+            "mode": "subagent",
+            "model": "openai/gpt-5-nano",
+            "prompt": "{file:/tmp/prompts/code-reviewer.txt}",
+            "tools": {
+                "edit": false,
+                "write": false
+            }
+        }
+    },
+    "autoupdate": "notify",
+    // Permissions when the interface needs to run commands or change files
+    "formatter": {
+        "pint": {
+            "command": [
+                "make",
+                "pint"
+            ],
+            "extensions": [
+                ".php"
+            ]
+        }
+    },
+    // Files/folders ignorati dal watcher
+    "mcp": {
+        "laravel-boost": {
+            "command": [
+                "php",
+                "artisan",
+                "boost:mcp"
+            ],
+            "enabled": true,
+            "type": "local"
+        }
+    },
+    // Server web (expose per browser)
+    "permission": {
+        "bash": "ask",
+        "edit": "ask",
+        "path": "ask",
+        "write": "ask"
+    },
+    // Provider LLM (OpenAI) - mantiene la tua variabile d'ambiente
+    //    "provider": {
+    //        "openai": {
+    //            "models": {
+    //                "gpt-5-nano": {
+    //                    "options": {
+    //                        "include": [
+    //                            "reasoning.encrypted_content"
+    //                        ],
+    //                        "reasoningEffort": "high",
+    //                        "reasoningSummary": "auto",
+    //                        "textVerbosity": "low"
+    //                    }
+    //                }
+    //            },
+    //            "options": {
+    //                "apiKey": "{env:OPEN_AI_API_KEY}"
+    //            }
+    //        }
+    //    },
+    "provider": {
+        "dmr": {
+            "npm": "@ai-sdk/openai-compatible",
+            "name": "Docker Model Runner",
+            "options": {
+                "baseURL": "http: //localhost:11434",
+                "apiKey": "docker"
+            },
+            "models": {
+                "ai/qwen2.5-coder:7b": {
+                    "name": "qwen2.5-coder:7b"
+                }
+            }
+        }
+    },
+    // Agents: reviewer esistente + nuovo agent per scrivere codice
+    "server": {
+        "hostname": "0.0.0.0",
+        "mdns": true,
+        "port": 4096
+    },
+    "theme": "matrix",
+    "watcher": {
+        "ignore": [
+            ".git/**",
+            ".build/**",
+            ".data/**",
+            ".ollama/**",
+            "node_modules/**"
+        ]
+    }
+}

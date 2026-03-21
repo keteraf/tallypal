@@ -1,0 +1,13 @@
+services:
+
+  app:
+    container_name: tallypal_app
+    ports: [ '8100:80' ]
+  redis:
+    container_name: tallypal_redis
+  database:
+    container_name: tallypal_database
+    ports: [ '5434:5432' ]
+  opencode:
+    container_name: tallypal_opencode
+    ports: [ '4096:4096' ]

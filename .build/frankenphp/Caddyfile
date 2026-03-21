@@ -1,0 +1,29 @@
+{
+    frankenphp
+    debug
+}
+
+# The domain name of your server
+:80 {
+    # Set the webroot to the public/ directory
+    root /var/www/public/
+    # Enable compression (optional)
+    encode zstd br gzip
+    # Execute PHP files from the public/ directory and serve assets
+    php_server {
+        try_files {path} index.php
+    }
+
+    # hot reload inertia
+    handle_path /_viteInertia/* {
+        reverse_proxy node:5173 {
+            header_up Host {host}
+            header_up X-Forwarded-Host {host}
+            header_up X-Forwarded-Proto {scheme}
+            header_up X-Forwarded-For {remote}
+            header_up Connection {>Connection}
+            header_up Upgrade {>Upgrade}
+        }
+    }
+
+}

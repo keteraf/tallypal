@@ -1,0 +1,51 @@
+services:
+
+    app:
+        build:
+            context: .
+            dockerfile: ./.build/frankenphp/Dockerfile
+            target: development
+        working_dir: /var/www
+        environment:
+            DB_HOST: ${DB_HOST:-database}
+            DB_DATABASE: ${DB_DATABASE:-postgres}
+            DB_PORT: ${DB_PORT:-5342}
+            DB_USERNAME: ${DB_USERNAME:-root}
+            DB_PASSWORD: ${DB_PASSWORD:-root}
+        volumes:
+            - ./:/var/www
+        depends_on:
+            - redis
+            - database
+
+    redis:
+        image: redis
+        volumes:
+            - .build/redis/redis.conf:/usr/local/etc/redis/redis.conf
+
+    database:
+        image: pgvector/pgvector:pg17
+        environment:
+            PGPASSWORD: ${DB_PASSWORD:-root}
+            POSTGRES_DB: ${DB_DATABASE:-postgres}
+            POSTGRES_USER: ${DB_USERNAME:-root}
+            POSTGRES_PASSWORD: ${DB_PASSWORD:-root}
+        volumes:
+            - ./.data:/var/lib/postgresql/data
+            - ./.build/postgres/initdb:/docker-entrypoint-initdb.d
+
+    opencode:
+        build:
+            context: .
+            dockerfile: ./.build/frankenphp/Dockerfile
+            target: opencode
+        working_dir: /var/www
+        environment:
+            OPEN_AI_API_KEY: ${OPEN_AI_API_KEY:-secrets}
+        volumes:
+            - ./:/var/www
+            - .build/opencode/config:/root/.config/opencode
+        depends_on:
+            - app
+
+
