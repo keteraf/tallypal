@@ -14,6 +14,7 @@ import type { BreadcrumbItem, NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
 import { BookOpen, LayoutGrid, Menu, Search } from 'lucide-vue-next';
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { GitHubIcon } from 'vue3-simple-icons';
 
 interface Props {
@@ -26,6 +27,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const page = usePage();
 const auth = computed(() => page.props.auth);
+const { t } = useI18n();
 
 const isCurrentRoute = computed(() => (url: string) => page.url === url);
 
@@ -35,7 +37,7 @@ const activeItemStyles = computed(
 
 const mainNavItems: NavItem[] = [
     {
-        title: 'Dashboard',
+        title: t('navigation.dashboard'),
         href: '/dashboard',
         icon: LayoutGrid,
     },
@@ -43,12 +45,12 @@ const mainNavItems: NavItem[] = [
 
 const rightNavItems: NavItem[] = [
     {
-        title: 'Repository',
+        title: t('navigation.github_repo'),
         href: 'https://github.com/laravel/vue-starter-kit',
         icon: GitHubIcon,
     },
     {
-        title: 'Documentation',
+        title: t('navigation.documentation'),
         href: 'https://laravel.com/docs/starter-kits#vue',
         icon: BookOpen,
     },
@@ -68,7 +70,7 @@ const rightNavItems: NavItem[] = [
                             </Button>
                         </SheetTrigger>
                         <SheetContent side="left" class="w-[300px] p-6">
-                            <SheetTitle class="sr-only">Navigation Menu</SheetTitle>
+                            <SheetTitle class="sr-only">{{ $t('common.navigation_menu') }}</SheetTitle>
                             <SheetHeader class="flex justify-start text-left">
                                 <AppLogoIcon class="size-6 fill-current text-black dark:text-white" />
                             </SheetHeader>
