@@ -5,7 +5,7 @@ import NavUser from '@/components/NavUser.vue';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { Activity, LayoutGrid, Telescope, LucideBookOpenText } from 'lucide-vue-next';
+import { Activity, LayoutGrid, LucideBookOpenText, Telescope } from 'lucide-vue-next';
 import { GitHubIcon } from 'vue3-simple-icons';
 import AppLogo from './AppLogo.vue';
 

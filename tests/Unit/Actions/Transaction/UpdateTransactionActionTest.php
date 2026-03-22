@@ -6,15 +6,18 @@ use App\Actions\Transaction\UpdateTransactionAction;
 use App\DTOs\TransactionDTO;
 use App\Models\Category;
 use App\Models\Currency;
+use App\Models\Tally;
 use App\Models\Transaction;
 use App\Models\User;
 
 covers(UpdateTransactionAction::class);
 
 it('updates a transaction', function () {
-    $transaction = Transaction::factory()->create(['title' => 'Old Title', 'amount' => 50.00]);
+    $user = User::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $user->id]);
+    $currency = Currency::where('code', 'USD')->first() ?? Currency::factory()->create(['decimals' => 2]);
+    $transaction = Transaction::factory()->forTally($tally)->withCurrency($currency)->create(['title' => 'Old Title', 'amount' => 50.00]);
     $party = User::factory()->create();
-    $currency = Currency::query()->inRandomOrder()->first();
     $category = Category::query()->inRandomOrder()->first();
 
     $dto = TransactionDTO::fromArray([

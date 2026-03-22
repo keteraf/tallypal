@@ -1,0 +1,106 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Http\Controllers\TallyController;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+use function Pest\Laravel\actingAs;
+
+uses(RefreshDatabase::class);
+
+covers(TallyController::class);
+
+it('renders the create page', function (): void {
+    $user = User::factory()->create();
+
+    actingAs($user)
+        ->get(route('tallies.create'))
+        ->assertOk();
+});
+
+it('shows tallies where the user is a collaborator on the index page', function (): void {
+    $owner = User::factory()->create();
+    $collaborator = User::factory()->create();
+
+    $tally = App\Models\Tally::factory()->create([
+        'owner_id' => $owner->id,
+        'name' => 'Shared Tally',
+    ]);
+
+    // Attach collaborator
+    $tally->users()->attach($collaborator->id, ['default_share_percentage' => 50]);
+
+    actingAs($collaborator)
+        ->get(route('tallies.index'))
+        ->assertOk()
+        ->assertSee('Shared Tally');
+});
+
+it('stores a new tally and redirects', function (): void {
+    $user = User::factory()->create();
+
+    actingAs($user)
+        ->post(route('tallies.store'), [
+            'name' => 'My New Tally',
+            'description' => 'A description of my new tally',
+        ])
+        ->assertRedirect(route('tallies.index'));
+
+    $this->assertDatabaseHas('tallies', [
+        'name' => 'My New Tally',
+        'description' => 'A description of my new tally',
+        'owner_id' => $user->id,
+    ]);
+});
+
+it('validates the tally name is required', function (): void {
+    $user = User::factory()->create();
+
+    actingAs($user)
+        ->post(route('tallies.store'), [
+            'name' => '',
+        ])
+        ->assertSessionHasErrors('name');
+});
+
+it('renders the edit page', function (): void {
+    $user = User::factory()->create();
+    $tally = App\Models\Tally::factory()->create(['owner_id' => $user->id]);
+
+    actingAs($user)
+        ->get(route('tallies.edit', $tally))
+        ->assertOk();
+});
+
+it('updates a tally and redirects to transactions index', function (): void {
+    $user = User::factory()->create();
+    $tally = App\Models\Tally::factory()->create(['owner_id' => $user->id]);
+
+    actingAs($user)
+        ->put(route('tallies.update', $tally), [
+            'name' => 'Updated Tally Name',
+            'description' => 'Updated Tally Description',
+        ])
+        ->assertRedirect(route('tallies.transactions.index', $tally));
+
+    $this->assertDatabaseHas('tallies', [
+        'tally_id' => $tally->tally_id,
+        'name' => 'Updated Tally Name',
+        'description' => 'Updated Tally Description',
+    ]);
+});
+
+it('deletes a tally and redirects to index', function (): void {
+    $user = User::factory()->create();
+    $tally = App\Models\Tally::factory()->create(['owner_id' => $user->id]);
+
+    actingAs($user)
+        ->delete(route('tallies.destroy', $tally))
+        ->assertRedirect(route('tallies.index'));
+
+    $this->assertDatabaseMissing('tallies', [
+        'tally_id' => $tally->tally_id,
+    ]);
+});

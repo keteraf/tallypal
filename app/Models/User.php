@@ -13,12 +13,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Traits\HasRoles;
 
 /**
  * @property-read int $id
  * @property string $name
  * @property string $email
  * @property string $password
+ * @property string $email_verified_at
  * @property string|null $remember_token
  * @property-read Collection<int, Tally> $ownedTallies
  * @property-read Collection<int, Tally> $tallies
@@ -27,7 +29,7 @@ use Laravel\Sanctum\HasApiTokens;
 final class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, HasRoles, Notifiable;
 
     public const string TABLE_NAME = 'users';
 
@@ -46,6 +48,7 @@ final class User extends Authenticatable implements MustVerifyEmail
         'name',
         'email',
         'password',
+        'email_verified_at',
     ];
 
     /**

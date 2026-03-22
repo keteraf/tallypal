@@ -17,7 +17,7 @@ it('prevents unauthorized users from viewing a tally', function (): void {
     $stranger = User::factory()->create();
     Sanctum::actingAs($stranger);
 
-    $this->getJson(route('tallies.show', $tally))->assertForbidden();
+    $this->getJson(route('api.tallies.show', $tally))->assertForbidden();
 });
 
 it('prevents unauthorized users from updating a tally', function (): void {
@@ -27,7 +27,7 @@ it('prevents unauthorized users from updating a tally', function (): void {
     $stranger = User::factory()->create();
     Sanctum::actingAs($stranger);
 
-    $this->patchJson(route('tallies.update', $tally), ['name' => 'New Name'])->assertForbidden();
+    $this->patchJson(route('api.tallies.update', $tally), ['name' => 'New Name'])->assertForbidden();
 });
 
 it('prevents unauthorized users from deleting a tally', function (): void {
@@ -37,7 +37,7 @@ it('prevents unauthorized users from deleting a tally', function (): void {
     $stranger = User::factory()->create();
     Sanctum::actingAs($stranger);
 
-    $this->deleteJson(route('tallies.destroy', $tally))->assertForbidden();
+    $this->deleteJson(route('api.tallies.destroy', $tally))->assertForbidden();
 });
 
 it('allows parties to view and update a tally but not delete it', function (): void {
@@ -49,9 +49,9 @@ it('allows parties to view and update a tally but not delete it', function (): v
 
     Sanctum::actingAs($party);
 
-    $this->getJson(route('tallies.show', $tally))->assertSuccessful();
-    $this->patchJson(route('tallies.update', $tally), ['name' => 'New Name'])->assertSuccessful();
-    $this->deleteJson(route('tallies.destroy', $tally))->assertForbidden();
+    $this->getJson(route('api.tallies.show', $tally))->assertSuccessful();
+    $this->patchJson(route('api.tallies.update', $tally), ['name' => 'New Name'])->assertSuccessful();
+    $this->deleteJson(route('api.tallies.destroy', $tally))->assertForbidden();
 });
 
 it('prevents unauthorized users from accessing transactions', function (): void {
@@ -62,11 +62,11 @@ it('prevents unauthorized users from accessing transactions', function (): void 
     $stranger = User::factory()->create();
     Sanctum::actingAs($stranger);
 
-    $this->getJson(route('tallies.transactions.index', $tally))->assertForbidden();
-    $this->postJson(route('tallies.transactions.store', $tally), [])->assertForbidden();
-    $this->getJson(route('tallies.transactions.show', [$tally, $transaction]))->assertForbidden();
-    $this->patchJson(route('tallies.transactions.update', [$tally, $transaction]), [])->assertForbidden();
-    $this->deleteJson(route('tallies.transactions.destroy', [$tally, $transaction]))->assertForbidden();
+    $this->getJson(route('api.tallies.transactions.index', $tally))->assertForbidden();
+    $this->postJson(route('api.tallies.transactions.store', $tally), [])->assertForbidden();
+    $this->getJson(route('api.tallies.transactions.show', [$tally, $transaction]))->assertForbidden();
+    $this->patchJson(route('api.tallies.transactions.update', [$tally, $transaction]), [])->assertForbidden();
+    $this->deleteJson(route('api.tallies.transactions.destroy', [$tally, $transaction]))->assertForbidden();
 });
 
 it('allows parties to access transactions', function (): void {
@@ -79,7 +79,7 @@ it('allows parties to access transactions', function (): void {
 
     Sanctum::actingAs($party);
 
-    $this->getJson(route('tallies.transactions.index', $tally))->assertSuccessful();
+    $this->getJson(route('api.tallies.transactions.index', $tally))->assertSuccessful();
     // store/update/delete would need valid payload to pass validation, but we can at least check if it's NOT 403
     // but better to check if it reaches validation
 });

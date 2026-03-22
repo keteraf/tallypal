@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\TransactionType;
 use Database\Factories\TransactionFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,13 +17,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $party_id
  * @property int $currency_id
  * @property int $category_id
- * @property string $type
+ * @property TransactionType $type
  * @property string $title
  * @property string $description
  * @property float $amount
  * @property string $transaction_date
  * @property string $created_at
  * @property string $updated_at
+ * @property-read Currency|null $currency
+ * @property-read float $raw_total
  */
 class Transaction extends Model
 {
@@ -86,5 +89,30 @@ class Transaction extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class, 'category_id', Category::PRIMARY_KEY);
+    }
+
+    /**
+     * @return Attribute<float, float>
+     */
+    protected function amount(): Attribute
+    {
+        return Attribute::make(
+            get: function (mixed $value): float {
+                $decimals = $this->currency->decimals ?? 2;
+                $factor = 10 ** $decimals;
+
+                $numericValue = is_numeric($value) ? (float) $value : 0.0;
+
+                return $numericValue / $factor;
+            },
+            set: function (mixed $value): float {
+                $decimals = $this->currency->decimals ?? 2;
+                $factor = 10 ** $decimals;
+
+                $numericValue = is_numeric($value) ? (float) $value : 0.0;
+
+                return $numericValue * $factor;
+            }
+        );
     }
 }

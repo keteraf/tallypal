@@ -1,0 +1,111 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers;
+
+use App\Actions\Transaction\GetTallyDebtsAction;
+use App\Actions\Transaction\GetTallyTotalsAction;
+use App\Actions\Transaction\GetTallyTransactionsAction;
+use App\Actions\Transaction\StoreTransactionAction;
+use App\Actions\Transaction\UpdateTransactionAction;
+use App\DTOs\TransactionDTO;
+use App\Http\Requests\Transactions\StoreTransactionRequest;
+use App\Http\Requests\Transactions\UpdateTransactionRequest;
+use App\Models\Category;
+use App\Models\Currency;
+use App\Models\Tally;
+use App\Models\Transaction;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
+
+class TransactionController extends Controller
+{
+    use AuthorizesRequests;
+
+    /**
+     * Display a listing of the transactions for a tally.
+     */
+    public function index(
+        Request $request,
+        Tally $tally,
+        GetTallyTransactionsAction $getTransactionsAction,
+        GetTallyTotalsAction $getTotalsAction,
+        GetTallyDebtsAction $getDebtsAction
+    ): Response {
+        $this->authorize('view', $tally);
+
+        return Inertia::render('tallies/transactions/Index', [
+            'tally' => $tally,
+            'transactions' => Inertia::merge(fn (): \Illuminate\Contracts\Pagination\LengthAwarePaginator => $getTransactionsAction->handle($tally)),
+            'totals' => Inertia::merge(fn (): \Illuminate\Support\Collection => $getTotalsAction->handle($tally)),
+            'debts' => Inertia::merge(fn (): \Illuminate\Support\Collection => $getDebtsAction->handle($tally)),
+        ]);
+    }
+
+    /**
+     * Show the form for creating a new transaction.
+     */
+    public function create(Tally $tally): Response
+    {
+        $this->authorize('view', $tally);
+
+        return Inertia::render('tallies/transactions/Create', [
+            'tally' => $tally,
+            'categories' => Category::all(),
+            'currencies' => Currency::all(),
+            'parties' => $tally->users()->get(),
+        ]);
+    }
+
+    /**
+     * Store a newly created transaction in storage.
+     */
+    public function store(StoreTransactionRequest $request, Tally $tally, StoreTransactionAction $action): RedirectResponse
+    {
+        /** @var array{party_id: int|numeric-string, currency_id: int|numeric-string, category_id: int|numeric-string, type: string, title: string, description?: string|null, amount: float|numeric-string, transaction_date: string} $data */
+        $data = $request->validated();
+        $transactionDTO = TransactionDTO::fromArray($data);
+        $action->handle($transactionDTO, $tally);
+
+        return redirect()->route('tallies.transactions.index', $tally);
+    }
+
+    /**
+     * Show the form for editing the specified transaction.
+     */
+    public function edit(Tally $tally, Transaction $transaction): Response
+    {
+        $this->authorize('view', $transaction);
+
+        return Inertia::render('tallies/transactions/Edit', [
+            'tally' => $tally,
+            'transaction' => $transaction,
+            'categories' => Category::all(),
+            'currencies' => Currency::all(),
+            'parties' => $tally->users()->get(),
+        ]);
+    }
+
+    /**
+     * Update the specified transaction in storage.
+     */
+    public function update(
+        UpdateTransactionRequest $request,
+        Tally $tally,
+        Transaction $transaction,
+        UpdateTransactionAction $action
+    ): RedirectResponse {
+        $this->authorize('update', $transaction);
+
+        /** @var array{party_id: int|numeric-string, currency_id: int|numeric-string, category_id: int|numeric-string, type: string, title: string, description?: string|null, amount: float|numeric-string, transaction_date: string} $data */
+        $data = $request->validated();
+        $transactionDTO = TransactionDTO::fromArray($data);
+        $action->handle($transaction, $transactionDTO);
+
+        return redirect()->route('tallies.transactions.index', $tally);
+    }
+}

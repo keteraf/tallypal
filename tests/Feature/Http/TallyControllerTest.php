@@ -30,7 +30,7 @@ it('lists only tallies owned by the authenticated user', function (): void {
     $otherA = Tally::factory()->create(['owner_id' => $other->id, 'name' => 'Other A']);
     $otherB = Tally::factory()->create(['owner_id' => $other->id, 'name' => 'Other B']);
 
-    $response = $this->getJson(route('tallies.index'));
+    $response = $this->getJson(route('api.tallies.index'));
 
     $response->assertSuccessful();
 
@@ -58,7 +58,7 @@ it('lists tallies shared with the authenticated user via pivot', function (): vo
     // Not related
     $unrelated = Tally::factory()->create(['owner_id' => $owner->id, 'name' => 'Not Mine']);
 
-    $response = $this->getJson(route('tallies.index'));
+    $response = $this->getJson(route('api.tallies.index'));
 
     $response->assertSuccessful();
 
@@ -82,7 +82,7 @@ it('lists both owned and shared tallies without including unrelated', function (
 
     $unrelated = Tally::factory()->create(['owner_id' => $other->id, 'name' => 'Nope']);
 
-    $response = $this->getJson(route('tallies.index'));
+    $response = $this->getJson(route('api.tallies.index'));
 
     $response->assertSuccessful();
 
@@ -112,7 +112,7 @@ it('shows a tally with owner and users relations loaded', function (): void {
     $collabB = User::factory()->create();
     $tally->users()->attach([$collabA->id, $collabB->id]);
 
-    $response = $this->getJson(route('tallies.show', $tally));
+    $response = $this->getJson(route('api.tallies.show', $tally));
 
     $response->assertSuccessful();
 

@@ -46,3 +46,19 @@ it('belongs to a category', function () {
     expect($transaction->category())->toBeInstanceOf(BelongsTo::class)
         ->and($transaction->category)->toBeInstanceOf(Category::class);
 });
+
+it('gets and sets amount correctly', function () {
+    $currency = Currency::factory()->create(['decimals' => 2]);
+    $transaction = Transaction::factory()->withCurrency($currency)->create(['amount' => 12.34]);
+
+    // Internal value in DB should be 1234
+    expect($transaction->getRawOriginal('amount'))->toEqual(1234);
+
+    // Accessed value should be 12.34
+    expect($transaction->amount)->toBe(12.34);
+
+    // Set a new value
+    $transaction->amount = 56.78;
+    expect($transaction->getAttributes()['amount'])->toEqual(5678);
+    expect($transaction->amount)->toBe(56.78);
+});

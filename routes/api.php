@@ -16,8 +16,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/logout-all', [AuthController::class, 'logoutAll']);
 
-    Route::apiResource('tallies', TallyController::class);
-    Route::apiResource('tallies.transactions', TransactionController::class);
-    Route::put('tallies/{tally}/shares', [TallyShareController::class, 'update']);
-    Route::apiResource('tallies.shares', TallyShareController::class)->only(['index', 'store', 'destroy']);
+    Route::apiResource('tallies', TallyController::class)->names('api.tallies');
+    Route::apiResource('tallies.transactions', TransactionController::class)->names('api.tallies.transactions');
+    Route::put('tallies/{tally}/shares', [TallyShareController::class, 'update'])->name('api.tallies.shares.update');
+    Route::apiResource('tallies.shares', TallyShareController::class)->only(['index', 'store', 'destroy'])->names('api.tallies.shares');
 });

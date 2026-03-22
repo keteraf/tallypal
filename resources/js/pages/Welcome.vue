@@ -1,5 +1,13 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
+
+const props = defineProps<{
+    auth: {
+        user: any;
+    };
+}>();
+
+const isSuperAdmin = props.auth.user?.roles?.includes('Super Admin');
 </script>
 
 <template>
@@ -11,13 +19,30 @@ import { Head, Link } from '@inertiajs/vue3';
         <!-- Navigation -->
         <header class="absolute top-0 right-0 p-6">
             <nav class="flex items-center gap-4">
-                <Link
-                    v-if="$page.props.auth.user"
-                    :href="route('dashboard')"
-                    class="rounded-full border border-border px-6 py-2 text-sm font-medium transition-all hover:bg-accent hover:text-accent-foreground"
-                >
-                    Dashboard
-                </Link>
+                <template v-if="auth.user">
+                    <Link
+                        v-if="isSuperAdmin"
+                        :href="route('dashboard')"
+                        class="rounded-full border border-border px-6 py-2 text-sm font-medium transition-all hover:bg-accent hover:text-accent-foreground"
+                    >
+                        Dashboard
+                    </Link>
+                    <Link
+                        v-else
+                        :href="route('tallies.index')"
+                        class="rounded-full border border-border px-6 py-2 text-sm font-medium transition-all hover:bg-accent hover:text-accent-foreground"
+                    >
+                        My Tallies
+                    </Link>
+                    <Link
+                        :href="route('logout')"
+                        method="post"
+                        as="button"
+                        class="rounded-full px-6 py-2 text-sm font-medium transition-all hover:bg-accent hover:text-accent-foreground"
+                    >
+                        Log out
+                    </Link>
+                </template>
                 <template v-else>
                     <Link
                         :href="route('login')"

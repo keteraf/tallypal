@@ -1,12 +1,5 @@
 {
     "mcpServers": {
-        "tallypal-mcp": {
-            "command": "/usr/bin/php",
-            "args": [
-                "/var/www/vhosts/tallypal/artisan",
-                "boost:mcp"
-            ]
-        },
         "laravel-boost": {
             "command": "/usr/bin/php",
             "args": [
