@@ -13,9 +13,10 @@ use App\Models\User;
 covers(StoreTransactionAction::class);
 
 it('creates a transaction', function () {
-    $tally = Tally::factory()->create();
+    $user = User::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $user->id]);
+    $currency = Currency::where('code', 'USD')->first() ?? Currency::factory()->create(['decimals' => 2]);
     $party = User::factory()->create();
-    $currency = Currency::query()->inRandomOrder()->first();
     $category = Category::query()->inRandomOrder()->first();
 
     $dto = TransactionDTO::fromArray([

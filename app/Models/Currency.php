@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
@@ -19,6 +20,9 @@ use Illuminate\Support\Carbon;
  */
 class Currency extends Model
 {
+    /** @use HasFactory<\Database\Factories\CurrencyFactory> */
+    use HasFactory;
+
     public const string TABLE_NAME = 'currencies';
 
     public const string KEYS_PREFIX = 'currency';

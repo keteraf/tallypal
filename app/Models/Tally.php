@@ -16,6 +16,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $name
  * @property string $description
  * @property int $owner_id
+ * @property mixed $income_total
+ * @property mixed $expense_total
  */
 class Tally extends Model
 {
@@ -36,6 +38,11 @@ class Tally extends Model
         'owner_id',
         'name',
         'description',
+    ];
+
+    protected $guarded = [
+        'income_total',
+        'expense_total',
     ];
 
     /**

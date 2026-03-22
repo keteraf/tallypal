@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Http;
 
+use App\Models\Currency;
 use App\Models\Tally;
 use App\Models\Transaction;
 use App\Models\User;
@@ -12,10 +13,11 @@ use Inertia\Testing\AssertableInertia as Assert;
 it('displays the transaction edit page', function () {
     $user = User::factory()->create();
     $tally = Tally::factory()->create(['owner_id' => $user->id]);
-    $transaction = Transaction::factory()->forTally($tally)->create();
+    $currency = Currency::where('code', 'USD')->first() ?? Currency::factory()->create(['decimals' => 2]);
+    $transaction = Transaction::factory()->forTally($tally)->withCurrency($currency)->create();
 
     $this->actingAs($user)
-        ->get(route('api.tallies.transactions.edit', [$tally, $transaction]))
+        ->get(route('tallies.transactions.edit', [$tally, $transaction]))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('tallies/transactions/Edit')
@@ -41,7 +43,8 @@ it('displays the transaction edit page', function () {
 it('updates a transaction via web route', function () {
     $user = User::factory()->create();
     $tally = Tally::factory()->create(['owner_id' => $user->id]);
-    $transaction = Transaction::factory()->forTally($tally)->create();
+    $currency = Currency::where('code', 'USD')->first() ?? Currency::factory()->create(['decimals' => 2]);
+    $transaction = Transaction::factory()->forTally($tally)->withCurrency($currency)->create();
 
     $payload = [
         'title' => 'Updated via Web',
@@ -54,8 +57,8 @@ it('updates a transaction via web route', function () {
     ];
 
     $this->actingAs($user)
-        ->patch(route('api.tallies.transactions.update', [$tally, $transaction]), $payload)
-        ->assertRedirect(route('api.tallies.transactions.index', $tally));
+        ->patch(route('tallies.transactions.update', [$tally, $transaction]), $payload)
+        ->assertRedirect(route('tallies.transactions.index', $tally));
 
     $this->assertDatabaseHas(Transaction::TABLE_NAME, [
         'transaction_id' => $transaction->transaction_id,

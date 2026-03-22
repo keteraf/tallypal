@@ -11,6 +11,8 @@ final readonly class GetTallyTransactionsAction
 {
     /**
      * Get paginated transactions for a tally.
+     *
+     * @return LengthAwarePaginator<int, \App\Models\Transaction>
      */
     public function handle(Tally $tally, int $perPage = 15): LengthAwarePaginator
     {

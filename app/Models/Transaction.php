@@ -17,13 +17,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $party_id
  * @property int $currency_id
  * @property int $category_id
- * @property string $type
+ * @property TransactionType $type
  * @property string $title
  * @property string $description
  * @property float $amount
  * @property string $transaction_date
  * @property string $created_at
  * @property string $updated_at
+ * @property-read Currency|null $currency
+ * @property-read float $raw_total
  */
 class Transaction extends Model
 {
@@ -95,17 +97,21 @@ class Transaction extends Model
     protected function amount(): Attribute
     {
         return Attribute::make(
-            get: function ($value): int|float {
-                $decimals = $this->currency?->decimals ?? 2;
+            get: function (mixed $value): float {
+                $decimals = $this->currency->decimals ?? 2;
                 $factor = 10 ** $decimals;
 
-                return $value / $factor;
+                $numericValue = is_numeric($value) ? (float) $value : 0.0;
+
+                return $numericValue / $factor;
             },
-            set: function ($value): int|float {
-                $decimals = $this->currency?->decimals ?? 2;
+            set: function (mixed $value): float {
+                $decimals = $this->currency->decimals ?? 2;
                 $factor = 10 ** $decimals;
 
-                return $value * $factor;
+                $numericValue = is_numeric($value) ? (float) $value : 0.0;
+
+                return $numericValue * $factor;
             }
         );
     }

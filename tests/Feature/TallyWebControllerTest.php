@@ -24,7 +24,7 @@ it('shows tallies where the user is a collaborator on the index page', function 
     $owner = User::factory()->create();
     $collaborator = User::factory()->create();
 
-    $tally = \App\Models\Tally::factory()->create([
+    $tally = App\Models\Tally::factory()->create([
         'owner_id' => $owner->id,
         'name' => 'Shared Tally',
     ]);
@@ -67,7 +67,7 @@ it('validates the tally name is required', function (): void {
 
 it('renders the edit page', function (): void {
     $user = User::factory()->create();
-    $tally = \App\Models\Tally::factory()->create(['owner_id' => $user->id]);
+    $tally = App\Models\Tally::factory()->create(['owner_id' => $user->id]);
 
     actingAs($user)
         ->get(route('tallies.edit', $tally))
@@ -76,7 +76,7 @@ it('renders the edit page', function (): void {
 
 it('updates a tally and redirects to transactions index', function (): void {
     $user = User::factory()->create();
-    $tally = \App\Models\Tally::factory()->create(['owner_id' => $user->id]);
+    $tally = App\Models\Tally::factory()->create(['owner_id' => $user->id]);
 
     actingAs($user)
         ->put(route('tallies.update', $tally), [
@@ -94,7 +94,7 @@ it('updates a tally and redirects to transactions index', function (): void {
 
 it('deletes a tally and redirects to index', function (): void {
     $user = User::factory()->create();
-    $tally = \App\Models\Tally::factory()->create(['owner_id' => $user->id]);
+    $tally = App\Models\Tally::factory()->create(['owner_id' => $user->id]);
 
     actingAs($user)
         ->delete(route('tallies.destroy', $tally))

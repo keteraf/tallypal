@@ -31,7 +31,7 @@ class TallyController extends Controller
 
         $tallies = Tally::query()
             ->with(['owner', 'users'])
-            ->where(function ($query) use ($userId) {
+            ->where(function ($query) use ($userId): void {
                 $query->where('owner_id', $userId)
                     ->orWhereHas('users', fn ($query) => $query->where('user_id', $userId));
             })
