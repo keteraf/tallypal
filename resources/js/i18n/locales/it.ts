@@ -30,7 +30,7 @@ export default {
         more: 'Altro',
         close: 'Chiudi',
         placeholder: {
-            email: 'email@esempio.com',
+            email: "email{'@'}example.com",
             password: 'Password',
             current_password: 'Password attuale',
             new_password: 'Nuova password',
