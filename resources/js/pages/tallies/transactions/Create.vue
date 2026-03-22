@@ -12,6 +12,7 @@ import { Form, Head, Link, usePage } from '@inertiajs/vue3';
 import { DateFormatter, getLocalTimeZone, today, type DateValue } from '@internationalized/date';
 import { CalendarIcon } from 'lucide-vue-next';
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 interface Props {
     tally: {
@@ -36,10 +37,11 @@ interface Props {
 const props = defineProps<Props>();
 
 const page = usePage();
+const { t } = useI18n();
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Tallies',
+        title: t('tallies.title'),
         href: route('tallies.index'),
     },
     {
@@ -47,7 +49,7 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: route('tallies.transactions.index', props.tally.tally_id),
     },
     {
-        title: 'Add Transaction',
+        title: t('transactions.add_button'),
         href: route('tallies.transactions.create', props.tally.tally_id),
     },
 ];
@@ -62,17 +64,17 @@ const isCalendarOpen = ref(false);
 const transactionType = ref('expense');
 
 const partyLabel = (type: string | undefined) => {
-    return type === 'income' ? 'Received by' : 'Paid by';
+    return type === 'income' ? t('transactions.fields.received_by') : t('transactions.fields.paid_by');
 };
 </script>
 
 <template>
-    <Head :title="`Add Transaction - ${tally.name}`" />
+    <Head :title="$t('transactions.add_title', { name: tally.name })" />
 
     <WebLayout :breadcrumbs="breadcrumbs">
         <div class="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
             <div class="flex items-center justify-between">
-                <h1 class="text-2xl font-bold">Add Transaction to {{ tally.name }}</h1>
+                <h1 class="text-2xl font-bold">{{ $t('transactions.add_heading', { name: tally.name }) }}</h1>
             </div>
 
             <div class="max-w-2xl rounded-lg border p-6 shadow-sm">
@@ -94,23 +96,30 @@ const partyLabel = (type: string | undefined) => {
                 >
                     <div class="grid gap-6 md:grid-cols-2">
                         <div class="space-y-2">
-                            <Label for="title">Title</Label>
-                            <Input id="title" name="title" placeholder="e.g. Grocery shopping" required autofocus />
+                            <Label for="title">{{ $t('transactions.fields.title') }}</Label>
+                            <Input id="title" name="title" :placeholder="$t('transactions.fields.title_placeholder')" required autofocus />
                             <div v-if="errors.title" class="text-sm font-medium text-destructive">
                                 {{ errors.title }}
                             </div>
                         </div>
 
                         <div class="space-y-2">
-                            <Label for="amount">Amount</Label>
-                            <Input id="amount" name="amount" type="number" step="0.01" placeholder="0.00" required />
+                            <Label for="amount">{{ $t('transactions.fields.amount') }}</Label>
+                            <Input
+                                id="amount"
+                                name="amount"
+                                type="number"
+                                step="0.01"
+                                :placeholder="$t('transactions.fields.amount_placeholder')"
+                                required
+                            />
                             <div v-if="errors.amount" class="text-sm font-medium text-destructive">
                                 {{ errors.amount }}
                             </div>
                         </div>
 
                         <div class="space-y-2">
-                            <Label for="type">Type</Label>
+                            <Label for="type">{{ $t('transactions.fields.type') }}</Label>
                             <select
                                 id="type"
                                 name="type"
@@ -118,8 +127,8 @@ const partyLabel = (type: string | undefined) => {
                                 class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                                 required
                             >
-                                <option value="expense">Expense</option>
-                                <option value="income">Income</option>
+                                <option value="expense">{{ $t('transactions.fields.expense') }}</option>
+                                <option value="income">{{ $t('transactions.fields.income') }}</option>
                             </select>
                             <div v-if="errors.type" class="text-sm font-medium text-destructive">
                                 {{ errors.type }}
@@ -144,7 +153,7 @@ const partyLabel = (type: string | undefined) => {
                         </div>
 
                         <div class="space-y-2">
-                            <Label for="category_id">Category</Label>
+                            <Label for="category_id">{{ $t('transactions.fields.category') }}</Label>
                             <select
                                 id="category_id"
                                 name="category_id"
@@ -161,7 +170,7 @@ const partyLabel = (type: string | undefined) => {
                         </div>
 
                         <div class="space-y-2">
-                            <Label for="currency_id">Currency</Label>
+                            <Label for="currency_id">{{ $t('transactions.fields.currency') }}</Label>
                             <select
                                 id="currency_id"
                                 name="currency_id"
@@ -178,7 +187,7 @@ const partyLabel = (type: string | undefined) => {
                         </div>
 
                         <div class="space-y-2">
-                            <Label for="transaction_date">Date</Label>
+                            <Label for="transaction_date">{{ $t('transactions.fields.date') }}</Label>
                             <Popover v-model:open="isCalendarOpen">
                                 <PopoverTrigger as-child>
                                     <Button
@@ -186,7 +195,7 @@ const partyLabel = (type: string | undefined) => {
                                         :class="cn('w-full justify-start text-left font-normal', !dateValue && 'text-muted-foreground')"
                                     >
                                         <CalendarIcon class="mr-2 h-4 w-4" />
-                                        {{ dateValue ? df.format(dateValue.toDate(getLocalTimeZone())) : 'Pick a date' }}
+                                        {{ dateValue ? df.format(dateValue.toDate(getLocalTimeZone())) : $t('transactions.fields.date_placeholder') }}
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent class="w-auto p-0">
@@ -201,8 +210,13 @@ const partyLabel = (type: string | undefined) => {
                     </div>
 
                     <div class="space-y-2">
-                        <Label for="description">Description (Optional)</Label>
-                        <Textarea id="description" name="description" placeholder="More details about the transaction" class="min-h-25" />
+                        <Label for="description">{{ $t('transactions.fields.description') }}</Label>
+                        <Textarea
+                            id="description"
+                            name="description"
+                            :placeholder="$t('transactions.fields.description_placeholder')"
+                            class="min-h-25"
+                        />
                         <div v-if="errors.description" class="text-sm font-medium text-destructive">
                             {{ errors.description }}
                         </div>
@@ -210,10 +224,10 @@ const partyLabel = (type: string | undefined) => {
 
                     <div class="flex justify-end gap-4">
                         <Button variant="outline" as-child>
-                            <Link :href="route('tallies.transactions.index', tally.tally_id)"> Cancel </Link>
+                            <Link :href="route('tallies.transactions.index', tally.tally_id)"> {{ $t('common.cancel') }} </Link>
                         </Button>
                         <Button type="submit" :disabled="processing">
-                            {{ processing ? 'Adding...' : 'Add Transaction' }}
+                            {{ processing ? $t('common.adding') : $t('transactions.add_button') }}
                         </Button>
                     </div>
                 </Form>

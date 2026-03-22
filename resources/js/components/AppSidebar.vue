@@ -6,12 +6,15 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, Sid
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
 import { Activity, LayoutGrid, LucideBookOpenText, Telescope } from 'lucide-vue-next';
+import { useI18n } from 'vue-i18n';
 import { GitHubIcon } from 'vue3-simple-icons';
 import AppLogo from './AppLogo.vue';
 
+const { t } = useI18n();
+
 const mainNavItems: NavItem[] = [
     {
-        title: 'Dashboard',
+        title: t('navigation.dashboard'),
         href: '/dashboard',
         icon: LayoutGrid,
     },
@@ -19,22 +22,22 @@ const mainNavItems: NavItem[] = [
 
 const footerNavItems: NavItem[] = [
     {
-        title: 'Pulse',
+        title: t('navigation.pulse'),
         href: '/pulse',
         icon: Activity,
     },
     {
-        title: 'Telescope',
+        title: t('navigation.telescope'),
         href: '/telescope',
         icon: Telescope,
     },
     {
-        title: 'Github Repo',
+        title: t('navigation.github_repo'),
         href: 'https://github.com/keteraf/tallypal',
         icon: GitHubIcon,
     },
     {
-        title: 'Documentation',
+        title: t('navigation.documentation'),
         href: 'https://laravel.com/docs/starter-kits#vue',
         icon: LucideBookOpenText,
     },

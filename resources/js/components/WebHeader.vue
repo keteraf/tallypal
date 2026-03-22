@@ -13,6 +13,7 @@ import type { BreadcrumbItem, NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
 import { LogOut, Menu, Tally5 } from 'lucide-vue-next';
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 interface Props {
     breadcrumbs?: BreadcrumbItem[];
@@ -24,6 +25,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const page = usePage();
 const auth = computed(() => page.props.auth);
+const { t } = useI18n();
 
 const isCurrentRoute = computed(() => (url: string) => page.url === url);
 
@@ -33,7 +35,7 @@ const activeItemStyles = computed(
 
 const mainNavItems: NavItem[] = [
     {
-        title: 'Tallies',
+        title: t('tallies.title'),
         href: '/tallies',
         icon: Tally5,
     },
@@ -53,7 +55,7 @@ const mainNavItems: NavItem[] = [
                             </Button>
                         </SheetTrigger>
                         <SheetContent side="left" class="w-75 p-6">
-                            <SheetTitle class="sr-only">Navigation Menu</SheetTitle>
+                            <SheetTitle class="sr-only">{{ $t('common.navigation_menu') }}</SheetTitle>
                             <SheetHeader class="flex justify-start text-left">
                                 <AppLogoIcon class="size-6 fill-current text-black dark:text-white" />
                             </SheetHeader>
@@ -79,7 +81,7 @@ const mainNavItems: NavItem[] = [
                                         class="flex w-full items-center gap-x-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent"
                                     >
                                         <LogOut class="h-5 w-5" />
-                                        Log out
+                                        {{ $t('common.logout') }}
                                     </Link>
                                 </div>
                             </div>

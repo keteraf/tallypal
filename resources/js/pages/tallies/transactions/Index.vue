@@ -1,12 +1,13 @@
 <script setup lang="ts">
+import TallyShareDialog from '@/components/tallies/TallyShareDialog.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import TallyShareDialog from '@/components/tallies/TallyShareDialog.vue';
 import WebLayout from '@/layouts/WebLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, usePage, WhenVisible } from '@inertiajs/vue3';
 import { Info, Plus, Settings, Share2, TrendingDown, TrendingUp } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 interface Props {
     tally: {
@@ -46,15 +47,20 @@ interface Props {
 
 const props = defineProps<Props>();
 const page = usePage();
+const { t } = useI18n();
 
 const showShareDialog = ref(false);
 const isOwner = computed(() => page.props.auth.user.id === props.tally.owner_id);
 
 const formatCurrency = (value: number, currency?: { symbol: string; decimals: number }) => {
-    return (currency?.symbol ?? '') + ' ' + new Intl.NumberFormat('en-US', {
-        minimumFractionDigits: currency?.decimals ?? 2,
-        maximumFractionDigits: currency?.decimals ?? 2,
-    }).format(value);
+    return (
+        (currency?.symbol ?? '') +
+        ' ' +
+        new Intl.NumberFormat('en-US', {
+            minimumFractionDigits: currency?.decimals ?? 2,
+            maximumFractionDigits: currency?.decimals ?? 2,
+        }).format(value)
+    );
 };
 
 const incomeTotals = computed(() => props.totals.filter((t) => t.type === 'income'));
@@ -78,7 +84,7 @@ const balances = computed(() => {
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Tallies',
+        title: t('tallies.title'),
         href: route('tallies.index'),
     },
     {
@@ -87,45 +93,48 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-const getDebtMessage = (settlement: { debtor: { id: number; name: string }; creditor: { id: number; name: string }; amount: number }, currency: any) => {
+const getDebtMessage = (
+    settlement: { debtor: { id: number; name: string }; creditor: { id: number; name: string }; amount: number },
+    currency: any,
+) => {
     const currentUserId = page.props.auth.user.id;
     const amount = formatCurrency(settlement.amount, currency);
 
     if (settlement.debtor.id === currentUserId) {
-        return `You owe ${settlement.creditor.name} ${amount}`;
+        return t('transactions.debts.you_owe', { creditor: settlement.creditor.name, amount });
     }
     if (settlement.creditor.id === currentUserId) {
-        return `${settlement.debtor.name} owes you ${amount}`;
+        return t('transactions.debts.owes_you', { debtor: settlement.debtor.name, amount });
     }
-    return `${settlement.debtor.name} owes ${settlement.creditor.name} ${amount}`;
+    return t('transactions.debts.owes_each_other', { debtor: settlement.debtor.name, creditor: settlement.creditor.name, amount });
 };
 </script>
 
 <template>
-    <Head :title="`${tally.name} - Transactions`" />
+    <Head :title="`${tally.name} - ${$t('transactions.title')}`" />
 
     <WebLayout :breadcrumbs="breadcrumbs">
         <div class="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-            <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+            <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
                 <div class="min-w-0">
                     <h1 class="text-2xl font-bold break-words">{{ tally.name }}</h1>
-                    <p class="text-gray-600 dark:text-gray-400 break-words">{{ tally.description }}</p>
+                    <p class="break-words text-gray-600 dark:text-gray-400">{{ tally.description }}</p>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
                     <Button v-if="isOwner" variant="outline" @click="showShareDialog = true" class="w-full sm:w-auto">
                         <Share2 class="mr-2 h-4 w-4" />
-                        Share
+                        {{ $t('common.share') }}
                     </Button>
                     <Button variant="outline" as-child class="w-full sm:w-auto">
                         <Link :href="route('tallies.edit', tally.tally_id)">
                             <Settings class="mr-2 h-4 w-4" />
-                            Edit
+                            {{ $t('common.edit') }}
                         </Link>
                     </Button>
                     <Button as-child class="w-full sm:w-auto">
                         <Link :href="route('tallies.transactions.create', tally.tally_id)">
                             <Plus class="mr-2 h-4 w-4" />
-                            Add Transaction
+                            {{ $t('transactions.add_button') }}
                         </Link>
                     </Button>
                 </div>
@@ -134,7 +143,7 @@ const getDebtMessage = (settlement: { debtor: { id: number; name: string }; cred
             <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <Card>
                     <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle class="text-sm font-medium"> Total Income </CardTitle>
+                        <CardTitle class="text-sm font-medium"> {{ $t('transactions.total_income') }} </CardTitle>
                         <TrendingUp class="h-4 w-4 text-green-600" />
                     </CardHeader>
                     <CardContent>
@@ -146,7 +155,7 @@ const getDebtMessage = (settlement: { debtor: { id: number; name: string }; cred
                 </Card>
                 <Card>
                     <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle class="text-sm font-medium"> Total Expenses </CardTitle>
+                        <CardTitle class="text-sm font-medium"> {{ $t('transactions.total_expenses') }} </CardTitle>
                         <TrendingDown class="h-4 w-4 text-red-600" />
                     </CardHeader>
                     <CardContent>
@@ -158,7 +167,7 @@ const getDebtMessage = (settlement: { debtor: { id: number; name: string }; cred
                 </Card>
                 <Card>
                     <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle class="text-sm font-medium"> Net Balance </CardTitle>
+                        <CardTitle class="text-sm font-medium"> {{ $t('transactions.net_balance') }} </CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div
@@ -177,7 +186,7 @@ const getDebtMessage = (settlement: { debtor: { id: number; name: string }; cred
                 <Card class="border-blue-100 bg-blue-50/50 dark:border-blue-900/50 dark:bg-blue-900/10">
                     <CardHeader class="flex flex-row items-center gap-2 pb-2">
                         <Info class="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                        <CardTitle class="text-sm font-medium text-blue-900 dark:text-blue-100"> Who owes what </CardTitle>
+                        <CardTitle class="text-sm font-medium text-blue-900 dark:text-blue-100"> {{ $t('transactions.who_owes_what') }} </CardTitle>
                     </CardHeader>
                     <CardContent class="space-y-2">
                         <div v-for="d in debts" :key="d.currency.code" class="space-y-1">
@@ -190,10 +199,10 @@ const getDebtMessage = (settlement: { debtor: { id: number; name: string }; cred
             </div>
 
             <div class="mt-4">
-                <h2 class="mb-4 text-lg font-semibold">Transactions</h2>
+                <h2 class="mb-4 text-lg font-semibold">{{ $t('transactions.title') }}</h2>
 
                 <div v-if="transactions.data.length === 0" class="rounded-lg border py-12 text-center">
-                    <p class="text-gray-500">No transactions found for this tally.</p>
+                    <p class="text-gray-500">{{ $t('transactions.empty_state') }}</p>
                 </div>
 
                 <div v-else class="space-y-4">

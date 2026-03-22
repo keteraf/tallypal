@@ -1,14 +1,6 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -17,6 +9,7 @@ import { type BreadcrumbItem } from '@/types';
 import { Form, Head, useForm, usePage } from '@inertiajs/vue3';
 import { Trash2 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{
     tally: {
@@ -28,11 +21,12 @@ const props = defineProps<{
 }>();
 
 const page = usePage();
+const { t } = useI18n();
 const isOwner = computed(() => page.props.auth.user.id === props.tally.owner_id);
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Tallies',
+        title: t('tallies.title'),
         href: route('tallies.index'),
     },
     {
@@ -40,7 +34,7 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: route('tallies.transactions.index', props.tally.tally_id),
     },
     {
-        title: 'Edit',
+        title: t('common.edit'),
         href: route('tallies.edit', props.tally.tally_id),
     },
 ];
@@ -58,31 +52,31 @@ const deleteTally = () => {
 </script>
 
 <template>
-    <Head :title="`Edit Tally - ${tally.name}`" />
+    <Head :title="$t('tallies.edit_title', { name: tally.name })" />
 
     <WebLayout :breadcrumbs="breadcrumbs">
         <div class="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <h1 class="text-2xl font-bold text-center sm:text-left">Edit Tally</h1>
+            <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+                <h1 class="text-center text-2xl font-bold sm:text-left">{{ $t('tallies.edit_heading') }}</h1>
 
                 <Dialog v-if="isOwner" v-model:open="showDeleteDialog">
                     <DialogTrigger as-child>
                         <Button variant="destructive" class="w-full sm:w-auto">
                             <Trash2 class="mr-2 h-4 w-4" />
-                            Delete Tally
+                            {{ $t('tallies.delete_tally') }}
                         </Button>
                     </DialogTrigger>
                     <DialogContent>
                         <DialogHeader>
-                            <DialogTitle>Are you sure you want to delete this tally?</DialogTitle>
+                            <DialogTitle>{{ $t('tallies.delete_confirm_title') }}</DialogTitle>
                             <DialogDescription>
-                                This action cannot be undone. This will permanently delete the tally "{{ tally.name }}" and all its transactions.
+                                {{ $t('tallies.delete_confirm_description', { name: tally.name }) }}
                             </DialogDescription>
                         </DialogHeader>
                         <DialogFooter>
-                            <Button variant="outline" @click="showDeleteDialog = false">Cancel</Button>
+                            <Button variant="outline" @click="showDeleteDialog = false">{{ $t('common.cancel') }}</Button>
                             <Button variant="destructive" :disabled="deleteForm.processing" @click="deleteTally">
-                                {{ deleteForm.processing ? 'Deleting...' : 'Delete Tally' }}
+                                {{ deleteForm.processing ? $t('common.deleting') : $t('tallies.delete_tally') }}
                             </Button>
                         </DialogFooter>
                     </DialogContent>
@@ -101,25 +95,27 @@ const deleteTally = () => {
                     class="space-y-6"
                 >
                     <div class="space-y-2">
-                        <Label for="name">Name</Label>
-                        <Input id="name" name="name" placeholder="Enter tally name" required autofocus />
+                        <Label for="name">{{ $t('tallies.name_label') }}</Label>
+                        <Input id="name" name="name" :placeholder="$t('tallies.name_placeholder')" required autofocus />
                         <div v-if="errors.name" class="text-sm font-medium text-destructive">
                             {{ errors.name }}
                         </div>
                     </div>
 
                     <div class="space-y-2">
-                        <Label for="description">Description</Label>
-                        <Textarea id="description" name="description" placeholder="Optional description for this tally" class="min-h-[100px]" />
+                        <Label for="description">{{ $t('tallies.description_label') }}</Label>
+                        <Textarea id="description" name="description" :placeholder="$t('tallies.description_placeholder')" class="min-h-[100px]" />
                         <div v-if="errors.description" class="text-sm font-medium text-destructive">
                             {{ errors.description }}
                         </div>
                     </div>
 
                     <div class="flex justify-end gap-4">
-                        <Button variant="outline" as="a" :href="route('tallies.transactions.index', tally.tally_id)"> Cancel </Button>
+                        <Button variant="outline" as-child>
+                            <a :href="route('tallies.transactions.index', tally.tally_id)"> {{ $t('common.cancel') }} </a>
+                        </Button>
                         <Button type="submit" :disabled="processing">
-                            {{ processing ? 'Updating...' : 'Update Tally' }}
+                            {{ processing ? $t('common.updating') : $t('common.update') + ' Tally' }}
                         </Button>
                     </div>
                 </Form>
