@@ -13,8 +13,10 @@
     "require": {
         "php": "^8.4",
         "ext-pdo": "*",
+        "doctrine/dbal": "^4.4",
         "inertiajs/inertia-laravel": "^2.0",
         "laravel/framework": "^12.0",
+        "laravel/nightwatch": "^1.24",
         "laravel/pulse": "^1.4",
         "laravel/sanctum": "^4.0",
         "laravel/telescope": "^5.15",
