@@ -15,7 +15,7 @@ it('creates a tally with valid data and sets the owner', function (): void {
         'description' => 'About this tally',
     ];
 
-    $response = $this->postJson(route('tallies.store'), $payload);
+    $response = $this->postJson(route('api.tallies.store'), $payload);
 
     $response->assertSuccessful();
 
@@ -35,7 +35,7 @@ it('allows null description on create', function (): void {
         'description' => null,
     ];
 
-    $response = $this->postJson(route('tallies.store'), $payload);
+    $response = $this->postJson(route('api.tallies.store'), $payload);
 
     $response->assertSuccessful();
 
@@ -50,7 +50,7 @@ it('validates create payload', function (array $payload, string $errorField): vo
     $user = User::factory()->create();
     Sanctum::actingAs($user);
 
-    $response = $this->postJson(route('tallies.store'), $payload);
+    $response = $this->postJson(route('api.tallies.store'), $payload);
 
     $response->assertUnprocessable();
     $response->assertJsonValidationErrors([$errorField]);
@@ -81,7 +81,7 @@ it('accepts boundary lengths on create', function (): void {
         'description' => str_repeat('b', 1000),
     ];
 
-    $response = $this->postJson(route('tallies.store'), $payload);
+    $response = $this->postJson(route('api.tallies.store'), $payload);
 
     $response->assertSuccessful();
 });
@@ -97,7 +97,7 @@ it('updates a tally when owner provides valid data', function (): void {
 
     Sanctum::actingAs($owner);
 
-    $response = $this->patchJson(route('tallies.update', $tally), [
+    $response = $this->patchJson(route('api.tallies.update', $tally), [
         'name' => 'New Name',
         'description' => 'New Desc',
     ]);
@@ -118,7 +118,7 @@ it('forbids update when user is not the owner', function (): void {
 
     Sanctum::actingAs($other);
 
-    $response = $this->patchJson(route('tallies.update', $tally), [
+    $response = $this->patchJson(route('api.tallies.update', $tally), [
         'name' => 'Hack',
     ]);
 
@@ -134,7 +134,7 @@ it('deletes a tally when requested by the owner', function (): void {
 
     Sanctum::actingAs($owner);
 
-    $response = $this->deleteJson(route('tallies.destroy', $tally));
+    $response = $this->deleteJson(route('api.tallies.destroy', $tally));
 
     $response->assertNoContent();
     $this->assertModelMissing($tally);
@@ -149,7 +149,7 @@ it('forbids delete when user is not the owner', function (): void {
 
     Sanctum::actingAs($other);
 
-    $response = $this->deleteJson(route('tallies.destroy', $tally));
+    $response = $this->deleteJson(route('api.tallies.destroy', $tally));
 
     $response->assertForbidden();
 });

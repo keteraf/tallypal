@@ -15,11 +15,11 @@ it('requires authentication for all transaction endpoints', function (): void {
     $tally = Tally::factory()->create();
     $transaction = Transaction::factory()->forTally($tally)->create();
 
-    $this->getJson(route('tallies.transactions.index', $tally))->assertUnauthorized();
-    $this->postJson(route('tallies.transactions.store', $tally), [])->assertUnauthorized();
-    $this->getJson(route('tallies.transactions.show', [$tally, $transaction]))->assertUnauthorized();
-    $this->patchJson(route('tallies.transactions.update', [$tally, $transaction]), [])->assertUnauthorized();
-    $this->deleteJson(route('tallies.transactions.destroy', [$tally, $transaction]))->assertUnauthorized();
+    $this->getJson(route('api.tallies.transactions.index', $tally))->assertUnauthorized();
+    $this->postJson(route('api.tallies.transactions.store', $tally), [])->assertUnauthorized();
+    $this->getJson(route('api.tallies.transactions.show', [$tally, $transaction]))->assertUnauthorized();
+    $this->patchJson(route('api.tallies.transactions.update', [$tally, $transaction]), [])->assertUnauthorized();
+    $this->deleteJson(route('api.tallies.transactions.destroy', [$tally, $transaction]))->assertUnauthorized();
 });
 
 it('lists transactions for a tally, newest first, paginated', function (): void {
@@ -32,7 +32,7 @@ it('lists transactions for a tally, newest first, paginated', function (): void 
     // Transactions belonging to a different tally should not appear
     Transaction::factory()->count(3)->create();
 
-    $response = $this->getJson(route('tallies.transactions.index', $tally));
+    $response = $this->getJson(route('api.tallies.transactions.index', $tally));
 
     $response->assertSuccessful();
 
@@ -70,7 +70,7 @@ it('stores a transaction with valid payload', function (): void {
         'transaction_date' => Carbon::now()->toDateString(),
     ];
 
-    $response = $this->postJson(route('tallies.transactions.store', $tally), $payload);
+    $response = $this->postJson(route('api.tallies.transactions.store', $tally), $payload);
 
     $response->assertSuccessful();
 
@@ -109,7 +109,7 @@ it('validates store payload - missing party_id', function (): void {
         'transaction_date' => Carbon::now()->toDateString(),
     ];
 
-    $response = $this->postJson(route('tallies.transactions.store', $tally), $payload);
+    $response = $this->postJson(route('api.tallies.transactions.store', $tally), $payload);
 
     $response->assertUnprocessable();
     $response->assertJsonValidationErrors(['party_id']);
@@ -134,7 +134,7 @@ it('validates store payload - invalid type', function (): void {
         'transaction_date' => Carbon::now()->toDateString(),
     ];
 
-    $response = $this->postJson(route('tallies.transactions.store', $tally), $payload);
+    $response = $this->postJson(route('api.tallies.transactions.store', $tally), $payload);
 
     $response->assertUnprocessable();
     $response->assertJsonValidationErrors(['type']);
@@ -159,7 +159,7 @@ it('validates store payload - amount not numeric', function (): void {
         'transaction_date' => Carbon::now()->toDateString(),
     ];
 
-    $response = $this->postJson(route('tallies.transactions.store', $tally), $payload);
+    $response = $this->postJson(route('api.tallies.transactions.store', $tally), $payload);
 
     $response->assertUnprocessable();
     $response->assertJsonValidationErrors(['amount']);
@@ -183,7 +183,7 @@ it('validates store payload - missing transaction_date', function (): void {
         'amount' => 10,
     ];
 
-    $response = $this->postJson(route('tallies.transactions.store', $tally), $payload);
+    $response = $this->postJson(route('api.tallies.transactions.store', $tally), $payload);
 
     $response->assertUnprocessable();
     $response->assertJsonValidationErrors(['transaction_date']);
@@ -196,7 +196,7 @@ it('shows a single transaction', function (): void {
     $tally = Tally::factory()->create(['owner_id' => $me->id]);
     $transaction = Transaction::factory()->forTally($tally)->create();
 
-    $response = $this->getJson(route('tallies.transactions.show', [$tally, $transaction]));
+    $response = $this->getJson(route('api.tallies.transactions.show', [$tally, $transaction]));
 
     $response->assertSuccessful();
     $response->assertJson(fn ($json) => $json
@@ -232,7 +232,7 @@ it('updates a transaction', function (): void {
         'transaction_date' => Carbon::now()->subDay()->toDateString(),
     ];
 
-    $response = $this->patchJson(route('tallies.transactions.update', [$tally, $transaction]), $payload);
+    $response = $this->patchJson(route('api.tallies.transactions.update', [$tally, $transaction]), $payload);
 
     $response->assertSuccessful();
 
@@ -253,7 +253,7 @@ it('deletes a transaction', function (): void {
     $tally = Tally::factory()->create(['owner_id' => $me->id]);
     $transaction = Transaction::factory()->forTally($tally)->create();
 
-    $response = $this->deleteJson(route('tallies.transactions.destroy', [$tally, $transaction]));
+    $response = $this->deleteJson(route('api.tallies.transactions.destroy', [$tally, $transaction]));
 
     $response->assertNoContent();
     $this->assertModelMissing($transaction);
