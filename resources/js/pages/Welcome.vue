@@ -11,7 +11,7 @@ const isSuperAdmin = props.auth.user?.roles?.includes('Super Admin');
 </script>
 
 <template>
-    <Head title="Welcome" />
+    <Head :title="$t('welcome.title')" />
 
     <div
         class="relative flex min-h-screen flex-col items-center justify-center bg-background p-6 text-foreground transition-colors duration-500 lg:p-8"
@@ -25,14 +25,14 @@ const isSuperAdmin = props.auth.user?.roles?.includes('Super Admin');
                         :href="route('dashboard')"
                         class="rounded-full border border-border px-6 py-2 text-sm font-medium transition-all hover:bg-accent hover:text-accent-foreground"
                     >
-                        Dashboard
+                        {{ $t('common.dashboard') }}
                     </Link>
                     <Link
                         v-else
                         :href="route('tallies.index')"
                         class="rounded-full border border-border px-6 py-2 text-sm font-medium transition-all hover:bg-accent hover:text-accent-foreground"
                     >
-                        My Tallies
+                        {{ $t('welcome.my_tallies') }}
                     </Link>
                     <Link
                         :href="route('logout')"
@@ -40,7 +40,7 @@ const isSuperAdmin = props.auth.user?.roles?.includes('Super Admin');
                         as="button"
                         class="rounded-full px-6 py-2 text-sm font-medium transition-all hover:bg-accent hover:text-accent-foreground"
                     >
-                        Log out
+                        {{ $t('common.logout') }}
                     </Link>
                 </template>
                 <template v-else>
@@ -48,13 +48,13 @@ const isSuperAdmin = props.auth.user?.roles?.includes('Super Admin');
                         :href="route('login')"
                         class="rounded-full px-6 py-2 text-sm font-medium transition-all hover:bg-accent hover:text-accent-foreground"
                     >
-                        Log in
+                        {{ $t('common.login') }}
                     </Link>
                     <Link
                         :href="route('register')"
                         class="rounded-full border border-border px-6 py-2 text-sm font-medium transition-all hover:bg-accent hover:text-accent-foreground"
                     >
-                        Register
+                        {{ $t('common.register') }}
                     </Link>
                 </template>
             </nav>
@@ -65,7 +65,7 @@ const isSuperAdmin = props.auth.user?.roles?.includes('Super Admin');
             <h1
                 class="animate-in text-center text-7xl font-black tracking-tighter duration-1000 fade-in slide-in-from-bottom-8 md:text-8xl lg:text-9xl"
             >
-                Tallypal
+                {{ $t('welcome.app_name') }}
             </h1>
         </main>
 

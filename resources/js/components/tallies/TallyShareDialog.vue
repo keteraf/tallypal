@@ -2,14 +2,7 @@
 import InputError from '@/components/InputError.vue';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -74,7 +67,7 @@ const addCollaborator = async () => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Accept': 'application/json',
+                Accept: 'application/json',
                 'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
             },
             body: JSON.stringify({ email: newCollaboratorEmail.value }),
@@ -101,7 +94,7 @@ const removeCollaborator = async (collaboratorId: number) => {
         const response = await fetch(route('api.tallies.shares.destroy', { tally: props.tally.tally_id, share: collaboratorId }), {
             method: 'DELETE',
             headers: {
-                'Accept': 'application/json',
+                Accept: 'application/json',
                 'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
             },
         });
@@ -130,14 +123,14 @@ const saveShares = async () => {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
-                'Accept': 'application/json',
+                Accept: 'application/json',
                 'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
             },
             body: JSON.stringify({
-                shares: collaborators.value.map(c => ({
+                shares: collaborators.value.map((c) => ({
                     user_id: c.id,
-                    percentage: c.percentage
-                }))
+                    percentage: c.percentage,
+                })),
             }),
         });
 
@@ -155,11 +148,14 @@ const saveShares = async () => {
     }
 };
 
-watch(() => props.open, (newVal) => {
-    if (newVal && props.tally) {
-        fetchCollaborators();
-    }
-});
+watch(
+    () => props.open,
+    (newVal) => {
+        if (newVal && props.tally) {
+            fetchCollaborators();
+        }
+    },
+);
 
 const getInitials = (name: string) => {
     return name
@@ -176,21 +172,21 @@ const getInitials = (name: string) => {
             <DialogHeader>
                 <DialogTitle class="flex items-center gap-2">
                     <Share2 class="h-5 w-5" />
-                    Share Tally: {{ tally?.name }}
+                    {{ $t('tallies.share.title', { name: tally?.name }) }}
                 </DialogTitle>
                 <DialogDescription>
-                    Manage who can see and collaborate on this tally. The total percentage must equal 100%.
+                    {{ $t('tallies.share.description') }}
                 </DialogDescription>
             </DialogHeader>
 
             <div class="grid gap-4 py-4 sm:gap-6">
                 <div class="space-y-2">
-                    <Label for="email">Invite collaborator</Label>
-                    <div class="flex flex-col sm:flex-row gap-2">
+                    <Label for="email">{{ $t('tallies.share.invite_collaborator') }}</Label>
+                    <div class="flex flex-col gap-2 sm:flex-row">
                         <Input
                             id="email"
                             v-model="newCollaboratorEmail"
-                            placeholder="Email address"
+                            :placeholder="$t('common.placeholder.email')"
                             type="email"
                             :disabled="isInviting"
                             class="flex-1"
@@ -199,58 +195,52 @@ const getInitials = (name: string) => {
                         <Button :disabled="isInviting || !newCollaboratorEmail" class="w-full sm:w-auto" @click="addCollaborator">
                             <Loader2 v-if="isInviting" class="mr-2 h-4 w-4 animate-spin" />
                             <Plus v-else class="mr-2 h-4 w-4" />
-                            Invite
+                            {{ $t('tallies.share.invite_button') }}
                         </Button>
                     </div>
                     <InputError v-if="errors.email" :message="errors.email[0]" />
                 </div>
 
                 <div class="space-y-4">
-                    <Label>Collaborators</Label>
+                    <Label>{{ $t('tallies.share.collaborators') }}</Label>
                     <div v-if="isLoading" class="space-y-3">
-                        <div v-for="i in 3" :key="i" class="flex items-center gap-3 py-3 border-b last:border-0">
-                            <Skeleton class="h-8 w-8 rounded-full shrink-0" />
-                            <div class="flex-1 space-y-2 min-w-0">
+                        <div v-for="i in 3" :key="i" class="flex items-center gap-3 border-b py-3 last:border-0">
+                            <Skeleton class="h-8 w-8 shrink-0 rounded-full" />
+                            <div class="min-w-0 flex-1 space-y-2">
                                 <Skeleton class="h-4 w-3/4" />
                                 <Skeleton class="h-3 w-1/2" />
                             </div>
-                            <div class="flex items-center gap-2 shrink-0">
+                            <div class="flex shrink-0 items-center gap-2">
                                 <Skeleton class="h-8 w-20" />
                                 <Skeleton class="h-8 w-8" />
                             </div>
                         </div>
                     </div>
-                    <div v-else-if="collaborators.length === 0" class="text-center py-4 text-sm text-gray-500">
-                        No collaborators yet.
+                    <div v-else-if="collaborators.length === 0" class="py-4 text-center text-sm text-gray-500">
+                        {{ $t('tallies.share.no_collaborators') }}
                     </div>
                     <div v-else class="max-h-[300px] overflow-y-auto pr-2">
-                        <div v-for="collaborator in collaborators" :key="collaborator.id" class="flex items-center gap-3 py-3 border-b last:border-0">
-                            <div class="flex items-center gap-3 flex-1 min-w-0">
+                        <div v-for="collaborator in collaborators" :key="collaborator.id" class="flex items-center gap-3 border-b py-3 last:border-0">
+                            <div class="flex min-w-0 flex-1 items-center gap-3">
                                 <Avatar class="h-8 w-8 shrink-0">
                                     <AvatarFallback>{{ getInitials(collaborator.name) }}</AvatarFallback>
                                 </Avatar>
-                                <div class="flex-1 min-w-0">
-                                    <p class="text-sm font-medium leading-none truncate">{{ collaborator.name }}</p>
-                                    <p class="text-xs text-gray-500 truncate mt-1">{{ collaborator.email }}</p>
+                                <div class="min-w-0 flex-1">
+                                    <p class="truncate text-sm leading-none font-medium">{{ collaborator.name }}</p>
+                                    <p class="mt-1 truncate text-xs text-gray-500">{{ collaborator.email }}</p>
                                 </div>
                             </div>
-                            <div class="flex items-center gap-2 shrink-0">
+                            <div class="flex shrink-0 items-center gap-2">
                                 <div class="relative w-20">
-                                    <Input
-                                        v-model.number="collaborator.percentage"
-                                        type="number"
-                                        class="h-8 text-right pr-6"
-                                        min="0"
-                                        max="100"
-                                    />
-                                    <span class="absolute right-2 top-1.5 text-xs text-gray-500">%</span>
+                                    <Input v-model.number="collaborator.percentage" type="number" class="h-8 pr-6 text-right" min="0" max="100" />
+                                    <span class="absolute top-1.5 right-2 text-xs text-gray-500">%</span>
                                 </div>
-                                <div class="w-8 flex justify-center">
+                                <div class="flex w-8 justify-center">
                                     <Button
                                         v-if="collaborator.id !== tally?.owner_id"
                                         variant="ghost"
                                         size="icon"
-                                        class="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                        class="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
                                         @click="removeCollaborator(collaborator.id)"
                                     >
                                         <Trash2 class="h-4 w-4" />
@@ -263,20 +253,20 @@ const getInitials = (name: string) => {
                 </div>
             </div>
 
-            <DialogFooter class="flex flex-col sm:flex-row gap-4 sm:gap-0 items-center justify-between border-t pt-4">
-                <div class="flex flex-col items-center sm:items-start w-full sm:w-auto">
+            <DialogFooter class="flex flex-col items-center justify-between gap-4 border-t pt-4 sm:flex-row sm:gap-0">
+                <div class="flex w-full flex-col items-center sm:w-auto sm:items-start">
                     <span class="text-sm font-medium" :class="isPercentageValid ? 'text-green-600' : 'text-red-600'">
-                        Total: {{ totalPercentage }}%
+                        {{ $t('tallies.share.total', { total: totalPercentage }) }}
                     </span>
                     <span v-if="!isPercentageValid" class="text-[10px] text-red-500">
-                        Must equal 100%
+                        {{ $t('tallies.share.must_equal_100') }}
                     </span>
                 </div>
-                <div class="flex gap-2 w-full sm:w-auto">
-                    <Button variant="outline" class="flex-1 sm:flex-none" @click="isOpen = false">Cancel</Button>
+                <div class="flex w-full gap-2 sm:w-auto">
+                    <Button variant="outline" class="flex-1 sm:flex-none" @click="isOpen = false">{{ $t('common.cancel') }}</Button>
                     <Button :disabled="!isPercentageValid || isSaving || isLoading" class="flex-1 sm:flex-none" @click="saveShares">
                         <Loader2 v-if="isSaving" class="mr-2 h-4 w-4 animate-spin" />
-                        Save Changes
+                        {{ $t('tallies.share.save_changes') }}
                     </Button>
                 </div>
             </DialogFooter>
