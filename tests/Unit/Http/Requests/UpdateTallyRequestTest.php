@@ -8,8 +8,8 @@ covers(UpdateTallyRequest::class);
 
 it('has validation rules', function () {
     $request = new UpdateTallyRequest();
-    $rules = $request->rules();
-
-    expect($rules)->toHaveKey('name')
-        ->and($rules)->toHaveKey('description');
+    expect($request->rules())->toBe([
+        'name' => ['required', 'string', 'max:25'],
+        'description' => ['sometimes', 'nullable', 'string'],
+    ]);
 });

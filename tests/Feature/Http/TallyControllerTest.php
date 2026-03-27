@@ -125,3 +125,83 @@ it('shows a tally with owner and users relations loaded', function (): void {
 
     // Ensure users array includes two collaborators
 });
+
+it('forbids showing unrelated tally', function (): void {
+    $owner = User::factory()->create();
+    $stranger = User::factory()->create();
+    Sanctum::actingAs($stranger);
+
+    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
+
+    $this->getJson(route('api.tallies.show', $tally))
+        ->assertForbidden();
+});
+
+it('stores a tally with authenticated user as owner', function (): void {
+    $me = User::factory()->create();
+    Sanctum::actingAs($me);
+
+    $payload = [
+        'name' => 'API Created Tally',
+        'description' => 'From api test',
+    ];
+
+    $response = $this->postJson(route('api.tallies.store'), $payload);
+    $response->assertCreated();
+
+    $response->assertJsonPath('data.name', 'API Created Tally');
+    $response->assertJsonPath('data.description', 'From api test');
+    $response->assertJsonPath('data.owner.id', $me->id);
+    $response->assertJsonCount(1, 'data.users');
+    $response->assertJsonPath('data.users.0.id', $me->id);
+
+    $this->assertDatabaseHas('tallies', [
+        'owner_id' => $me->id,
+        'name' => 'API Created Tally',
+        'description' => 'From api test',
+    ]);
+});
+
+it('updates a tally preserving owner id', function (): void {
+    $owner = User::factory()->create();
+    Sanctum::actingAs($owner);
+
+    $tally = Tally::factory()->create([
+        'owner_id' => $owner->id,
+        'name' => 'Before',
+        'description' => 'Before description',
+    ]);
+    $collaborator = User::factory()->create();
+    $tally->users()->attach($collaborator->id, ['default_share_percentage' => 100]);
+
+    $response = $this->patchJson(route('api.tallies.update', $tally), [
+        'name' => 'After',
+        'description' => 'After description',
+    ]);
+
+    $response->assertSuccessful();
+    $response->assertJsonPath('data.id', $tally->tally_id);
+    $response->assertJsonPath('data.name', 'After');
+    $response->assertJsonPath('data.owner.id', $owner->id);
+    $response->assertJsonCount(1, 'data.users');
+    $response->assertJsonPath('data.users.0.id', $collaborator->id);
+
+    $this->assertDatabaseHas('tallies', [
+        'tally_id' => $tally->tally_id,
+        'owner_id' => $owner->id,
+        'name' => 'After',
+        'description' => 'After description',
+    ]);
+});
+
+it('deletes a tally', function (): void {
+    $owner = User::factory()->create();
+    Sanctum::actingAs($owner);
+
+    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
+
+    $response = $this->deleteJson(route('api.tallies.destroy', $tally));
+
+    $response->assertNoContent();
+    $this->assertDatabaseMissing('tallies', ['tally_id' => $tally->tally_id]);
+});

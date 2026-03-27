@@ -29,12 +29,16 @@ it('registers a new user and returns a token', function (): void {
 
     $response->assertCreated();
 
-    $response->assertJsonStructure([
-        'message',
-        'user' => ['id', 'name', 'email'],
-        'token',
-        'token_type',
+    $response->assertJson([
+        'message' => 'Registration successful',
+        'user' => [
+            'name' => 'Jane Doe',
+            'email' => 'jane@example.com',
+        ],
+        'token_type' => 'Bearer',
     ]);
+
+    expect($response->json('token'))->toBeString()->not->toBeEmpty();
 
     $this->assertDatabaseHas('users', [
         'email' => 'jane@example.com',
@@ -91,11 +95,14 @@ it('logs in and replaces previous tokens', function (): void {
 
     $response->assertSuccessful();
 
-    $response->assertJsonStructure([
-        'message',
-        'user' => ['id', 'name', 'email'],
-        'token',
-        'token_type',
+    $response->assertJson([
+        'message' => 'Login successful',
+        'user' => [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => 'alice@example.com',
+        ],
+        'token_type' => 'Bearer',
     ]);
 
     $user->refresh();
@@ -152,6 +159,8 @@ it('logs out by deleting only the current token', function (): void {
     $user->refresh();
     expect($user->tokens()->count())->toBe(1);
     expect($user->tokens()->firstWhere('id', $tokenB->accessToken->id))->not->toBeNull();
+
+    $response->assertJson(['message' => 'Logged out successfully']);
 });
 
 it('logs out from all devices by deleting all tokens', function (): void {
@@ -170,4 +179,64 @@ it('logs out from all devices by deleting all tokens', function (): void {
 
     $user->refresh();
     expect($user->tokens()->count())->toBe(0);
+
+    $response->assertJson(['message' => 'All tokens revoked successfully']);
+});
+
+it('fails registration when required fields are missing', function (string $field): void {
+    $payload = [
+        'name' => 'Jane Doe',
+        'email' => 'jane@example.com',
+        'password' => 'secret123',
+        'password_confirmation' => 'secret123',
+    ];
+    unset($payload[$field]);
+
+    $response = $this->postJson('/api/register', $payload);
+
+    $response->assertUnprocessable();
+    $response->assertJsonValidationErrors([$field]);
+})->with(['name', 'email', 'password']);
+
+it('fails registration with invalid data', function (array $payload, string $errorField): void {
+    $response = $this->postJson('/api/register', array_merge([
+        'name' => 'John',
+        'email' => 'john@example.com',
+        'password' => 'secret123',
+        'password_confirmation' => 'secret123',
+    ], $payload));
+
+    $response->assertUnprocessable();
+    $response->assertJsonValidationErrors([$errorField]);
+})->with([
+    'short password' => [['password' => 'short', 'password_confirmation' => 'short'], 'password'],
+    'invalid email' => [['email' => 'not-an-email'], 'email'],
+    'long name' => [['name' => str_repeat('a', 256)], 'name'],
+    'long email' => [['email' => str_repeat('a', 246) . '@example.com'], 'email'],
+    'name as array' => [['name' => ['John']], 'name'],
+    'email as array' => [['email' => ['john@example.com']], 'email'],
+    'password as array' => [['password' => ['secret123'], 'password_confirmation' => ['secret123']], 'password'],
+]);
+
+it('fails login when required fields are missing', function (string $field): void {
+    $payload = [
+        'email' => 'alice@example.com',
+        'password' => 'correct-horse',
+    ];
+    unset($payload[$field]);
+
+    $response = $this->postJson('/api/login', $payload);
+
+    $response->assertUnprocessable();
+    $response->assertJsonValidationErrors([$field]);
+})->with(['email', 'password']);
+
+it('fails login with invalid email format', function (): void {
+    $response = $this->postJson('/api/login', [
+        'email' => 'not-an-email',
+        'password' => 'secret123',
+    ]);
+
+    $response->assertUnprocessable();
+    $response->assertJsonValidationErrors(['email']);
 });

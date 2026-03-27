@@ -55,13 +55,13 @@ const deleteTally = () => {
     <Head :title="$t('tallies.edit_title', { name: tally.name })" />
 
     <WebLayout :breadcrumbs="breadcrumbs">
-        <div class="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
+        <div class="flex h-full flex-1 flex-col gap-4 rounded-xl p-4 max-[768px]:pb-24">
             <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                 <h1 class="text-center text-2xl font-bold sm:text-left">{{ $t('tallies.edit_heading') }}</h1>
 
                 <Dialog v-if="isOwner" v-model:open="showDeleteDialog">
                     <DialogTrigger as-child>
-                        <Button variant="destructive" class="w-full sm:w-auto">
+                        <Button variant="destructive" class="hidden w-full sm:w-auto min-[769px]:inline-flex">
                             <Trash2 class="mr-2 h-4 w-4" />
                             {{ $t('tallies.delete_tally') }}
                         </Button>
@@ -120,6 +120,35 @@ const deleteTally = () => {
                     </div>
                 </Form>
             </div>
+        </div>
+
+        <div
+            v-if="isOwner"
+            class="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 p-3 backdrop-blur min-[769px]:hidden"
+            style="padding-bottom: calc(env(safe-area-inset-bottom) + 0.75rem)"
+        >
+            <Dialog v-model:open="showDeleteDialog">
+                <DialogTrigger as-child>
+                    <Button variant="destructive" class="w-full sm:w-auto">
+                        <Trash2 class="mr-2 h-4 w-4" />
+                        {{ $t('tallies.delete_tally') }}
+                    </Button>
+                </DialogTrigger>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{{ $t('tallies.delete_confirm_title') }}</DialogTitle>
+                        <DialogDescription>
+                            {{ $t('tallies.delete_confirm_description', { name: tally.name }) }}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" @click="showDeleteDialog = false">{{ $t('common.cancel') }}</Button>
+                        <Button variant="destructive" :disabled="deleteForm.processing" @click="deleteTally">
+                            {{ deleteForm.processing ? $t('common.deleting') : $t('tallies.delete_tally') }}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     </WebLayout>
 </template>

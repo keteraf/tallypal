@@ -51,10 +51,24 @@ it('denies non-owner', function () {
 
 it('has validation rules', function () {
     $request = new CreateTallyShareRequest();
-    $rules = $request->rules();
+    expect($request->rules())->toBe([
+        'email' => ['required', 'email', 'exists:users,email'],
+    ]);
+});
 
-    expect($rules)->toHaveKey('email')
-        ->and($rules['email'])->toContain('required')
-        ->and($rules['email'])->toContain('email')
-        ->and($rules['email'])->toContain('exists:users,email');
+it('denies guest', function () {
+    $tally = Tally::factory()->create();
+    $request = new CreateTallyShareRequest();
+    $request->setUserResolver(fn () => null);
+    $request->setRouteResolver(fn () => new class($tally)
+    {
+        public function __construct(private Tally $tally) {}
+
+        public function parameter(string $key): Tally
+        {
+            return $this->tally;
+        }
+    });
+
+    expect($request->authorize())->toBeFalse();
 });

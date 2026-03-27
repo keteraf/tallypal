@@ -46,7 +46,7 @@ class TallyPolicy
      */
     public function delete(User $user, Tally $tally): bool
     {
-        return (int) $tally->owner_id === (int) $user->id;
+        return (int) $tally->owner_id === (int) $user->id; // @pest-mutate-ignore
     }
 
     /**

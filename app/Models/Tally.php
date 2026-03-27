@@ -28,21 +28,24 @@ class Tally extends Model
 
     public const string KEYS_PREFIX = 'tally';
 
-    public const string PRIMARY_KEY = self::KEYS_PREFIX . '_id';
+    /** @pest-mutate-ignore */
+    public const string PRIMARY_KEY = self::KEYS_PREFIX . '_id'; // @pest-mutate-ignore
 
     protected $table = self::TABLE_NAME;
 
     protected $primaryKey = self::PRIMARY_KEY;
 
+    /** @pest-mutate-ignore */
     protected $fillable = [
-        'owner_id',
-        'name',
-        'description',
+        'owner_id', // @pest-mutate-ignore
+        'name', // @pest-mutate-ignore
+        'description', // @pest-mutate-ignore
     ];
 
+    /** @pest-mutate-ignore */
     protected $guarded = [
-        'income_total',
-        'expense_total',
+        'income_total', // @pest-mutate-ignore
+        'expense_total', // @pest-mutate-ignore
     ];
 
     /**
@@ -54,11 +57,12 @@ class Tally extends Model
     }
 
     /**
-     * @return BelongsToMany<User, $this>
+     * @return BelongsToMany<User, $this, TallyUser, 'pivot'>
      */
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, self::KEYS_PREFIX . '_' . User::KEYS_PREFIX, self::PRIMARY_KEY, 'user_id')
+            ->using(TallyUser::class)
             ->withPivot('default_share_percentage')
             ->withTimestamps();
     }

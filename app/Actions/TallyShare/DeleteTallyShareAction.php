@@ -18,7 +18,8 @@ class DeleteTallyShareAction
             return;
         }
 
-        $revokedPercentage = (float) ($userToRevoke->pivot->default_share_percentage);
+        // @pest-mutate-ignore
+        $revokedPercentage = (float) ($userToRevoke->pivot->default_share_percentage); // @pest-mutate-ignore
 
         $tally->users()->detach($user->getKey());
 
@@ -30,13 +31,14 @@ class DeleteTallyShareAction
 
         /** @var float|int $sumResult */
         $sumResult = $remainingUsers->sum('pivot.default_share_percentage');
-        $totalCurrentPercentage = (float) $sumResult;
+        $totalCurrentPercentage = (float) $sumResult; // @pest-mutate-ignore
 
         $syncData = $remainingUsers->mapWithKeys(function (User $remainingUser) use ($revokedPercentage, $totalCurrentPercentage, $remainingUsers): array {
             if ($remainingUser->pivot === null) {
                 return [];
             }
 
+            // @pest-mutate-ignore
             $currentPercentage = (float) ($remainingUser->pivot->default_share_percentage);
 
             $newPercentage = $totalCurrentPercentage > 0

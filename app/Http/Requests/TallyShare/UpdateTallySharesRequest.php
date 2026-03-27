@@ -36,7 +36,8 @@ class UpdateTallySharesRequest extends FormRequest
             $shares = $this->input('shares');
             $total = collect($shares)->sum('percentage');
 
-            if ($total !== 100) {
+            /** @var float|int $total */
+            if ((float) $total !== 100.0) {
                 $validator->errors()->add('shares', 'The total percentage must equal 100.');
             }
         });

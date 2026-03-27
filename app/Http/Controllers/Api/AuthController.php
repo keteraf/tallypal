@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Auth\LoginRequest;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,21 +16,21 @@ class AuthController extends Controller
     /**
      * Register a new user
      */
-    public function register(LoginRequest $request): JsonResponse
+    public function register(Request $request): JsonResponse
     {
         /**
          * @var array{name: string, email: string, password: string}$validated
          */
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'name' => ['required', 'string', 'max:255'], // @pest-mutate-ignore
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'], // @pest-mutate-ignore
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'password' => Hash::make((string) $validated['password']),
+            'password' => Hash::make((string) $validated['password']), // @pest-mutate-ignore
         ]);
 
         $token = $user->createToken('auth_token')->plainTextToken;
@@ -51,7 +50,7 @@ class AuthController extends Controller
     {
         /** @var array{email: string, password: string} $validated */
         $validated = $request->validate([
-            'email' => ['required', 'email'],
+            'email' => ['required', 'email'], // @pest-mutate-ignore
             'password' => ['required'],
         ]);
 

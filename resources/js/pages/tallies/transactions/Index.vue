@@ -115,13 +115,25 @@ const getDebtMessage = (
     <Head :title="`${tally.name} - ${$t('transactions.title')}`" />
 
     <WebLayout :breadcrumbs="breadcrumbs">
-        <div class="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
+        <div class="flex h-full flex-1 flex-col gap-4 rounded-xl p-4 max-[768px]:pb-28">
             <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
                 <div class="min-w-0">
-                    <h1 class="text-2xl font-bold break-words">{{ tally.name }}</h1>
+                    <div class="flex items-start justify-between gap-2">
+                        <h1 class="text-2xl font-bold break-words">{{ tally.name }}</h1>
+                        <div class="flex items-center gap-2 min-[769px]:hidden">
+                            <Button v-if="isOwner" variant="outline" size="icon" @click="showShareDialog = true" :aria-label="$t('common.share')">
+                                <Share2 class="h-4 w-4" />
+                            </Button>
+                            <Button variant="outline" as-child size="icon">
+                                <Link :href="route('tallies.edit', tally.tally_id)" :aria-label="$t('common.edit')">
+                                    <Settings class="h-4 w-4" />
+                                </Link>
+                            </Button>
+                        </div>
+                    </div>
                     <p class="break-words text-gray-600 dark:text-gray-400">{{ tally.description }}</p>
                 </div>
-                <div class="flex flex-wrap items-center gap-2">
+                <div class="hidden min-[769px]:flex min-[769px]:flex-wrap min-[769px]:items-center min-[769px]:gap-2">
                     <Button v-if="isOwner" variant="outline" @click="showShareDialog = true" class="w-full sm:w-auto">
                         <Share2 class="mr-2 h-4 w-4" />
                         {{ $t('common.share') }}
@@ -255,6 +267,20 @@ const getDebtMessage = (
                         </template>
                     </WhenVisible>
                 </div>
+            </div>
+        </div>
+
+        <div
+            class="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 p-3 backdrop-blur min-[769px]:hidden"
+            style="padding-bottom: calc(env(safe-area-inset-bottom) + 0.75rem)"
+        >
+            <div class="flex justify-center">
+                <Button as-child class="w-full">
+                    <Link :href="route('tallies.transactions.create', tally.tally_id)">
+                        <Plus class="mr-2 h-4 w-4" />
+                        {{ $t('transactions.add_button') }}
+                    </Link>
+                </Button>
             </div>
         </div>
 

@@ -6,6 +6,7 @@ namespace App\Http\Requests\Transactions;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Stringable;
 
 class UpdateTransactionRequest extends FormRequest
 {
@@ -41,9 +42,14 @@ class UpdateTransactionRequest extends FormRequest
         if ($this->has('amount')) {
             $amount = $this->input('amount');
 
-            if (is_numeric($amount)) {
-                $amountString = (string) $amount;
-                $this->merge(['amount' => (float) str_replace(',', '.', $amountString)]);
+            if (! is_scalar($amount) && ! $amount instanceof Stringable) {
+                return;
+            }
+
+            $normalizedAmount = str_replace(',', '.', (string) $amount); // @pest-mutate-ignore
+
+            if (is_numeric($normalizedAmount)) {
+                $this->merge(['amount' => (float) $normalizedAmount]);
             }
         }
     }

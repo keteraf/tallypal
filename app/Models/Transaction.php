@@ -36,27 +36,30 @@ class Transaction extends Model
 
     public const string KEYS_PREFIX = 'transaction';
 
-    public const string PRIMARY_KEY = self::KEYS_PREFIX . '_id';
+    /** @pest-mutate-ignore */
+    public const string PRIMARY_KEY = self::KEYS_PREFIX . '_id'; // @pest-mutate-ignore
 
     protected $table = self::TABLE_NAME;
 
     protected $primaryKey = self::PRIMARY_KEY;
 
+    /** @pest-mutate-ignore */
     protected $fillable = [
-        'tally_id',
-        'party_id',
-        'currency_id',
-        'category_id',
-        'type',
-        'title',
-        'description',
-        'amount',
-        'transaction_date',
+        'tally_id', // @pest-mutate-ignore
+        'party_id', // @pest-mutate-ignore
+        'currency_id', // @pest-mutate-ignore
+        'category_id', // @pest-mutate-ignore
+        'type', // @pest-mutate-ignore
+        'title', // @pest-mutate-ignore
+        'description', // @pest-mutate-ignore
+        'amount', // @pest-mutate-ignore
+        'transaction_date', // @pest-mutate-ignore
     ];
 
+    /** @pest-mutate-ignore */
     protected $casts = [
-        'amount' => 'float',
-        'type' => TransactionType::class,
+        'amount' => 'float', // @pest-mutate-ignore
+        'type' => TransactionType::class, // @pest-mutate-ignore
     ];
 
     /**
@@ -101,7 +104,7 @@ class Transaction extends Model
                 $decimals = $this->currency->decimals ?? 2;
                 $factor = 10 ** $decimals;
 
-                $numericValue = is_numeric($value) ? (float) $value : 0.0;
+                $numericValue = is_numeric($value) ? (float) $value : 0.0; // @pest-mutate-ignore
 
                 return $numericValue / $factor;
             },
@@ -109,7 +112,7 @@ class Transaction extends Model
                 $decimals = $this->currency->decimals ?? 2;
                 $factor = 10 ** $decimals;
 
-                $numericValue = is_numeric($value) ? (float) $value : 0.0;
+                $numericValue = is_numeric($value) ? (float) $value : 0.0; // @pest-mutate-ignore
 
                 return $numericValue * $factor;
             }

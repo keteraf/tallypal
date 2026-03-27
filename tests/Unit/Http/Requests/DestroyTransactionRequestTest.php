@@ -36,3 +36,42 @@ it('has empty validation rules', function () {
     $request = new DestroyTransactionRequest();
     expect($request->rules())->toBe([]);
 });
+
+it('denies unauthorized request', function () {
+    $user = User::factory()->create();
+    $owner = User::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
+    $transaction = Transaction::factory()->create(['tally_id' => $tally->tally_id]);
+
+    $request = new DestroyTransactionRequest();
+    $request->setUserResolver(fn () => $user);
+    $request->setRouteResolver(fn () => new class($transaction)
+    {
+        public function __construct(private Transaction $transaction) {}
+
+        public function parameter(string $key): Transaction
+        {
+            return $this->transaction;
+        }
+    });
+
+    expect($request->authorize())->toBeFalse();
+});
+
+it('denies guest request', function () {
+    $transaction = Transaction::factory()->create();
+
+    $request = new DestroyTransactionRequest();
+    $request->setUserResolver(fn () => null);
+    $request->setRouteResolver(fn () => new class($transaction)
+    {
+        public function __construct(private Transaction $transaction) {}
+
+        public function parameter(string $key): Transaction
+        {
+            return $this->transaction;
+        }
+    });
+
+    expect($request->authorize())->toBeFalse();
+});
