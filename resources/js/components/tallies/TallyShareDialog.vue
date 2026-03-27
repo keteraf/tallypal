@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useForm } from '@inertiajs/vue3';
 import { Loader2, Plus, Share2, Trash2 } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 
@@ -39,6 +40,23 @@ const isSaving = ref(false);
 const newCollaboratorEmail = ref('');
 const errors = ref<Record<string, string[]>>({});
 
+// Inertia forms
+const inviteForm = useForm<{ email: string }>({ email: '' });
+
+// Helper to read Sanctum's XSRF token from cookie for API requests
+const getXsrfToken = (): string => {
+    const name = 'XSRF-TOKEN=';
+    const decodedCookie = decodeURIComponent(document.cookie);
+    const parts = decodedCookie.split(';');
+    for (let c of parts) {
+        c = c.trim();
+        if (c.startsWith(name)) {
+            return c.substring(name.length);
+        }
+    }
+    return '';
+};
+
 const fetchCollaborators = async () => {
     if (!props.tally) return;
 
@@ -62,26 +80,29 @@ const addCollaborator = async () => {
 
     isInviting.value = true;
     errors.value = {};
+
     try {
         const response = await fetch(route('api.tallies.shares.store', props.tally.tally_id), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 Accept: 'application/json',
-                'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
+                'X-XSRF-TOKEN': getXsrfToken(),
             },
             body: JSON.stringify({ email: newCollaboratorEmail.value }),
         });
 
+        const result = await response.json();
+
         if (response.ok) {
             newCollaboratorEmail.value = '';
             await fetchCollaborators();
-        } else if (response.status === 422) {
-            const data = await response.json();
-            errors.value = data.errors;
+        } else {
+            // Handle validation errors from the API
+            errors.value = result.errors || { email: [result.message] };
         }
     } catch (e) {
-        console.error('Failed to add collaborator', e);
+        console.error('Failed to invite collaborator', e);
     } finally {
         isInviting.value = false;
     }
@@ -90,17 +111,29 @@ const addCollaborator = async () => {
 const removeCollaborator = async (collaboratorId: number) => {
     if (!props.tally) return;
 
+    errors.value = {};
+
     try {
-        const response = await fetch(route('api.tallies.shares.destroy', { tally: props.tally.tally_id, share: collaboratorId }), {
-            method: 'DELETE',
-            headers: {
-                Accept: 'application/json',
-                'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
+        const response = await fetch(
+            route('api.tallies.shares.destroy', {
+                tally: props.tally.tally_id,
+                share: collaboratorId,
+            }),
+            {
+                method: 'DELETE',
+                headers: {
+                    Accept: 'application/json',
+                    'X-XSRF-TOKEN': getXsrfToken(),
+                },
             },
-        });
+        );
 
         if (response.ok) {
+            // Refresh the list after successful removal
             await fetchCollaborators();
+        } else {
+            const result = await response.json();
+            errors.value = result.errors || { general: [result.message || 'Failed to remove collaborator'] };
         }
     } catch (e) {
         console.error('Failed to remove collaborator', e);
@@ -119,31 +152,39 @@ const saveShares = async () => {
 
     isSaving.value = true;
     errors.value = {};
+
+    const payload = {
+        shares: collaborators.value.map((c) => ({
+            user_id: c.id,
+            percentage: c.percentage,
+        })),
+    };
+
     try {
         const response = await fetch(route('api.tallies.shares.update', props.tally.tally_id), {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
                 Accept: 'application/json',
-                'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
+                'X-XSRF-TOKEN': getXsrfToken(),
             },
-            body: JSON.stringify({
-                shares: collaborators.value.map((c) => ({
-                    user_id: c.id,
-                    percentage: c.percentage,
-                })),
-            }),
+            body: JSON.stringify(payload),
         });
 
         if (response.ok) {
-            // Maybe show success message?
             isOpen.value = false;
-        } else if (response.status === 422) {
-            const data = await response.json();
-            errors.value = data.errors;
+        } else {
+            const result = await response.json();
+            // Map validation errors if they exist
+            if (result.errors) {
+                errors.value = result.errors;
+            } else {
+                errors.value = { general: [result.message || 'Failed to update shares'] };
+            }
         }
     } catch (e) {
-        console.error('Failed to save shares', e);
+        console.error('Failed to update shares', e);
+        errors.value = { general: ['An unexpected error occurred'] };
     } finally {
         isSaving.value = false;
     }
@@ -193,8 +234,12 @@ const getInitials = (name: string) => {
                             class="flex-1"
                             @keyup.enter="addCollaborator"
                         />
-                        <Button :disabled="isInviting || !newCollaboratorEmail" class="w-full sm:w-auto" @click="addCollaborator">
-                            <Loader2 v-if="isInviting" class="mr-2 h-4 w-4 animate-spin" />
+                        <Button
+                            :disabled="isInviting || inviteForm.processing || !newCollaboratorEmail"
+                            class="w-full sm:w-auto"
+                            @click="addCollaborator"
+                        >
+                            <Loader2 v-if="isInviting || inviteForm.processing" class="mr-2 h-4 w-4 animate-spin" />
                             <Plus v-else class="mr-2 h-4 w-4" />
                             {{ $t('tallies.share.invite_button') }}
                         </Button>
@@ -222,7 +267,11 @@ const getInitials = (name: string) => {
                         {{ $t('tallies.share.no_collaborators') }}
                     </div>
                     <div v-else class="max-h-[300px] overflow-y-auto pr-2">
-                        <div v-for="collaborator in collaborators" :key="collaborator.id" class="flex items-center justify-between gap-3 border-b py-3 last:border-0">
+                        <div
+                            v-for="collaborator in collaborators"
+                            :key="collaborator.id"
+                            class="flex items-center justify-between gap-3 border-b py-3 last:border-0"
+                        >
                             <div class="flex min-w-0 items-center gap-3">
                                 <Avatar class="h-8 w-8 shrink-0">
                                     <AvatarFallback>{{ getInitials(collaborator.name) }}</AvatarFallback>

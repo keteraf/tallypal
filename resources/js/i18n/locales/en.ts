@@ -41,7 +41,7 @@ export default {
     welcome: {
         title: 'Welcome',
         my_tallies: 'My Tallies',
-        app_name: 'Tallypal',
+        app_name: 'TallyPal',
     },
     auth: {
         login: {

@@ -13,6 +13,6 @@ class CreateTallyShareAction
     {
         $user = User::query()->where('email', $email)->firstOrFail();
 
-        $tally->users()->syncWithoutDetaching([$user->getKey()]);
+        $tally->users()->syncWithoutDetaching([$user->getKey() => ['default_share_percentage' => 0]]);
     }
 }

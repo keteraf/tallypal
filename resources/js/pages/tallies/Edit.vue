@@ -96,7 +96,7 @@ const deleteTally = () => {
                 >
                     <div class="space-y-2">
                         <Label for="name">{{ $t('tallies.name_label') }}</Label>
-                        <Input id="name" name="name" :placeholder="$t('tallies.name_placeholder')" required autofocus />
+                        <Input id="name" name="name" :default-value="tally.name" :placeholder="$t('tallies.name_placeholder')" required autofocus />
                         <div v-if="errors.name" class="text-sm font-medium text-destructive">
                             {{ errors.name }}
                         </div>
@@ -104,7 +104,7 @@ const deleteTally = () => {
 
                     <div class="space-y-2">
                         <Label for="description">{{ $t('tallies.description_label') }}</Label>
-                        <Textarea id="description" name="description" :placeholder="$t('tallies.description_placeholder')" class="min-h-[100px]" />
+                        <Textarea id="description" name="description" :default-value="tally.description" :placeholder="$t('tallies.description_placeholder')" class="min-h-[100px]" />
                         <div v-if="errors.description" class="text-sm font-medium text-destructive">
                             {{ errors.description }}
                         </div>

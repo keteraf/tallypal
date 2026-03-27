@@ -67,16 +67,17 @@ const incomeTotals = computed(() => props.totals.filter((t) => t.type === 'incom
 const expenseTotals = computed(() => props.totals.filter((t) => t.type === 'expense'));
 
 const balances = computed(() => {
-    const result: Array<{ balance: number; currency: any }> = [];
+    const result: Array<{ balance: number; currency: any; currency_id: number }> = [];
     const currencies = [...new Set(props.totals.map((t) => t.currency_id))];
 
-    for (const cid of currencies) {
+    for (const cid of currencies as number[]) {
         const inc = props.totals.find((t) => t.type === 'income' && t.currency_id === cid)?.total ?? 0;
         const exp = props.totals.find((t) => t.type === 'expense' && t.currency_id === cid)?.total ?? 0;
         const currency = props.totals.find((t) => t.currency_id === cid)?.currency;
         result.push({
             balance: inc - exp,
             currency,
+            currency_id: cid,
         });
     }
     return result;
