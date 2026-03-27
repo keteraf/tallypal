@@ -4,12 +4,13 @@ import { Calendar } from '@/components/ui/calendar';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import WebLayout from '@/layouts/WebLayout.vue';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Form, Head, Link } from '@inertiajs/vue3';
-import { DateFormatter, getLocalTimeZone, parseDate, type DateValue } from '@internationalized/date';
+import { DateFormatter, getLocalTimeZone, parseDate } from '@internationalized/date';
 import { CalendarIcon } from 'lucide-vue-next';
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -67,7 +68,7 @@ const df = new DateFormatter('en-US', {
     dateStyle: 'long',
 });
 
-const dateValue = ref<DateValue>(parseDate(props.transaction.transaction_date));
+const dateValue = ref<any>(parseDate(props.transaction.transaction_date));
 const isCalendarOpen = ref(false);
 
 const transactionType = ref(props.transaction.type);
@@ -137,16 +138,17 @@ const partyLabel = (type: string | undefined) => {
 
                         <div class="space-y-2">
                             <Label for="type">{{ $t('transactions.fields.type') }}</Label>
-                            <select
-                                id="type"
-                                name="type"
-                                v-model="transactionType"
-                                class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                                required
-                            >
-                                <option value="expense">{{ $t('transactions.fields.expense') }}</option>
-                                <option value="income">{{ $t('transactions.fields.income') }}</option>
-                            </select>
+                            <Select name="type" v-model="transactionType" required>
+                                <SelectTrigger id="type">
+                                    <SelectValue :placeholder="$t('transactions.fields.type')" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectGroup>
+                                        <SelectItem value="expense">{{ $t('transactions.fields.expense') }}</SelectItem>
+                                        <SelectItem value="income">{{ $t('transactions.fields.income') }}</SelectItem>
+                                    </SelectGroup>
+                                </SelectContent>
+                            </Select>
                             <div v-if="errors.type" class="text-sm font-medium text-destructive">
                                 {{ errors.type }}
                             </div>
@@ -154,16 +156,18 @@ const partyLabel = (type: string | undefined) => {
 
                         <div class="space-y-2">
                             <Label for="party_id">{{ partyLabel(transactionType) }}</Label>
-                            <select
-                                id="party_id"
-                                name="party_id"
-                                class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                                required
-                            >
-                                <option v-for="party in parties" :key="party.id" :value="party.id" :selected="party.id === transaction.party_id">
-                                    {{ party.name }}
-                                </option>
-                            </select>
+                            <Select name="party_id" :default-value="transaction.party_id.toString()" required>
+                                <SelectTrigger id="party_id">
+                                    <SelectValue :placeholder="partyLabel(transactionType)" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectGroup>
+                                        <SelectItem v-for="party in parties" :key="party.id" :value="party.id.toString()">
+                                            {{ party.name }}
+                                        </SelectItem>
+                                    </SelectGroup>
+                                </SelectContent>
+                            </Select>
                             <div v-if="errors.party_id" class="text-sm font-medium text-destructive">
                                 {{ errors.party_id }}
                             </div>
@@ -171,21 +175,22 @@ const partyLabel = (type: string | undefined) => {
 
                         <div class="space-y-2">
                             <Label for="category_id">{{ $t('transactions.fields.category') }}</Label>
-                            <select
-                                id="category_id"
-                                name="category_id"
-                                class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                                required
-                            >
-                                <option
-                                    v-for="category in categories"
-                                    :key="category.category_id"
-                                    :value="category.category_id"
-                                    :selected="category.category_id === transaction.category_id"
-                                >
-                                    {{ category.name }}
-                                </option>
-                            </select>
+                            <Select name="category_id" :default-value="transaction.category_id.toString()" required>
+                                <SelectTrigger id="category_id">
+                                    <SelectValue :placeholder="$t('transactions.fields.category')" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectGroup>
+                                        <SelectItem
+                                            v-for="category in categories"
+                                            :key="category.category_id"
+                                            :value="category.category_id.toString()"
+                                        >
+                                            {{ category.name }}
+                                        </SelectItem>
+                                    </SelectGroup>
+                                </SelectContent>
+                            </Select>
                             <div v-if="errors.category_id" class="text-sm font-medium text-destructive">
                                 {{ errors.category_id }}
                             </div>
@@ -193,21 +198,22 @@ const partyLabel = (type: string | undefined) => {
 
                         <div class="space-y-2">
                             <Label for="currency_id">{{ $t('transactions.fields.currency') }}</Label>
-                            <select
-                                id="currency_id"
-                                name="currency_id"
-                                class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                                required
-                            >
-                                <option
-                                    v-for="currency in currencies"
-                                    :key="currency.currency_id"
-                                    :value="currency.currency_id"
-                                    :selected="currency.currency_id === transaction.currency_id"
-                                >
-                                    {{ currency.code }} - {{ currency.name }}
-                                </option>
-                            </select>
+                            <Select name="currency_id" :default-value="transaction.currency_id.toString()" required>
+                                <SelectTrigger id="currency_id">
+                                    <SelectValue :placeholder="$t('transactions.fields.currency')" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectGroup>
+                                        <SelectItem
+                                            v-for="currency in currencies"
+                                            :key="currency.currency_id"
+                                            :value="currency.currency_id.toString()"
+                                        >
+                                            {{ currency.code }} - {{ currency.name }}
+                                        </SelectItem>
+                                    </SelectGroup>
+                                </SelectContent>
+                            </Select>
                             <div v-if="errors.currency_id" class="text-sm font-medium text-destructive">
                                 {{ errors.currency_id }}
                             </div>

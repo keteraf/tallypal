@@ -6,7 +6,29 @@ use App\DTOs\TransactionDTO;
 
 covers(TransactionDTO::class);
 
-it('creates from array', function () {
+it('can be instantiated via constructor', function () {
+    $dto = new TransactionDTO(
+        party_id: 1,
+        currency_id: 2,
+        category_id: 3,
+        type: 'income',
+        title: 'Test',
+        description: 'Desc',
+        amount: 100.50,
+        transaction_date: '2024-01-01'
+    );
+
+    expect($dto->getPartyId())->toBe(1)
+        ->and($dto->getCurrencyId())->toBe(2)
+        ->and($dto->getCategoryId())->toBe(3)
+        ->and($dto->getType())->toBe('income')
+        ->and($dto->getTitle())->toBe('Test')
+        ->and($dto->getDescription())->toBe('Desc')
+        ->and($dto->getAmount())->toBe(100.50)
+        ->and($dto->getTransactionDate())->toBe('2024-01-01');
+});
+
+it('creates from array with all fields', function () {
     $data = [
         'party_id' => 1,
         'currency_id' => 2,
@@ -30,43 +52,80 @@ it('creates from array', function () {
         ->and($dto->getTransactionDate())->toBe('2024-01-01');
 });
 
-it('converts to array', function () {
-    $dto = TransactionDTO::fromArray([
-        'party_id' => 1,
-        'currency_id' => 2,
-        'category_id' => 3,
-        'type' => 'expense',
+it('creates from array with numeric strings', function () {
+    $data = [
+        'party_id' => '1',
+        'currency_id' => '2',
+        'category_id' => '3',
+        'type' => 'income',
         'title' => 'Test',
-        'description' => null,
-        'amount' => 50.00,
+        'description' => 'Desc',
+        'amount' => '100.50',
         'transaction_date' => '2024-01-01',
-    ]);
+    ];
 
-    $array = $dto->toArray();
+    $dto = TransactionDTO::fromArray($data);
 
-    expect($array)->toBe([
-        'party_id' => 1,
-        'currency_id' => 2,
-        'category_id' => 3,
-        'type' => 'expense',
-        'title' => 'Test',
-        'description' => null,
-        'amount' => 50.00,
-        'transaction_date' => '2024-01-01',
-    ]);
+    expect($dto->getPartyId())->toBe(1)
+        ->and($dto->getCurrencyId())->toBe(2)
+        ->and($dto->getCategoryId())->toBe(3)
+        ->and($dto->getAmount())->toBe(100.50);
 });
 
-it('uses setters', function () {
-    $dto = TransactionDTO::fromArray([
+it('creates from array without description', function () {
+    $data = [
+        'party_id' => 1,
+        'currency_id' => 2,
+        'category_id' => 3,
+        'type' => 'income',
+        'title' => 'Test',
+        'amount' => 100.50,
+        'transaction_date' => '2024-01-01',
+    ];
+
+    $dto = TransactionDTO::fromArray($data);
+
+    expect($dto->getDescription())->toBeNull();
+});
+
+it('converts to array', function () {
+    $data = [
         'party_id' => 1,
         'currency_id' => 2,
         'category_id' => 3,
         'type' => 'income',
         'title' => 'Test',
         'description' => 'Desc',
-        'amount' => 100.00,
+        'amount' => 100.50,
         'transaction_date' => '2024-01-01',
-    ]);
+    ];
+
+    $dto = TransactionDTO::fromArray($data);
+    $array = $dto->toArray();
+
+    expect($array)->toBe($data);
+});
+
+it('converts to array with null description', function () {
+    $data = [
+        'party_id' => 1,
+        'currency_id' => 2,
+        'category_id' => 3,
+        'type' => 'income',
+        'title' => 'Test',
+        'description' => null,
+        'amount' => 100.50,
+        'transaction_date' => '2024-01-01',
+    ];
+
+    $dto = TransactionDTO::fromArray($data);
+    $array = $dto->toArray();
+
+    expect($array)->toBe($data);
+});
+
+it('uses setters', function () {
+    $dto = new TransactionDTO(1, 2, 3, 'income', 'Title', 'Desc', 100.0, '2024-01-01');
 
     $dto->setPartyId(10)
         ->setCurrencyId(20)
@@ -74,7 +133,7 @@ it('uses setters', function () {
         ->setType('expense')
         ->setTitle('New Title')
         ->setDescription('New Desc')
-        ->setAmount(200.00)
+        ->setAmount(200.0)
         ->setTransactionDate('2024-02-01');
 
     expect($dto->getPartyId())->toBe(10)
@@ -83,6 +142,14 @@ it('uses setters', function () {
         ->and($dto->getType())->toBe('expense')
         ->and($dto->getTitle())->toBe('New Title')
         ->and($dto->getDescription())->toBe('New Desc')
-        ->and($dto->getAmount())->toBe(200.00)
+        ->and($dto->getAmount())->toBe(200.0)
         ->and($dto->getTransactionDate())->toBe('2024-02-01');
+});
+
+it('can set null description', function () {
+    $dto = new TransactionDTO(1, 2, 3, 'income', 'Title', 'Desc', 100.0, '2024-01-01');
+
+    $dto->setDescription(null);
+
+    expect($dto->getDescription())->toBeNull();
 });

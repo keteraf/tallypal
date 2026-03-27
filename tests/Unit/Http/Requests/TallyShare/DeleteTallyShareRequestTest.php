@@ -53,3 +53,20 @@ it('has validation rules', function () {
     $request = new DeleteTallyShareRequest();
     expect($request->rules())->toBe([]);
 });
+
+it('denies guest', function () {
+    $tally = Tally::factory()->create();
+    $request = new DeleteTallyShareRequest();
+    $request->setUserResolver(fn () => null);
+    $request->setRouteResolver(fn () => new class($tally)
+    {
+        public function __construct(private Tally $tally) {}
+
+        public function parameter(string $key): Tally
+        {
+            return $this->tally;
+        }
+    });
+
+    expect($request->authorize())->toBeFalse();
+});

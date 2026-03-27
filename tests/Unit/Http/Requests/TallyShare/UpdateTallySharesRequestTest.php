@@ -52,11 +52,11 @@ it('denies non-owner', function () {
 
 it('has validation rules', function () {
     $request = new UpdateTallySharesRequest();
-    $rules = $request->rules();
-
-    expect($rules)->toHaveKey('shares')
-        ->and($rules)->toHaveKey('shares.*.user_id')
-        ->and($rules)->toHaveKey('shares.*.percentage');
+    expect($request->rules())->toBe([
+        'shares' => ['required', 'array'],
+        'shares.*.user_id' => ['required', 'integer', 'exists:users,id'],
+        'shares.*.percentage' => ['required', 'numeric', 'min:0', 'max:100'],
+    ]);
 });
 
 it('validates that total percentage is 100', function () {
@@ -90,4 +90,21 @@ it('fails if total percentage is not 100', function () {
 
     expect($validator->fails())->toBeTrue();
     expect($validator->errors()->first('shares'))->toBe('The total percentage must equal 100.');
+});
+
+it('denies guest', function () {
+    $tally = Tally::factory()->create();
+    $request = new UpdateTallySharesRequest();
+    $request->setUserResolver(fn () => null);
+    $request->setRouteResolver(fn () => new class($tally)
+    {
+        public function __construct(private Tally $tally) {}
+
+        public function parameter(string $key): Tally
+        {
+            return $this->tally;
+        }
+    });
+
+    expect($request->authorize())->toBeFalse();
 });

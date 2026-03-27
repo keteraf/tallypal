@@ -88,12 +88,14 @@
         "test:refactor": "rector --dry-run",
         "test:types": "phpstan analyse",
         "test:unit": "pest --colors=always --parallel @additional_args --coverage --min=90",
+        "test:mutate": "pest --colors=always --parallel @additional_args --mutate --min=90",
         "test": [
             "@php artisan config:clear --ansi",
             "@test:lint",
             "@test:refactor",
             "@test:types",
-            "@test:unit"
+            "@test:unit",
+            "@test:mutate"
         ]
     },
     "extra": {

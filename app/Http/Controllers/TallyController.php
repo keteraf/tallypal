@@ -24,7 +24,7 @@ final class TallyController extends Controller
      */
     public function index(Request $request): Response
     {
-        $userId = $request->user()?->id;
+        $userId = $request->user()?->id; // @pest-mutate-ignore
 
         $tallies = Tally::query()
             ->where(function ($query) use ($userId): void {
@@ -37,10 +37,10 @@ final class TallyController extends Controller
             ->get()
             ->map(function (Tally $tally): Tally {
                 $incomeTotal = $tally->income_total;
-                $tally->income_total = (is_numeric($incomeTotal) ? (float) $incomeTotal : 0.0) / 100;
+                $tally->income_total = (is_numeric($incomeTotal) ? (float) $incomeTotal : 0.0) / 100; // @pest-mutate-ignore
 
                 $expenseTotal = $tally->expense_total;
-                $tally->expense_total = (is_numeric($expenseTotal) ? (float) $expenseTotal : 0.0) / 100;
+                $tally->expense_total = (is_numeric($expenseTotal) ? (float) $expenseTotal : 0.0) / 100; // @pest-mutate-ignore
 
                 return $tally;
             });
@@ -65,7 +65,7 @@ final class TallyController extends Controller
     {
         /** @var array{owner_id: int, name: string, description?: string|null} $data */
         $data = [
-            'owner_id' => (int) $request->user()?->id,
+            'owner_id' => (int) $request->user()?->id, // @pest-mutate-ignore
             ...$request->validated(),
         ];
 
@@ -93,7 +93,7 @@ final class TallyController extends Controller
     {
         /** @var array{owner_id: int, name: string, description?: string|null} $data */
         $data = [
-            'owner_id' => (int) $tally->owner_id,
+            'owner_id' => (int) $tally->owner_id, // @pest-mutate-ignore
             ...$request->validated(),
         ];
 

@@ -12,11 +12,14 @@ covers(Tally::class);
 it('has correct table name', function () {
     $tally = new Tally();
     expect($tally->getTable())->toBe('tallies');
+    expect(Tally::TABLE_NAME)->toBe('tallies');
+    expect(Tally::KEYS_PREFIX)->toBe('tally');
 });
 
 it('has correct primary key', function () {
     $tally = new Tally();
     expect($tally->getKeyName())->toBe('tally_id');
+    expect(Tally::PRIMARY_KEY)->toBe('tally_id');
 });
 
 it('has fillable attributes', function () {
@@ -26,6 +29,7 @@ it('has fillable attributes', function () {
         'name',
         'description',
     ]);
+    expect($tally->getGuarded())->toContain('income_total', 'expense_total');
 });
 
 it('belongs to an owner', function () {
@@ -36,7 +40,9 @@ it('belongs to an owner', function () {
 
 it('belongs to many users', function () {
     $tally = Tally::factory()->create();
-    expect($tally->users())->toBeInstanceOf(BelongsToMany::class);
+    $relation = $tally->users();
+    expect($relation)->toBeInstanceOf(BelongsToMany::class);
+    expect($relation->getTable())->toBe('tally_user');
 });
 
 it('can attach users', function () {

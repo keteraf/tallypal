@@ -39,11 +39,15 @@ class StoreTransactionRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         if ($this->has('amount')) {
+            /** @var string|int|float $amount */
             $amount = $this->input('amount');
 
+            if (! is_numeric($amount)) {
+                $amount = str_replace(',', '.', (string) $amount);
+            }
+
             if (is_numeric($amount)) {
-                $amountString = (string) $amount;
-                $this->merge(['amount' => (float) str_replace(',', '.', $amountString)]);
+                $this->merge(['amount' => (float) $amount]);
             }
         }
     }

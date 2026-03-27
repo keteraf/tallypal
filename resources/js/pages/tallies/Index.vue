@@ -45,15 +45,17 @@ const breadcrumbs: BreadcrumbItem[] = [
     <Head :title="$t('tallies.title')" />
 
     <WebLayout :breadcrumbs="breadcrumbs">
-        <div class="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
+        <div class="flex h-full flex-1 flex-col gap-4 rounded-xl p-4 max-[768px]:pb-24">
             <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                 <h1 class="text-2xl font-bold">{{ $t('tallies.title') }}</h1>
-                <Button v-if="tallies.length > 0" as-child class="w-full sm:w-auto">
-                    <Link :href="route('tallies.create')">
-                        <Plus class="mr-2 h-4 w-4" />
-                        {{ $t('tallies.new_tally') }}
-                    </Link>
-                </Button>
+                <div class="hidden min-[769px]:block">
+                    <Button v-if="tallies.length > 0" as-child class="w-full sm:w-auto">
+                        <Link :href="route('tallies.create')">
+                            <Plus class="mr-2 h-4 w-4" />
+                            {{ $t('tallies.new_tally') }}
+                        </Link>
+                    </Button>
+                </div>
             </div>
 
             <div v-if="tallies.length === 0" class="mt-20 flex flex-1 flex-col items-center gap-6 md:mt-40">
@@ -96,6 +98,19 @@ const breadcrumbs: BreadcrumbItem[] = [
                     </div>
                 </Link>
             </div>
+        </div>
+
+        <div
+            v-if="tallies.length > 0"
+            class="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 p-3 backdrop-blur min-[769px]:hidden"
+            style="padding-bottom: calc(env(safe-area-inset-bottom) + 0.75rem)"
+        >
+            <Button as-child class="w-full sm:w-auto">
+                <Link :href="route('tallies.create')">
+                    <Plus class="mr-2 h-4 w-4" />
+                    {{ $t('tallies.new_tally') }}
+                </Link>
+            </Button>
         </div>
 
         <TallyShareDialog v-model:open="showShareDialog" :tally="selectedTally" />

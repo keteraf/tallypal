@@ -65,6 +65,7 @@ it('allows owner to share a tally with a user', function () {
     $response->assertJson(['message' => 'Tally shared successfully']);
 
     expect($tally->users()->where('user_id', $user->id)->exists())->toBeTrue();
+    expect($tally->users()->find($user->id)->pivot->default_share_percentage)->toBe(0.0);
 });
 
 it('denies non-owner from sharing a tally', function () {
@@ -138,6 +139,33 @@ it('allows owner to update share percentages', function () {
 
     expect($tally->users()->find($user1->id)->pivot->default_share_percentage)->toEqual(30)
         ->and($tally->users()->find($user2->id)->pivot->default_share_percentage)->toEqual(70);
+});
+
+it('allows owner to update share percentages with floats totaling 100', function () {
+    $owner = User::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
+    $user1 = User::factory()->create();
+    $user2 = User::factory()->create();
+
+    $tally->users()->attach([
+        $user1->id => ['default_share_percentage' => 50],
+        $user2->id => ['default_share_percentage' => 50],
+    ]);
+
+    Sanctum::actingAs($owner);
+
+    $response = $this->putJson("/api/tallies/{$tally->tally_id}/shares", [
+        'shares' => [
+            ['user_id' => $user1->id, 'percentage' => 30.5],
+            ['user_id' => $user2->id, 'percentage' => 69.5],
+        ],
+    ]);
+
+    $response->assertSuccessful();
+    $response->assertJson(['message' => 'Shares updated successfully']);
+
+    expect((float) $tally->users()->find($user1->id)->pivot->default_share_percentage)->toEqual(30.5)
+        ->and((float) $tally->users()->find($user2->id)->pivot->default_share_percentage)->toEqual(69.5);
 });
 
 it('denies updating shares if total percentage is not 100', function () {

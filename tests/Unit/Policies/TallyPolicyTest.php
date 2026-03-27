@@ -69,6 +69,24 @@ it('allows owner to delete their tally', function () {
     expect($this->policy->delete($user, $tally))->toBeTrue();
 });
 
+it('allows delete when owner_id is numeric string', function () {
+    $user = User::factory()->create();
+    $tally = Tally::factory()->create();
+    $tally->owner_id = (string) $user->id;
+
+    expect($this->policy->delete($user, $tally))->toBeTrue();
+});
+
+it('allows delete when user id is numeric string', function () {
+    $owner = User::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
+
+    $user = new User();
+    $user->id = (string) $owner->id;
+
+    expect($this->policy->delete($user, $tally))->toBeTrue();
+});
+
 it('denies non-owner from deleting the tally', function () {
     $owner = User::factory()->create();
     $tally = Tally::factory()->create(['owner_id' => $owner->id]);

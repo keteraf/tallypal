@@ -3,12 +3,20 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\TallyController;
+use App\Models\Currency;
+use App\Models\Transaction;
 use App\Models\User;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia;
 
 use function Pest\Laravel\actingAs;
 
 uses(RefreshDatabase::class);
+
+beforeEach(function (): void {
+    $this->withoutMiddleware(ValidateCsrfToken::class);
+});
 
 covers(TallyController::class);
 
@@ -36,6 +44,48 @@ it('shows tallies where the user is a collaborator on the index page', function 
         ->get(route('tallies.index'))
         ->assertOk()
         ->assertSee('Shared Tally');
+});
+
+it('shows only owned and shared tallies on index', function (): void {
+    $me = User::factory()->create();
+    $owner = User::factory()->create();
+
+    $owned = App\Models\Tally::factory()->create(['owner_id' => $me->id, 'name' => 'Owned']);
+    $shared = App\Models\Tally::factory()->create(['owner_id' => $owner->id, 'name' => 'Shared']);
+    $shared->users()->attach($me->id, ['default_share_percentage' => 50]);
+    App\Models\Tally::factory()->create(['owner_id' => $owner->id, 'name' => 'Unrelated']);
+
+    actingAs($me)
+        ->get(route('tallies.index'))
+        ->assertOk()
+        ->assertInertia(fn (AssertableInertia $page): AssertableInertia => $page
+            ->component('tallies/Index')
+            ->has('tallies', 2)
+            ->has('tallies.0.owner')
+            ->has('tallies.1.owner')
+            ->where('tallies.0.name', fn (string $name): bool => in_array($name, ['Owned', 'Shared'], true))
+            ->where('tallies.1.name', fn (string $name): bool => in_array($name, ['Owned', 'Shared'], true))
+        );
+});
+
+it('converts income and expense totals from cents to decimals on index', function (): void {
+    $me = User::factory()->create();
+    $tally = App\Models\Tally::factory()->create(['owner_id' => $me->id, 'name' => 'Totals']);
+    $currency = Currency::factory()->create(['decimals' => 2]);
+
+    Transaction::factory()->forTally($tally)->create(['currency_id' => $currency->currency_id, 'type' => 'income', 'amount' => 12.34]);
+    Transaction::factory()->forTally($tally)->create(['currency_id' => $currency->currency_id, 'type' => 'expense', 'amount' => 5.67]);
+
+    actingAs($me)
+        ->get(route('tallies.index'))
+        ->assertOk()
+        ->assertInertia(fn (AssertableInertia $page): AssertableInertia => $page
+            ->component('tallies/Index')
+            ->has('tallies', 1)
+            ->where('tallies.0.name', 'Totals')
+            ->where('tallies.0.income_total', 12.34)
+            ->where('tallies.0.expense_total', 5.67)
+        );
 });
 
 it('stores a new tally and redirects', function (): void {
@@ -71,7 +121,21 @@ it('renders the edit page', function (): void {
 
     actingAs($user)
         ->get(route('tallies.edit', $tally))
-        ->assertOk();
+        ->assertOk()
+        ->assertInertia(fn (AssertableInertia $page): AssertableInertia => $page
+            ->component('tallies/Edit')
+            ->where('tally.tally_id', $tally->tally_id)
+        );
+});
+
+it('forbids editing tally for non-owner', function (): void {
+    $owner = User::factory()->create();
+    $stranger = User::factory()->create();
+    $tally = App\Models\Tally::factory()->create(['owner_id' => $owner->id]);
+
+    actingAs($stranger)
+        ->get(route('tallies.edit', $tally))
+        ->assertForbidden();
 });
 
 it('updates a tally and redirects to transactions index', function (): void {
