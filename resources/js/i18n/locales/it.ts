@@ -42,6 +42,48 @@ export default {
         title: 'Benvenuto',
         my_tallies: 'Miei conteggi',
         app_name: 'TallyPal',
+        slogan: 'Contaci.',
+        discover_more: 'Scopri di piu',
+        contact_cta: 'Contattaci',
+        back: 'Indietro',
+        info: {
+            title: 'Perche TallyPal?',
+            description: 'TallyPal rende il conteggio semplice: veloce da iniziare, chiaro da leggere e affidabile quando i numeri contano.',
+            cards: {
+                setup: {
+                    title: 'Setup Rapido',
+                    description: 'Crea e monitora i conteggi in pochi secondi con un flusso pulito.',
+                },
+                clear: {
+                    title: 'Massima Chiarezza',
+                    description: "Visualizza totali e progressi a colpo d'occhio, senza confusione.",
+                },
+                trust: {
+                    title: 'Pensato per la Fiducia',
+                    description: 'I tuoi conteggi restano coerenti e pronti quando ti servono.',
+                },
+            },
+        },
+        contact: {
+            title: 'Contattaci',
+            description: 'Domande, idee o richieste di collaborazione? Invia un messaggio e ti risponderemo presto.',
+            tagline: 'Risposta rapida. Supporto umano.',
+            form_title: 'Contatta TallyPal',
+            form_description: 'Dicci cosa ti serve e ti ricontatteremo.',
+            fields: {
+                name: 'Nome',
+                email: 'Email',
+                message: 'Messaggio',
+            },
+            placeholders: {
+                name: 'Il tuo nome',
+                email: "tuo{'@'}example.com",
+                message: 'Scrivici come possiamo aiutarti...',
+            },
+            submit: 'Invia messaggio',
+            success: 'Messaggio inviato. Grazie per averci contattato.',
+            privacy: 'Usiamo questi dati solo per rispondere alla tua richiesta.',
+        },
     },
     auth: {
         login: {
