@@ -42,6 +42,48 @@ export default {
         title: 'Welcome',
         my_tallies: 'My Tallies',
         app_name: 'TallyPal',
+        slogan: 'Count on it.',
+        discover_more: 'Discover more',
+        contact_cta: 'Contact us',
+        back: 'Back',
+        info: {
+            title: 'Why TallyPal?',
+            description: 'TallyPal keeps counting simple: fast to start, clear to read, and reliable whenever numbers matter.',
+            cards: {
+                setup: {
+                    title: 'Quick Setup',
+                    description: 'Create and track tallies in seconds with a clean flow.',
+                },
+                clear: {
+                    title: 'Crystal Clear',
+                    description: 'See totals and progress at a glance without clutter.',
+                },
+                trust: {
+                    title: 'Built to Trust',
+                    description: 'Your counters stay consistent and ready when you need them.',
+                },
+            },
+        },
+        contact: {
+            title: 'Get in touch',
+            description: 'Questions, ideas, or partnership requests? Send a quick message and we will reach out soon.',
+            tagline: 'Fast reply. Human support.',
+            form_title: 'Contact TallyPal',
+            form_description: 'Tell us what you need and we will follow up.',
+            fields: {
+                name: 'Name',
+                email: 'Email',
+                message: 'Message',
+            },
+            placeholders: {
+                name: 'Your name',
+                email: "you{'@'}example.com",
+                message: 'Tell us how we can help...',
+            },
+            submit: 'Send message',
+            success: 'Message sent. Thanks for reaching out.',
+            privacy: 'We only use these details to reply to your request.',
+        },
     },
     auth: {
         login: {
