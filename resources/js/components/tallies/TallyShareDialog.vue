@@ -108,7 +108,8 @@ const removeCollaborator = async (collaboratorId: number) => {
 };
 
 const totalPercentage = computed(() => {
-    return collaborators.value.reduce((sum, c) => sum + (Number(c.percentage) || 0), 0);
+    const sum = collaborators.value.reduce((sum, c) => sum + (Number(c.percentage) || 0), 0);
+    return Math.round((sum + Number.EPSILON) * 100) / 100;
 });
 
 const isPercentageValid = computed(() => totalPercentage.value === 100);
@@ -204,15 +205,16 @@ const getInitials = (name: string) => {
                 <div class="space-y-4">
                     <Label>{{ $t('tallies.share.collaborators') }}</Label>
                     <div v-if="isLoading" class="space-y-3">
-                        <div v-for="i in 3" :key="i" class="flex items-center gap-3 border-b py-3 last:border-0">
-                            <Skeleton class="h-8 w-8 shrink-0 rounded-full" />
-                            <div class="min-w-0 flex-1 space-y-2">
-                                <Skeleton class="h-4 w-3/4" />
-                                <Skeleton class="h-3 w-1/2" />
+                        <div v-for="i in 3" :key="i" class="flex items-center justify-between gap-3 border-b py-3 last:border-0">
+                            <div class="flex min-w-0 items-center gap-3">
+                                <Skeleton class="h-8 w-8 shrink-0 rounded-full" />
+                                <div class="min-w-0 space-y-2">
+                                    <Skeleton class="h-4 w-24" />
+                                    <Skeleton class="h-3 w-16" />
+                                </div>
                             </div>
                             <div class="flex shrink-0 items-center gap-2">
-                                <Skeleton class="h-8 w-20" />
-                                <Skeleton class="h-8 w-8" />
+                                <Skeleton class="h-8 w-24" />
                             </div>
                         </div>
                     </div>
@@ -220,8 +222,8 @@ const getInitials = (name: string) => {
                         {{ $t('tallies.share.no_collaborators') }}
                     </div>
                     <div v-else class="max-h-[300px] overflow-y-auto pr-2">
-                        <div v-for="collaborator in collaborators" :key="collaborator.id" class="flex items-center gap-3 border-b py-3 last:border-0">
-                            <div class="flex min-w-0 flex-1 items-center gap-3">
+                        <div v-for="collaborator in collaborators" :key="collaborator.id" class="flex items-center justify-between gap-3 border-b py-3 last:border-0">
+                            <div class="flex min-w-0 items-center gap-3">
                                 <Avatar class="h-8 w-8 shrink-0">
                                     <AvatarFallback>{{ getInitials(collaborator.name) }}</AvatarFallback>
                                 </Avatar>
@@ -231,13 +233,19 @@ const getInitials = (name: string) => {
                                 </div>
                             </div>
                             <div class="flex shrink-0 items-center gap-2">
-                                <div class="relative w-20">
-                                    <Input v-model.number="collaborator.percentage" type="number" class="h-8 pr-6 text-right" min="0" max="100" />
-                                    <span class="absolute top-1.5 right-2 text-xs text-gray-500">%</span>
+                                <div class="relative w-24">
+                                    <Input
+                                        v-model.number="collaborator.percentage"
+                                        type="number"
+                                        step="0.01"
+                                        class="h-8 pr-7 text-right"
+                                        min="0"
+                                        max="100"
+                                    />
+                                    <span class="absolute top-1/2 right-2.5 -translate-y-1/2 text-xs text-muted-foreground">%</span>
                                 </div>
-                                <div class="flex w-8 justify-center">
+                                <div v-if="collaborator.id !== tally?.owner_id" class="flex w-8 justify-center">
                                     <Button
-                                        v-if="collaborator.id !== tally?.owner_id"
                                         variant="ghost"
                                         size="icon"
                                         class="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
@@ -253,8 +261,8 @@ const getInitials = (name: string) => {
                 </div>
             </div>
 
-            <DialogFooter class="flex flex-col items-center justify-between gap-4 border-t pt-4 sm:flex-row sm:gap-0">
-                <div class="flex w-full flex-col items-center sm:w-auto sm:items-start">
+            <DialogFooter class="flex flex-col items-start gap-4 border-t pt-4 sm:flex-row sm:items-center sm:justify-start">
+                <div class="flex flex-col items-start sm:w-full">
                     <span class="text-sm font-medium" :class="isPercentageValid ? 'text-green-600' : 'text-red-600'">
                         {{ $t('tallies.share.total', { total: totalPercentage }) }}
                     </span>
@@ -262,9 +270,9 @@ const getInitials = (name: string) => {
                         {{ $t('tallies.share.must_equal_100') }}
                     </span>
                 </div>
-                <div class="flex w-full gap-2 sm:w-auto">
-                    <Button variant="outline" class="flex-1 sm:flex-none" @click="isOpen = false">{{ $t('common.cancel') }}</Button>
-                    <Button :disabled="!isPercentageValid || isSaving || isLoading" class="flex-1 sm:flex-none" @click="saveShares">
+                <div class="flex gap-2 sm:w-auto">
+                    <Button variant="outline" class="sm:flex-none" @click="isOpen = false">{{ $t('common.cancel') }}</Button>
+                    <Button :disabled="!isPercentageValid || isSaving || isLoading" class="sm:flex-none" @click="saveShares">
                         <Loader2 v-if="isSaving" class="mr-2 h-4 w-4 animate-spin" />
                         {{ $t('tallies.share.save_changes') }}
                     </Button>
