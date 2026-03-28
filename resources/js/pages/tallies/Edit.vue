@@ -61,7 +61,7 @@ const deleteTally = () => {
 
                 <Dialog v-if="isOwner" v-model:open="showDeleteDialog">
                     <DialogTrigger as-child>
-                        <Button variant="destructive" class="hidden w-full sm:w-auto min-[769px]:inline-flex">
+                        <Button variant="destructive" class="hidden w-full min-[769px]:inline-flex sm:w-auto">
                             <Trash2 class="mr-2 h-4 w-4" />
                             {{ $t('tallies.delete_tally') }}
                         </Button>
@@ -104,7 +104,13 @@ const deleteTally = () => {
 
                     <div class="space-y-2">
                         <Label for="description">{{ $t('tallies.description_label') }}</Label>
-                        <Textarea id="description" name="description" :default-value="tally.description" :placeholder="$t('tallies.description_placeholder')" class="min-h-[100px]" />
+                        <Textarea
+                            id="description"
+                            name="description"
+                            :default-value="tally.description"
+                            :placeholder="$t('tallies.description_placeholder')"
+                            class="min-h-[100px]"
+                        />
                         <div v-if="errors.description" class="text-sm font-medium text-destructive">
                             {{ errors.description }}
                         </div>

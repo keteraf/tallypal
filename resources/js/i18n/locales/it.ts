@@ -44,6 +44,7 @@ export default {
         app_name: 'TallyPal',
         slogan: 'Contaci.',
         discover_more: 'Scopri di piu',
+        pricing_cta: 'Vedi prezzi',
         contact_cta: 'Contattaci',
         back: 'Indietro',
         info: {
@@ -63,6 +64,36 @@ export default {
                     description: 'I tuoi conteggi restano coerenti e pronti quando ti servono.',
                 },
             },
+        },
+        pricing: {
+            title: 'Prezzi semplici',
+            description: "Inizia gratis con tutte le funzionalita attuali dell'app, poi passa a Pro per strumenti avanzati.",
+            tiers: {
+                free: {
+                    name: 'Free',
+                    summary: "Tutte le funzionalita principali dell'app incluse.",
+                    price: '0€',
+                    cta: 'Inizia gratis',
+                    features: {
+                        create_tallies: 'Crea conteggi',
+                        share_tallies: 'Condividi conteggi',
+                        custom_share_percentage: 'Percentuali personalizzate',
+                        add_remove_transactions: 'Aggiungi e rimuovi transazioni',
+                    },
+                },
+                pro: {
+                    name: 'Pro',
+                    summary: 'Tutto il piano Free piu strumenti avanzati.',
+                    price: '9€/mese',
+                    cta: 'Passa a Pro',
+                    features: {
+                        everything_in_free: 'Tutto il piano Free',
+                        stats_access: 'Accesso alle statistiche',
+                        import_export_file: 'Importazione ed esportazione da file',
+                    },
+                },
+            },
+            footnote: 'Il piano Free include gia tutte le funzionalita attuali. Pro aggiunge statistiche e import/export da file.',
         },
         contact: {
             title: 'Contattaci',
