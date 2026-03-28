@@ -44,6 +44,7 @@ export default {
         app_name: 'TallyPal',
         slogan: 'Count on it.',
         discover_more: 'Discover more',
+        pricing_cta: 'See pricing',
         contact_cta: 'Contact us',
         back: 'Back',
         info: {
@@ -63,6 +64,36 @@ export default {
                     description: 'Your counters stay consistent and ready when you need them.',
                 },
             },
+        },
+        pricing: {
+            title: 'Simple pricing',
+            description: 'Start for free with the full app experience, then unlock advanced control with Pro.',
+            tiers: {
+                free: {
+                    name: 'Free',
+                    summary: 'All core app features included.',
+                    price: '$0',
+                    cta: 'Start for free',
+                    features: {
+                        create_tallies: 'Create tallies',
+                        share_tallies: 'Share tallies',
+                        custom_share_percentage: 'Custom share percentages',
+                        add_remove_transactions: 'Add and remove transactions',
+                    },
+                },
+                pro: {
+                    name: 'Pro',
+                    summary: 'Everything in Free plus advanced tools.',
+                    price: '$9/mo',
+                    cta: 'Get Pro',
+                    features: {
+                        everything_in_free: 'Everything in Free',
+                        stats_access: 'Access to stats',
+                        import_export_file: 'Import and export from file',
+                    },
+                },
+            },
+            footnote: 'Free already includes all current app features. Pro adds stats and file import/export.',
         },
         contact: {
             title: 'Get in touch',
