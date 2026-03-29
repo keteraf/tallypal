@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Database\Factories\TallyFactory;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property-read int $tally_id
+ * @property string $uuid
  * @property string $name
  * @property string $description
  * @property int $owner_id
@@ -22,7 +24,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Tally extends Model
 {
     /** @use HasFactory<TallyFactory> */
-    use HasFactory;
+    use HasFactory, HasUuids;
 
     public const string TABLE_NAME = 'tallies';
 
@@ -47,6 +49,16 @@ class Tally extends Model
         'income_total', // @pest-mutate-ignore
         'expense_total', // @pest-mutate-ignore
     ];
+
+    public function uniqueIds(): array
+    {
+        return ['uuid'];
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'uuid';
+    }
 
     /**
      * @return BelongsTo<User, $this>

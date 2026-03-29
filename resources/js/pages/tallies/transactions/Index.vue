@@ -12,6 +12,7 @@ import { useI18n } from 'vue-i18n';
 interface Props {
     tally: {
         tally_id: number;
+        uuid: string;
         name: string;
         description: string;
         owner_id: number;
@@ -90,7 +91,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
     {
         title: props.tally.name,
-        href: route('tallies.transactions.index', props.tally.tally_id),
+        href: route('tallies.transactions.index', props.tally.uuid),
     },
 ];
 
@@ -125,7 +126,7 @@ const getDebtMessage = (
                                 <Share2 class="h-4 w-4" />
                             </Button>
                             <Button variant="outline" as-child size="icon">
-                                <Link :href="route('tallies.edit', tally.tally_id)" :aria-label="$t('common.edit')">
+                                <Link :href="route('tallies.edit', tally.uuid)" :aria-label="$t('common.edit')">
                                     <Settings class="h-4 w-4" />
                                 </Link>
                             </Button>
@@ -139,13 +140,13 @@ const getDebtMessage = (
                         {{ $t('common.share') }}
                     </Button>
                     <Button variant="outline" as-child class="w-full sm:w-auto">
-                        <Link :href="route('tallies.edit', tally.tally_id)">
+                        <Link :href="route('tallies.edit', tally.uuid)">
                             <Settings class="mr-2 h-4 w-4" />
                             {{ $t('common.edit') }}
                         </Link>
                     </Button>
                     <Button as-child class="w-full sm:w-auto">
-                        <Link :href="route('tallies.transactions.create', tally.tally_id)">
+                        <Link :href="route('tallies.transactions.create', tally.uuid)">
                             <Plus class="mr-2 h-4 w-4" />
                             {{ $t('transactions.add_button') }}
                         </Link>
@@ -222,7 +223,7 @@ const getDebtMessage = (
                     <Link
                         v-for="transaction in transactions.data"
                         :key="transaction.transaction_id"
-                        :href="route('tallies.transactions.edit', { tally: tally.tally_id, transaction: transaction.transaction_id })"
+                        :href="route('tallies.transactions.edit', { tally: tally.uuid, transaction: transaction.uuid })"
                         class="flex items-center justify-between rounded-lg border p-4 shadow-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50"
                     >
                         <div>
@@ -276,7 +277,7 @@ const getDebtMessage = (
         >
             <div class="flex justify-center">
                 <Button as-child class="w-full">
-                    <Link :href="route('tallies.transactions.create', tally.tally_id)">
+                    <Link :href="route('tallies.transactions.create', tally.uuid)">
                         <Plus class="mr-2 h-4 w-4" />
                         {{ $t('transactions.add_button') }}
                     </Link>

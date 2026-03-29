@@ -12,6 +12,7 @@ import { computed, ref, watch } from 'vue';
 
 interface Collaborator {
     id: number;
+    uuid: string;
     name: string;
     email: string;
     percentage: number;
@@ -21,6 +22,7 @@ const props = defineProps<{
     open: boolean;
     tally: {
         tally_id: number;
+        uuid: string;
         name: string;
         owner_id: number;
     } | null;
@@ -63,7 +65,7 @@ const fetchCollaborators = async () => {
     isLoading.value = true;
     errors.value = {};
     try {
-        const response = await fetch(route('api.tallies.shares.index', props.tally.tally_id));
+        const response = await fetch(route('api.tallies.shares.index', props.tally.uuid));
         if (response.ok) {
             const result = await response.json();
             collaborators.value = result.data;
@@ -82,7 +84,7 @@ const addCollaborator = async () => {
     errors.value = {};
 
     try {
-        const response = await fetch(route('api.tallies.shares.store', props.tally.tally_id), {
+        const response = await fetch(route('api.tallies.shares.store', props.tally.uuid), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -108,7 +110,7 @@ const addCollaborator = async () => {
     }
 };
 
-const removeCollaborator = async (collaboratorId: number) => {
+const removeCollaborator = async (collaboratorUuid: string) => {
     if (!props.tally) return;
 
     errors.value = {};
@@ -116,8 +118,8 @@ const removeCollaborator = async (collaboratorId: number) => {
     try {
         const response = await fetch(
             route('api.tallies.shares.destroy', {
-                tally: props.tally.tally_id,
-                share: collaboratorId,
+                tally: props.tally.uuid,
+                share: collaboratorUuid,
             }),
             {
                 method: 'DELETE',
@@ -161,7 +163,7 @@ const saveShares = async () => {
     };
 
     try {
-        const response = await fetch(route('api.tallies.shares.update', props.tally.tally_id), {
+        const response = await fetch(route('api.tallies.shares.update', props.tally.uuid), {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -298,7 +300,7 @@ const getInitials = (name: string) => {
                                         variant="ghost"
                                         size="icon"
                                         class="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
-                                        @click="removeCollaborator(collaborator.id)"
+                                        @click="removeCollaborator(collaborator.uuid)"
                                     >
                                         <Trash2 class="h-4 w-4" />
                                     </Button>

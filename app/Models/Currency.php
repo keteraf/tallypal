@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
 /**
  * @property-read int $currency_id
+ * @property string $uuid
  * @property string $name
  * @property string $code
  * @property string $symbol
@@ -21,7 +23,7 @@ use Illuminate\Support\Carbon;
 class Currency extends Model
 {
     /** @use HasFactory<\Database\Factories\CurrencyFactory> */
-    use HasFactory;
+    use HasFactory, HasUuids;
 
     public const string TABLE_NAME = 'currencies';
 
@@ -38,4 +40,14 @@ class Currency extends Model
         'decimals',
         'description',
     ];
+
+    public function uniqueIds(): array
+    {
+        return ['uuid'];
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'uuid';
+    }
 }

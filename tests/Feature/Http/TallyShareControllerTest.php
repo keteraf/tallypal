@@ -127,7 +127,7 @@ it('allows owner to update share percentages', function () {
 
     Sanctum::actingAs($owner);
 
-    $response = $this->putJson("/api/tallies/{$tally->tally_id}/shares", [
+    $response = $this->putJson(route('api.tallies.shares.update', $tally), [
         'shares' => [
             ['user_id' => $user1->id, 'percentage' => 30],
             ['user_id' => $user2->id, 'percentage' => 70],
@@ -154,7 +154,7 @@ it('allows owner to update share percentages with floats totaling 100', function
 
     Sanctum::actingAs($owner);
 
-    $response = $this->putJson("/api/tallies/{$tally->tally_id}/shares", [
+    $response = $this->putJson(route('api.tallies.shares.update', $tally), [
         'shares' => [
             ['user_id' => $user1->id, 'percentage' => 30.5],
             ['user_id' => $user2->id, 'percentage' => 69.5],
@@ -177,7 +177,7 @@ it('denies updating shares if total percentage is not 100', function () {
 
     Sanctum::actingAs($owner);
 
-    $response = $this->putJson("/api/tallies/{$tally->tally_id}/shares", [
+    $response = $this->putJson(route('api.tallies.shares.update', $tally), [
         'shares' => [
             ['user_id' => $user1->id, 'percentage' => 50],
         ],
@@ -197,7 +197,7 @@ it('denies non-owner from updating share percentages', function () {
 
     Sanctum::actingAs($stranger);
 
-    $response = $this->putJson("/api/tallies/{$tally->tally_id}/shares", [
+    $response = $this->putJson(route('api.tallies.shares.update', $tally), [
         'shares' => [
             ['user_id' => $user1->id, 'percentage' => 100],
         ],

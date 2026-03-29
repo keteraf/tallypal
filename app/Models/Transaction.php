@@ -7,12 +7,14 @@ namespace App\Models;
 use App\Enums\TransactionType;
 use Database\Factories\TransactionFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * @property-read int $transaction_id
+ * @property string $uuid
  * @property int $tally_id
  * @property int $party_id
  * @property int $currency_id
@@ -30,7 +32,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Transaction extends Model
 {
     /** @use HasFactory<TransactionFactory> */
-    use HasFactory;
+    use HasFactory, HasUuids;
 
     public const string TABLE_NAME = 'transactions';
 
@@ -61,6 +63,16 @@ class Transaction extends Model
         'amount' => 'float', // @pest-mutate-ignore
         'type' => TransactionType::class, // @pest-mutate-ignore
     ];
+
+    public function uniqueIds(): array
+    {
+        return ['uuid'];
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'uuid';
+    }
 
     /**
      * @return BelongsTo<Tally, $this>

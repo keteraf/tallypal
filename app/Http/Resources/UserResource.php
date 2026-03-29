@@ -23,6 +23,7 @@ class UserResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'uuid' => $this->uuid,
             'name' => $this->name,
             'email' => $this->email,
             'percentage' => $this->whenPivotLoaded('tally_user', fn () => $this->pivot->default_share_percentage),

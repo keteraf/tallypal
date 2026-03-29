@@ -18,6 +18,7 @@ import { useI18n } from 'vue-i18n';
 interface Props {
     tally: {
         tally_id: number;
+        uuid: string;
         name: string;
     };
     categories: Array<{
@@ -47,11 +48,11 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
     {
         title: props.tally.name,
-        href: route('tallies.transactions.index', props.tally.tally_id),
+        href: route('tallies.transactions.index', props.tally.uuid),
     },
     {
         title: t('transactions.add_button'),
-        href: route('tallies.transactions.create', props.tally.tally_id),
+        href: route('tallies.transactions.create', props.tally.uuid),
     },
 ];
 
@@ -80,7 +81,7 @@ const partyLabel = (type: string | undefined) => {
 
             <div class="max-w-2xl rounded-lg border p-6 shadow-sm">
                 <Form
-                    :action="route('tallies.transactions.store', tally.tally_id)"
+                    :action="route('tallies.transactions.store', tally.uuid)"
                     method="post"
                     :defaults="{
                         title: '',
@@ -240,7 +241,7 @@ const partyLabel = (type: string | undefined) => {
 
                     <div class="flex justify-end gap-4">
                         <Button variant="outline" as-child>
-                            <Link :href="route('tallies.transactions.index', tally.tally_id)"> {{ $t('common.cancel') }} </Link>
+                            <Link :href="route('tallies.transactions.index', tally.uuid)"> {{ $t('common.cancel') }} </Link>
                         </Button>
                         <Button type="submit" :disabled="processing">
                             {{ processing ? $t('common.adding') : $t('transactions.add_button') }}
