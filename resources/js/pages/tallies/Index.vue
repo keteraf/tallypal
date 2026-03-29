@@ -15,11 +15,12 @@ defineProps<{
 }>();
 
 const showShareDialog = ref(false);
-const selectedTally = ref<{ tally_id: number; name: string; owner_id: number } | null>(null);
+const selectedTally = ref<{ tally_id: number; uuid: string; name: string; owner_id: number } | null>(null);
 
 const openShareDialog = (tally: any) => {
     selectedTally.value = {
         tally_id: tally.tally_id,
+        uuid: tally.uuid,
         name: tally.name,
         owner_id: tally.owner_id,
     };
@@ -74,7 +75,7 @@ const breadcrumbs: BreadcrumbItem[] = [
                 <Link
                     v-for="tally in tallies"
                     :key="tally.tally_id"
-                    :href="route('tallies.transactions.index', tally.tally_id)"
+                    :href="route('tallies.transactions.index', tally.uuid)"
                     class="block rounded-lg border p-4 shadow-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-900"
                 >
                     <div class="flex items-start justify-between gap-2">

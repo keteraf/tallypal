@@ -7,6 +7,7 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -17,6 +18,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 /**
  * @property-read int $id
+ * @property string $uuid
  * @property string $name
  * @property string $email
  * @property string $password
@@ -29,7 +31,7 @@ use Spatie\Permission\Traits\HasRoles;
 final class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory, HasRoles, Notifiable;
+    use HasApiTokens, HasFactory, HasRoles, HasUuids, Notifiable;
 
     public const string TABLE_NAME = 'users';
 
@@ -60,6 +62,17 @@ final class User extends Authenticatable implements MustVerifyEmail
         'password',
         'remember_token',
     ];
+
+    /** @return array<int, string> */
+    public function uniqueIds(): array
+    {
+        return ['uuid'];
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'uuid';
+    }
 
     /**
      * @return HasMany<Tally, $this>

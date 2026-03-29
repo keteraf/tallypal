@@ -16,7 +16,7 @@ it('lists transactions', function () {
     $tally = Tally::factory()->create(['owner_id' => $user->id]);
     Transaction::factory()->count(5)->forTally($tally)->create();
 
-    $response = $this->actingAs($user)->getJson("/api/tallies/{$tally->tally_id}/transactions");
+    $response = $this->actingAs($user)->getJson(route('api.tallies.transactions.index', $tally));
 
     $response->assertSuccessful()
         ->assertJsonStructure(['data']);
@@ -40,7 +40,7 @@ it('stores a transaction', function () {
         'transaction_date' => '2024-01-01',
     ];
 
-    $response = $this->actingAs($user)->postJson("/api/tallies/{$tally->tally_id}/transactions", $data);
+    $response = $this->actingAs($user)->postJson(route('api.tallies.transactions.store', $tally), $data);
 
     $response->assertSuccessful()
         ->assertJsonPath('data.title', 'Test Transaction');
@@ -51,7 +51,7 @@ it('shows a transaction', function () {
     $tally = Tally::factory()->create(['owner_id' => $user->id]);
     $transaction = Transaction::factory()->forTally($tally)->create();
 
-    $response = $this->actingAs($user)->getJson("/api/tallies/{$tally->tally_id}/transactions/{$transaction->transaction_id}");
+    $response = $this->actingAs($user)->getJson(route('api.tallies.transactions.show', [$tally, $transaction]));
 
     $response->assertSuccessful()
         ->assertJsonPath('data.id', $transaction->transaction_id);
@@ -76,7 +76,7 @@ it('updates a transaction', function () {
         'transaction_date' => '2024-02-01',
     ];
 
-    $response = $this->actingAs($user)->putJson("/api/tallies/{$tally->tally_id}/transactions/{$transaction->transaction_id}", $data);
+    $response = $this->actingAs($user)->putJson(route('api.tallies.transactions.update', [$tally, $transaction]), $data);
 
     $response->assertSuccessful()
         ->assertJsonPath('data.title', 'Updated Transaction');
@@ -87,7 +87,7 @@ it('destroys a transaction', function () {
     $tally = Tally::factory()->create(['owner_id' => $user->id]);
     $transaction = Transaction::factory()->forTally($tally)->create();
 
-    $response = $this->actingAs($user)->deleteJson("/api/tallies/{$tally->tally_id}/transactions/{$transaction->transaction_id}");
+    $response = $this->actingAs($user)->deleteJson(route('api.tallies.transactions.destroy', [$tally, $transaction]));
 
     $response->assertNoContent();
     expect(Transaction::query()->find($transaction->transaction_id))->toBeNull();

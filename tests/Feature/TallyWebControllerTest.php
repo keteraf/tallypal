@@ -6,7 +6,7 @@ use App\Http\Controllers\TallyController;
 use App\Models\Currency;
 use App\Models\Transaction;
 use App\Models\User;
-use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia;
 
@@ -15,7 +15,7 @@ use function Pest\Laravel\actingAs;
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
-    $this->withoutMiddleware(ValidateCsrfToken::class);
+    $this->withoutMiddleware(PreventRequestForgery::class);
 });
 
 covers(TallyController::class);
