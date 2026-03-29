@@ -29,6 +29,42 @@
             html.dark {
                 background-color: oklch(0.145 0 0);
             }
+
+            .beta-ribbon-layer {
+                position: fixed;
+                inset: 0;
+                z-index: 9999;
+                overflow: hidden;
+                pointer-events: none;
+                user-select: none;
+            }
+
+            .beta-ribbon {
+                position: absolute;
+                top: 1rem;
+                right: -2.1rem;
+                width: 8rem;
+                padding: 0.35rem 0;
+                transform: rotate(45deg);
+                transform-origin: center;
+                text-align: center;
+                font-size: 0.65rem;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                color: oklch(0.98 0.02 95);
+                background: oklch(0.62 0.18 45);
+                box-shadow: 0 8px 20px oklch(0 0 0 / 0.28);
+            }
+
+            @media (max-width: 640px) {
+                .beta-ribbon {
+                    width: 6.5rem;
+                    top: 0.9rem;
+                    right: -1.75rem;
+                    font-size: 0.58rem;
+                    padding: 0.3rem 0;
+                }
+            }
         </style>
 
         <title inertia>{{ config('app.name', 'Laravel') }}</title>
@@ -45,7 +81,10 @@
         @vite(['resources/js/app.ts', "resources/js/pages/{$page['component']}.vue"])
         @inertiaHead
     </head>
-    <body class="font-sans antialiased">
+    <body class="font-sans antialiased overflow-hidden">
+        <div class="beta-ribbon-layer" aria-hidden="true">
+            <div class="beta-ribbon">BETA</div>
+        </div>
         @inertia
     </body>
 </html>
