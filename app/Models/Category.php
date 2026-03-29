@@ -28,6 +28,7 @@ class Category extends Model
         'color',
     ];
 
+    /** @return array<int, string> */
     public function uniqueIds(): array
     {
         return ['uuid'];

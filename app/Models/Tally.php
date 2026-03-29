@@ -50,6 +50,7 @@ class Tally extends Model
         'expense_total', // @pest-mutate-ignore
     ];
 
+    /** @return array<int, string> */
     public function uniqueIds(): array
     {
         return ['uuid'];

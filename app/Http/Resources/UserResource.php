@@ -10,6 +10,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * @property-read int $id
+ * @property-read string $uuid
  * @property-read string $name
  * @property-read string $email
  * @property-read TallyUser $pivot

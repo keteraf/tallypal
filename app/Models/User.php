@@ -63,6 +63,7 @@ final class User extends Authenticatable implements MustVerifyEmail
         'remember_token',
     ];
 
+    /** @return array<int, string> */
     public function uniqueIds(): array
     {
         return ['uuid'];

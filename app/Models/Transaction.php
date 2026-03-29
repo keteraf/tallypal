@@ -64,6 +64,7 @@ class Transaction extends Model
         'type' => TransactionType::class, // @pest-mutate-ignore
     ];
 
+    /** @return array<int, string> */
     public function uniqueIds(): array
     {
         return ['uuid'];
