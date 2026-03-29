@@ -24,10 +24,13 @@
         <style>
             html {
                 background-color: oklch(1 0 0);
+                overflow:  hidden;
             }
 
             html.dark {
                 background-color: oklch(0.145 0 0);
+                overflow:  hidden;
+                color-scheme: dark;
             }
 
             .beta-ribbon-layer {
@@ -81,7 +84,7 @@
         @vite(['resources/js/app.ts', "resources/js/pages/{$page['component']}.vue"])
         @inertiaHead
     </head>
-    <body class="font-sans antialiased overflow-hidden">
+    <body class="font-sans antialiased">
         <div class="beta-ribbon-layer" aria-hidden="true">
             <div class="beta-ribbon">BETA</div>
         </div>
