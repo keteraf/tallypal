@@ -49,29 +49,29 @@ export default {
         back: 'Back',
         info: {
             title: 'Why TallyPal?',
-            description: 'TallyPal keeps counting simple: fast to start, clear to read, and reliable whenever numbers matter.',
+            description: 'No spreadsheets, no stress. TallyPal makes counting things actually enjoyable — start in seconds and always know where you stand.',
             cards: {
                 setup: {
-                    title: 'Quick Setup',
-                    description: 'Create and track tallies in seconds with a clean flow.',
+                    title: 'Up and Running',
+                    description: 'Name it, go. Your first tally is live before you even put your phone down.',
                 },
                 clear: {
-                    title: 'Crystal Clear',
-                    description: 'See totals and progress at a glance without clutter.',
+                    title: 'Zero Noise',
+                    description: 'Totals front and center. No digging around, no clutter — just the numbers that matter.',
                 },
                 trust: {
-                    title: 'Built to Trust',
-                    description: 'Your counters stay consistent and ready when you need them.',
+                    title: 'Rock Solid',
+                    description: "Your data's always there when you need it. TallyPal doesn't miss a beat.",
                 },
             },
         },
         pricing: {
             title: 'Simple pricing',
-            description: 'Start for free with the full app experience, then unlock advanced control with Pro.',
+            description: 'Start free, no credit card needed. Upgrade to Pro when you want to level up.',
             tiers: {
                 free: {
                     name: 'Free',
-                    summary: 'All core app features included.',
+                    summary: 'Everything you need, right out of the box.',
                     price: '$0',
                     cta: 'Start for free',
                     features: {
@@ -83,7 +83,7 @@ export default {
                 },
                 pro: {
                     name: 'Pro',
-                    summary: 'Everything in Free plus advanced tools.',
+                    summary: 'All the Free stuff, plus the tools that make you look pro.',
                     price: '$9/mo',
                     cta: 'Get Pro',
                     features: {
@@ -93,14 +93,14 @@ export default {
                     },
                 },
             },
-            footnote: 'Free already includes all current app features. Pro adds stats and file import/export.',
+            footnote: 'Free covers everything for most people. Pro is there when you want more.',
         },
         contact: {
             title: 'Get in touch',
-            description: 'Questions, ideas, or partnership requests? Send a quick message and we will reach out soon.',
-            tagline: 'Fast reply. Human support.',
+            description: "Got questions or ideas? Drop us a message — we actually read every one.",
+            tagline: 'Fast reply. Real humans.',
             form_title: 'Contact TallyPal',
-            form_description: 'Tell us what you need and we will follow up.',
+            form_description: "Tell us what's on your mind and we'll get back to you.",
             fields: {
                 name: 'Name',
                 email: 'Email',
@@ -112,14 +112,14 @@ export default {
                 message: 'Tell us how we can help...',
             },
             submit: 'Send message',
-            success: 'Message sent. Thanks for reaching out.',
-            privacy: 'We only use these details to reply to your request.',
+            success: "Got it! We'll be in touch soon.",
+            privacy: 'We only use this to reply — no spam, ever.',
         },
     },
     auth: {
         login: {
-            title: 'Log in to your account',
-            description: 'Enter your email and password below to log in',
+            title: 'Welcome back',
+            description: 'Good to see you again — pick up right where you left off.',
             head_title: 'Log in',
             forgot_password: 'Forgot password?',
             remember_me: 'Remember me',
@@ -129,14 +129,14 @@ export default {
         },
         register: {
             title: 'Create an account',
-            description: 'Enter your details below to create your account',
+            description: 'Join TallyPal and start counting what matters.',
             head_title: 'Register',
             create_account_button: 'Create account',
             already_have_account: 'Already have an account?',
         },
         forgot_password: {
             title: 'Forgot password',
-            description: 'Enter your email to receive a password reset link',
+            description: "No worries — happens to everyone. Enter your email and we'll sort it out.",
             head_title: 'Forgot password',
             email_button: 'Email password reset link',
             return_to: 'Or, return to',
@@ -155,9 +155,9 @@ export default {
             reset_button: 'Reset password',
         },
         verify_email: {
-            title: 'Verify email',
+            title: 'Check your inbox',
             description:
-                "Thanks for signing up! Before getting started, could you verify your email address by clicking on the link we just emailed to you? If you didn't receive the email, we will gladly send you another.",
+                "Almost there! We sent a verification link to your email — just click it and you're in. Didn't get it? We can send another one.",
             head_title: 'Email verification',
             resend_button: 'Resend verification email',
             logout: 'Log out',
@@ -172,11 +172,11 @@ export default {
             unverified_email: 'Your email address is unverified.',
             resend_verification: 'Click here to resend the verification email.',
             verification_sent: 'A new verification link has been sent to your email address.',
-            delete_description: 'Delete your account and all of its resources',
-            delete_warning: 'Please proceed with caution, this cannot be undone.',
-            delete_confirm_title: 'Are you sure you want to delete your account?',
+            delete_description: 'Delete your account and all of its data',
+            delete_warning: 'Heads up — this is permanent and cannot be undone.',
+            delete_confirm_title: 'Delete your account?',
             delete_confirm_description:
-                'Once your account is deleted, all of its resources and data will also be permanently deleted. Please enter your password to confirm you would like to permanently delete your account.',
+                'This will permanently delete your account and everything in it — tallies, transactions, all of it. Enter your password to confirm.',
         },
         password: {
             title: 'Password settings',
@@ -206,8 +206,8 @@ export default {
         delete_tally: 'Delete Tally',
         delete_confirm_title: 'Are you sure you want to delete this tally?',
         delete_confirm_description: 'This action cannot be undone. This will permanently delete the tally "{name}" and all its transactions.',
-        empty_state: "You don't have any tallies yet.",
-        empty_description: 'Get started by creating your first tally to keep track of things.',
+        empty_state: 'No tallies here yet.',
+        empty_description: 'Create your first tally and start tracking — it only takes a second.',
         name_label: 'Name',
         name_placeholder: 'Enter tally name',
         description_label: 'Description',
@@ -260,7 +260,7 @@ export default {
             owes_you: '{debtor} owes you {amount}',
             owes_each_other: '{debtor} owes {creditor} {amount}',
         },
-        empty_state: 'No transactions found for this tally.',
+        empty_state: 'Nothing here yet — add your first transaction above.',
     },
     navigation: {
         platform: 'Platform',

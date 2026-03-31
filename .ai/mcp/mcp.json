@@ -13,6 +13,14 @@
         "shadcn-vue@latest",
         "mcp"
       ]
+    },
+    "nightwatch": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://nightwatch.laravel.com/mcp"
+      ]
     }
   }
 }
