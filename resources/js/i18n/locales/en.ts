@@ -222,6 +222,11 @@ export default {
             total: 'Total: {total}%',
             must_equal_100: 'Must equal 100%',
             save_changes: 'Save Changes',
+            pending_invitations: 'Pending Invitations',
+            no_pending_invitations: 'No pending invitations.',
+            invitation_sent: 'Invitation sent to {email}.',
+            cancel_invitation: 'Cancel invitation',
+            invitation_pending_badge: 'Pending',
         },
     },
     transactions: {

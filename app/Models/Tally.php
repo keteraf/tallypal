@@ -87,4 +87,12 @@ class Tally extends Model
     {
         return $this->hasMany(Transaction::class, self::PRIMARY_KEY, self::PRIMARY_KEY);
     }
+
+    /**
+     * @return HasMany<TallyInvitation, $this>
+     */
+    public function invitations(): HasMany
+    {
+        return $this->hasMany(TallyInvitation::class, self::PRIMARY_KEY, self::PRIMARY_KEY);
+    }
 }

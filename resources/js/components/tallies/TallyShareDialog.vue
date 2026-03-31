@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useForm } from '@inertiajs/vue3';
-import { Loader2, Plus, Share2, Trash2 } from 'lucide-vue-next';
+import { Loader2, Plus, Share2, Trash2, X } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 
 interface Collaborator {
@@ -16,6 +16,19 @@ interface Collaborator {
     name: string;
     email: string;
     percentage: number;
+}
+
+interface PendingInvitation {
+    uuid: string;
+    email: string;
+    status: string;
+    expires_at: string | null;
+    invited_by: {
+        id: number;
+        uuid: string;
+        name: string;
+        email: string;
+    };
 }
 
 const props = defineProps<{
@@ -36,11 +49,14 @@ const isOpen = computed({
 });
 
 const collaborators = ref<Collaborator[]>([]);
+const pendingInvitations = ref<PendingInvitation[]>([]);
 const isLoading = ref(false);
 const isInviting = ref(false);
 const isSaving = ref(false);
+const isCancellingInvitation = ref<string | null>(null);
 const newCollaboratorEmail = ref('');
 const errors = ref<Record<string, string[]>>({});
+const successMessage = ref('');
 
 // Inertia forms
 const inviteForm = useForm<{ email: string }>({ email: '' });
@@ -65,10 +81,19 @@ const fetchCollaborators = async () => {
     isLoading.value = true;
     errors.value = {};
     try {
-        const response = await fetch(route('api.tallies.shares.index', props.tally.uuid));
-        if (response.ok) {
-            const result = await response.json();
+        const [sharesResponse, invitationsResponse] = await Promise.all([
+            fetch(route('api.tallies.shares.index', props.tally.uuid)),
+            fetch(route('api.tallies.invitations.index', props.tally.uuid)),
+        ]);
+
+        if (sharesResponse.ok) {
+            const result = await sharesResponse.json();
             collaborators.value = result.data;
+        }
+
+        if (invitationsResponse.ok) {
+            const result = await invitationsResponse.json();
+            pendingInvitations.value = result.data;
         }
     } catch (e) {
         console.error('Failed to fetch collaborators', e);
@@ -82,6 +107,7 @@ const addCollaborator = async () => {
 
     isInviting.value = true;
     errors.value = {};
+    successMessage.value = '';
 
     try {
         const response = await fetch(route('api.tallies.shares.store', props.tally.uuid), {
@@ -97,16 +123,50 @@ const addCollaborator = async () => {
         const result = await response.json();
 
         if (response.ok) {
+            successMessage.value = $t('tallies.share.invitation_sent', { email: newCollaboratorEmail.value });
             newCollaboratorEmail.value = '';
             await fetchCollaborators();
         } else {
-            // Handle validation errors from the API
             errors.value = result.errors || { email: [result.message] };
         }
     } catch (e) {
         console.error('Failed to invite collaborator', e);
     } finally {
         isInviting.value = false;
+    }
+};
+
+const cancelInvitation = async (invitationUuid: string) => {
+    if (!props.tally) return;
+
+    isCancellingInvitation.value = invitationUuid;
+    errors.value = {};
+
+    try {
+        const response = await fetch(
+            route('api.tallies.invitations.destroy', {
+                tally: props.tally.uuid,
+                invitation: invitationUuid,
+            }),
+            {
+                method: 'DELETE',
+                headers: {
+                    Accept: 'application/json',
+                    'X-XSRF-TOKEN': getXsrfToken(),
+                },
+            },
+        );
+
+        if (response.ok) {
+            await fetchCollaborators();
+        } else {
+            const result = await response.json();
+            errors.value = result.errors || { general: [result.message || 'Failed to cancel invitation'] };
+        }
+    } catch (e) {
+        console.error('Failed to cancel invitation', e);
+    } finally {
+        isCancellingInvitation.value = null;
     }
 };
 
@@ -131,7 +191,6 @@ const removeCollaborator = async (collaboratorUuid: string) => {
         );
 
         if (response.ok) {
-            // Refresh the list after successful removal
             await fetchCollaborators();
         } else {
             const result = await response.json();
@@ -177,7 +236,6 @@ const saveShares = async () => {
             isOpen.value = false;
         } else {
             const result = await response.json();
-            // Map validation errors if they exist
             if (result.errors) {
                 errors.value = result.errors;
             } else {
@@ -196,6 +254,7 @@ watch(
     () => props.open,
     (newVal) => {
         if (newVal && props.tally) {
+            successMessage.value = '';
             fetchCollaborators();
         }
     },
@@ -247,6 +306,43 @@ const getInitials = (name: string) => {
                         </Button>
                     </div>
                     <InputError v-if="errors.email" :message="errors.email[0]" />
+                    <p v-if="successMessage" class="text-sm text-green-600">{{ successMessage }}</p>
+                </div>
+
+                <!-- Pending Invitations -->
+                <div v-if="isLoading || pendingInvitations.length > 0" class="space-y-3">
+                    <Label>{{ $t('tallies.share.pending_invitations') }}</Label>
+                    <div v-if="isLoading" class="space-y-2">
+                        <div v-for="i in 2" :key="i" class="flex items-center justify-between gap-3 border-b py-2 last:border-0">
+                            <Skeleton class="h-4 w-40" />
+                            <Skeleton class="h-7 w-7 rounded-full" />
+                        </div>
+                    </div>
+                    <div v-else class="space-y-0">
+                        <div
+                            v-for="invitation in pendingInvitations"
+                            :key="invitation.uuid"
+                            class="flex items-center justify-between gap-3 border-b py-2 last:border-0"
+                        >
+                            <div class="flex min-w-0 items-center gap-2">
+                                <p class="truncate text-sm text-muted-foreground">{{ invitation.email }}</p>
+                                <span class="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+                                    {{ $t('tallies.share.invitation_pending_badge') }}
+                                </span>
+                            </div>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                class="h-7 w-7 shrink-0 text-muted-foreground hover:text-red-600"
+                                :disabled="isCancellingInvitation === invitation.uuid"
+                                :title="$t('tallies.share.cancel_invitation')"
+                                @click="cancelInvitation(invitation.uuid)"
+                            >
+                                <Loader2 v-if="isCancellingInvitation === invitation.uuid" class="h-3.5 w-3.5 animate-spin" />
+                                <X v-else class="h-3.5 w-3.5" />
+                            </Button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="space-y-4">

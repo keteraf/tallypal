@@ -3,15 +3,19 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\TallyShareController;
+use App\Http\Requests\TallyShare\CreateTallyShareRequest;
+use App\Mail\TallyInvitationExistingUser;
 use App\Models\Tally;
+use App\Models\TallyInvitation;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use Laravel\Sanctum\Sanctum;
 use Symfony\Component\HttpFoundation\Response;
 
 uses(RefreshDatabase::class);
 
-covers(TallyShareController::class);
+covers(TallyShareController::class, CreateTallyShareRequest::class);
 
 it('lists all users sharing a tally', function () {
     $owner = User::factory()->create();
@@ -50,7 +54,9 @@ it('denies stranger from listing shares', function () {
     $response->assertStatus(Response::HTTP_FORBIDDEN);
 });
 
-it('allows owner to share a tally with a user', function () {
+it('allows owner to invite an existing user and returns a pending invitation', function () {
+    Mail::fake();
+
     $owner = User::factory()->create();
     $tally = Tally::factory()->create(['owner_id' => $owner->id]);
     $user = User::factory()->create();
@@ -62,10 +68,105 @@ it('allows owner to share a tally with a user', function () {
     ]);
 
     $response->assertStatus(Response::HTTP_CREATED);
-    $response->assertJson(['message' => 'Tally shared successfully']);
+    $response->assertJsonStructure(['data' => ['uuid', 'email', 'status', 'expires_at']]);
+    $response->assertJsonPath('data.email', $user->email);
+    $response->assertJsonPath('data.status', 'pending');
 
-    expect($tally->users()->where('user_id', $user->id)->exists())->toBeTrue();
-    expect($tally->users()->find($user->id)->pivot->default_share_percentage)->toBe(0.0);
+    expect($tally->invitations()->where('email', $user->email)->exists())->toBeTrue();
+    expect($tally->users()->where('user_id', $user->id)->exists())->toBeFalse();
+
+    Mail::assertQueued(TallyInvitationExistingUser::class);
+});
+
+it('allows owner to invite a non-registered email', function () {
+    Mail::fake();
+
+    $owner = User::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
+
+    Sanctum::actingAs($owner);
+
+    $response = $this->postJson(route('api.tallies.shares.store', $tally), [
+        'email' => 'newuser@example.com',
+    ]);
+
+    $response->assertStatus(Response::HTTP_CREATED);
+    $response->assertJsonPath('data.email', 'newuser@example.com');
+    $response->assertJsonPath('data.status', 'pending');
+});
+
+it('rejects inviting an email that already has a pending invitation', function () {
+    Mail::fake();
+
+    $owner = User::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
+    $user = User::factory()->create();
+
+    Sanctum::actingAs($owner);
+
+    $this->postJson(route('api.tallies.shares.store', $tally), ['email' => $user->email]);
+
+    $response = $this->postJson(route('api.tallies.shares.store', $tally), ['email' => $user->email]);
+
+    $response->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY);
+    $response->assertJsonValidationErrors(['email']);
+});
+
+it('rejects inviting an existing collaborator', function () {
+    Mail::fake();
+
+    $owner = User::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
+    $user = User::factory()->create();
+    $tally->users()->attach($user->id, ['default_share_percentage' => 100]);
+
+    Sanctum::actingAs($owner);
+
+    $response = $this->postJson(route('api.tallies.shares.store', $tally), ['email' => $user->email]);
+
+    $response->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY);
+    $response->assertJsonValidationErrors(['email']);
+});
+
+it('skips after validation checks when email is invalid', function () {
+    Mail::fake();
+
+    $owner = User::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
+
+    Sanctum::actingAs($owner);
+
+    $response = $this->postJson(route('api.tallies.shares.store', $tally), [
+        'email' => 'not-a-valid-email',
+    ]);
+
+    $response->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY);
+    $response->assertJsonValidationErrors(['email']);
+    Mail::assertNothingQueued();
+});
+
+it('rejects inviting with an expired pending invitation still allows re-invite', function () {
+    Mail::fake();
+
+    $owner = User::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
+    $user = User::factory()->create(['email' => 'invitee@example.com']);
+
+    $tally->invitations()->create([
+        'invited_by_user_id' => $owner->id,
+        'email' => 'invitee@example.com',
+        'token' => 'old-token',
+        'status' => TallyInvitation::STATUS_PENDING,
+        'expires_at' => now()->subDay(),
+    ]);
+
+    Sanctum::actingAs($owner);
+
+    $response = $this->postJson(route('api.tallies.shares.store', $tally), [
+        'email' => $user->email,
+    ]);
+
+    $response->assertStatus(Response::HTTP_CREATED);
 });
 
 it('denies non-owner from sharing a tally', function () {

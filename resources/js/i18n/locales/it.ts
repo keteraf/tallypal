@@ -223,6 +223,11 @@ export default {
             total: 'Totale: {total}%',
             must_equal_100: 'Deve essere esattamente 100%',
             save_changes: 'Salva modifiche',
+            pending_invitations: 'Inviti in attesa',
+            no_pending_invitations: 'Nessun invito in attesa.',
+            invitation_sent: 'Invito inviato a {email}.',
+            cancel_invitation: 'Annulla invito',
+            invitation_pending_badge: 'In attesa',
         },
     },
     transactions: {

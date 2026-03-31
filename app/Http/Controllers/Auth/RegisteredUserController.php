@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Auth;
 
+use App\Actions\TallyShare\AcceptTallyInvitationAction;
 use App\Http\Controllers\Controller;
+use App\Models\TallyInvitation;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -47,6 +49,22 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
+        $this->acceptPendingInvitations($user);
+
         return to_route('dashboard');
+    }
+
+    private function acceptPendingInvitations(User $user): void
+    {
+        $action = app(AcceptTallyInvitationAction::class);
+
+        TallyInvitation::query()
+            ->with('tally')
+            ->where('email', mb_strtolower($user->email))
+            ->pending()
+            ->notExpired()
+            ->each(function (TallyInvitation $invitation) use ($user, $action): void {
+                $action->handle($invitation, $user);
+            });
     }
 }
