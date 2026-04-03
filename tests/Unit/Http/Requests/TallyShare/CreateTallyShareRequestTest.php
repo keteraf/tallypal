@@ -49,10 +49,10 @@ it('denies non-owner', function () {
     expect($request->authorize())->toBeFalse();
 });
 
-it('has validation rules', function () {
+it('has validation rules requiring only a valid email', function () {
     $request = new CreateTallyShareRequest();
     expect($request->rules())->toBe([
-        'email' => ['required', 'email', 'exists:users,email'],
+        'email' => ['required', 'email'],
     ]);
 });
 

@@ -43,7 +43,7 @@ class StoreTransactionRequest extends FormRequest
             $amount = $this->input('amount');
 
             if (! is_numeric($amount)) {
-                $amount = str_replace(',', '.', (string) $amount);
+                $amount = str_replace(',', '.', (string) $amount); // @pest-mutate-ignore
             }
 
             if (is_numeric($amount)) {

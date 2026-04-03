@@ -107,6 +107,38 @@ it('does not normalize amount when value is non-numeric', function () {
     expect($request->input('amount'))->toBe('NaN-text');
 });
 
+it('normalizes amount when it is a Stringable object', function () {
+    $stringable = new class('12,34') implements Stringable
+    {
+        public function __construct(private string $val) {}
+
+        public function __toString(): string
+        {
+            return $this->val;
+        }
+    };
+
+    $request = new UpdateTransactionRequest();
+    $request->merge(['amount' => $stringable]);
+
+    $method = new ReflectionMethod(UpdateTransactionRequest::class, 'prepareForValidation');
+    $method->setAccessible(true);
+    $method->invoke($request);
+
+    expect($request->input('amount'))->toBe(12.34);
+});
+
+it('does not normalize when amount is non-scalar and non-Stringable', function () {
+    $request = new UpdateTransactionRequest();
+    $request->merge(['amount' => ['not', 'scalar']]);
+
+    $method = new ReflectionMethod(UpdateTransactionRequest::class, 'prepareForValidation');
+    $method->setAccessible(true);
+    $method->invoke($request);
+
+    expect($request->input('amount'))->toBe(['not', 'scalar']);
+});
+
 it('keeps payload unchanged when amount is missing', function () {
     $request = new UpdateTransactionRequest();
     $request->merge(['title' => 'No amount']);

@@ -11,6 +11,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\TallyShare\CreateTallyShareRequest;
 use App\Http\Requests\TallyShare\DeleteTallyShareRequest;
 use App\Http\Requests\TallyShare\UpdateTallySharesRequest;
+use App\Http\Resources\TallyInvitationResource;
 use App\Http\Resources\UserResource;
 use App\Models\Tally;
 use App\Models\User;
@@ -32,9 +33,11 @@ class TallyShareController extends Controller
     {
         $email = $request->string('email')->toString();
 
-        $action->handle($tally, $email);
+        $invitation = $action->handle($tally, $email);
 
-        return response()->json(['message' => 'Tally shared successfully'], Response::HTTP_CREATED);
+        return TallyInvitationResource::make($invitation)
+            ->response()
+            ->setStatusCode(Response::HTTP_CREATED);
     }
 
     public function destroy(DeleteTallyShareRequest $request, Tally $tally, User $share, DeleteTallyShareAction $action): JsonResponse
