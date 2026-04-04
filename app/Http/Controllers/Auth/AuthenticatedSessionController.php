@@ -35,9 +35,6 @@ final class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        $request->authenticate();
-        $request->session()->regenerate();
-
         $user = $request->user();
 
         if ($user?->hasRole('Super Admin')) {

@@ -133,6 +133,7 @@ export default {
             head_title: 'Register',
             create_account_button: 'Create account',
             already_have_account: 'Already have an account?',
+            login: 'Log in',
         },
         forgot_password: {
             title: 'Forgot password',

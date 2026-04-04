@@ -1,11 +1,14 @@
 {
     "agents": [
-        "claude_code",
-        "junie"
+        "claude_code"
     ],
     "guidelines": true,
     "mcp": true,
     "nightwatch_mcp": true,
+    "packages": [
+        "laravel/nightwatch",
+        "barryvdh/laravel-debugbar"
+    ],
     "sail": false,
     "skills": [
         "laravel-best-practices",
@@ -13,6 +16,8 @@
         "wayfinder-development",
         "pest-testing",
         "inertia-vue-development",
-        "tailwindcss-development"
+        "tailwindcss-development",
+        "configure-nightwatch",
+        "debug-using-debugbar"
     ]
 }
