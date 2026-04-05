@@ -72,6 +72,32 @@ it('is not pending when status is declined', function () {
     expect($invitation->isPending())->toBeFalse();
 });
 
+it('scopePending returns only pending invitations', function () {
+    $owner = User::factory()->create();
+    $tally = Tally::factory()->withOwner($owner)->create();
+
+    $tally->invitations()->create([
+        'invited_by_user_id' => $owner->id,
+        'email' => 'pending@example.com',
+        'token' => 'token-scope-pending',
+        'status' => TallyInvitation::STATUS_PENDING,
+        'expires_at' => null,
+    ]);
+
+    $tally->invitations()->create([
+        'invited_by_user_id' => $owner->id,
+        'email' => 'accepted@example.com',
+        'token' => 'token-scope-accepted',
+        'status' => TallyInvitation::STATUS_ACCEPTED,
+        'expires_at' => null,
+    ]);
+
+    $results = TallyInvitation::query()->pending()->get();
+
+    expect($results)->toHaveCount(1)
+        ->and($results->first()->email)->toBe('pending@example.com');
+});
+
 it('scopeNotExpired includes records with null expires_at', function () {
     $owner = User::factory()->create();
     $tally = Tally::factory()->withOwner($owner)->create();
@@ -139,6 +165,22 @@ it('belongs to a tally', function () {
 
     expect($invitation->tally())->toBeInstanceOf(BelongsTo::class)
         ->and($invitation->tally)->toBeInstanceOf(Tally::class);
+});
+
+it('belongs to an invited user by email', function () {
+    $owner = User::factory()->create();
+    $tally = Tally::factory()->withOwner($owner)->create();
+
+    $invitation = $tally->invitations()->create([
+        'invited_by_user_id' => $owner->id,
+        'email' => $owner->email,
+        'token' => 'token-inviteduser',
+        'status' => TallyInvitation::STATUS_PENDING,
+        'expires_at' => now()->addDays(7),
+    ]);
+
+    expect($invitation->invitedUser())->toBeInstanceOf(BelongsTo::class)
+        ->and($invitation->invitedUser)->toBeInstanceOf(User::class);
 });
 
 it('belongs to the inviting user', function () {

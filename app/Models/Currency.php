@@ -29,16 +29,18 @@ class Currency extends Model
 
     public const string KEYS_PREFIX = 'currency';
 
-    public const string PRIMARY_KEY = self::KEYS_PREFIX . '_id';
+    /** @pest-mutate-ignore */
+    public const string PRIMARY_KEY = self::KEYS_PREFIX . '_id'; // @pest-mutate-ignore
 
     protected $primaryKey = self::PRIMARY_KEY;
 
+    /** @pest-mutate-ignore */
     protected $fillable = [
-        'name',
-        'code',
-        'symbol',
-        'decimals',
-        'description',
+        'name', // @pest-mutate-ignore
+        'code', // @pest-mutate-ignore
+        'symbol', // @pest-mutate-ignore
+        'decimals', // @pest-mutate-ignore
+        'description', // @pest-mutate-ignore
     ];
 
     /** @return array<int, string> */

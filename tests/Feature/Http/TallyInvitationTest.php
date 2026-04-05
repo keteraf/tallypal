@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
+use App\Actions\TallyShare\AcceptTallyInvitationAction;
 use App\Http\Controllers\Api\TallyInvitationController as ApiTallyInvitationController;
 use App\Http\Controllers\TallyInvitationController;
+use App\Http\Resources\TallyInvitationResource;
 use App\Models\Tally;
 use App\Models\TallyInvitation;
 use App\Models\User;
@@ -14,7 +16,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 uses(RefreshDatabase::class);
 
-covers(TallyInvitationController::class, ApiTallyInvitationController::class);
+covers(TallyInvitationController::class, ApiTallyInvitationController::class, AcceptTallyInvitationAction::class, TallyInvitationResource::class);
 
 // ─── Web: Accept ─────────────────────────────────────────────────────────────
 
@@ -38,6 +40,9 @@ it('allows an authenticated invited user to accept an invitation', function () {
     $invitation->refresh();
     expect($invitation->status)->toBe(TallyInvitation::STATUS_ACCEPTED);
     expect($tally->users()->where('user_id', $invitee->id)->exists())->toBeTrue();
+
+    $pivot = $tally->users()->where('user_id', $invitee->id)->first()->pivot;
+    expect($pivot->default_share_percentage)->toEqual(0);
 });
 
 it('stores intended url in session when unauthenticated user visits invitation link', function () {
@@ -282,7 +287,8 @@ it('lists pending non-expired invitations for a tally', function () {
     $this->getJson(route('api.tallies.invitations.index', $tally))
         ->assertSuccessful()
         ->assertJsonCount(1, 'data')
-        ->assertJsonPath('data.0.email', 'pending@example.com');
+        ->assertJsonPath('data.0.email', 'pending@example.com')
+        ->assertJsonStructure(['data' => [['uuid', 'email', 'status', 'expires_at', 'invited_by']]]);
 });
 
 // ─── API: Cancel invitation ───────────────────────────────────────────────────
@@ -306,6 +312,48 @@ it('allows owner to cancel a pending invitation', function () {
 
     $invitation->refresh();
     expect($invitation->status)->toBe(TallyInvitation::STATUS_DECLINED);
+});
+
+it('returns all invitation resource fields in index response', function () {
+    $owner = User::factory()->create(['name' => 'Owner']);
+    $tally = Tally::factory()->withOwner($owner)->create();
+
+    $tally->invitations()->create([
+        'invited_by_user_id' => $owner->id,
+        'email' => 'fields@example.com',
+        'token' => 'fields-token',
+        'status' => TallyInvitation::STATUS_PENDING,
+        'expires_at' => now()->addDays(7),
+    ]);
+
+    Sanctum::actingAs($owner);
+
+    $this->getJson(route('api.tallies.invitations.index', $tally))
+        ->assertSuccessful()
+        ->assertJsonPath('data.0.email', 'fields@example.com')
+        ->assertJsonPath('data.0.status', TallyInvitation::STATUS_PENDING)
+        ->assertJsonPath('data.0.invited_by.name', 'Owner')
+        ->assertJsonPath('data.0.uuid', fn ($v) => is_string($v))
+        ->assertJsonPath('data.0.expires_at', fn ($v) => $v !== null);
+});
+
+it('returns null for expires_at when invitation has no expiry', function () {
+    $owner = User::factory()->create();
+    $tally = Tally::factory()->withOwner($owner)->create();
+
+    $tally->invitations()->create([
+        'invited_by_user_id' => $owner->id,
+        'email' => 'no-expiry@example.com',
+        'token' => 'no-expiry-token',
+        'status' => TallyInvitation::STATUS_PENDING,
+        'expires_at' => null,
+    ]);
+
+    Sanctum::actingAs($owner);
+
+    $this->getJson(route('api.tallies.invitations.index', $tally))
+        ->assertSuccessful()
+        ->assertJsonPath('data.0.expires_at', null);
 });
 
 it('denies unauthenticated user from listing invitations', function () {

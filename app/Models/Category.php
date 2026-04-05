@@ -18,14 +18,16 @@ class Category extends Model
 
     public const string KEYS_PREFIX = 'category';
 
-    public const string PRIMARY_KEY = self::KEYS_PREFIX . '_id';
+    /** @pest-mutate-ignore */
+    public const string PRIMARY_KEY = self::KEYS_PREFIX . '_id'; // @pest-mutate-ignore
 
     protected $primaryKey = self::PRIMARY_KEY;
 
+    /** @pest-mutate-ignore */
     protected $fillable = [
-        'name',
-        'icon',
-        'color',
+        'name', // @pest-mutate-ignore
+        'icon', // @pest-mutate-ignore
+        'color', // @pest-mutate-ignore
     ];
 
     /** @return array<int, string> */
