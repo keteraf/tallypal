@@ -13,11 +13,14 @@ class AcceptTallyInvitationAction
     {
         $tally = $invitation->tally()->firstOrFail();
 
-        $alreadyAttached = $tally->users()->where('user_id', $user->getKey())->exists();
+        /** @var int $userId */
+        $userId = $user->getKey();
 
-        if (! $alreadyAttached) {
-            /** @var int $userId */
-            $userId = $user->getKey();
+        $alreadyAttached = $tally->users()->where('user_id', $userId)->exists();
+
+        if ($alreadyAttached) {
+            $tally->users()->updateExistingPivot($userId, ['default_share_percentage' => 0]);
+        } else {
             $tally->users()->syncWithoutDetaching([$userId => ['default_share_percentage' => 0]]);
         }
 

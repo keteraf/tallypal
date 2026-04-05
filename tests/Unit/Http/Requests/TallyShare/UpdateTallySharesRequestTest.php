@@ -60,14 +60,26 @@ it('has validation rules', function () {
 });
 
 it('validates that total percentage is 100', function () {
-    $user1 = User::factory()->create();
+    $owner = User::factory()->create();
     $user2 = User::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
+    $tally->users()->attach($owner->id, ['default_share_percentage' => 50]);
+    $tally->users()->attach($user2->id, ['default_share_percentage' => 50]);
 
     $request = new UpdateTallySharesRequest();
     $request->merge(['shares' => [
-        ['user_id' => $user1->id, 'percentage' => 50],
+        ['user_id' => $owner->id, 'percentage' => 50],
         ['user_id' => $user2->id, 'percentage' => 50],
     ]]);
+    $request->setRouteResolver(fn () => new class($tally)
+    {
+        public function __construct(private Tally $tally) {}
+
+        public function parameter(string $key): Tally
+        {
+            return $this->tally;
+        }
+    });
 
     $validator = Validator::make($request->all(), $request->rules());
     $request->withValidator($validator);
@@ -76,20 +88,60 @@ it('validates that total percentage is 100', function () {
 });
 
 it('fails if total percentage is not 100', function () {
-    $user1 = User::factory()->create();
+    $owner = User::factory()->create();
     $user2 = User::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
+    $tally->users()->attach($owner->id, ['default_share_percentage' => 50]);
+    $tally->users()->attach($user2->id, ['default_share_percentage' => 50]);
 
     $request = new UpdateTallySharesRequest();
     $request->merge(['shares' => [
-        ['user_id' => $user1->id, 'percentage' => 50],
+        ['user_id' => $owner->id, 'percentage' => 50],
         ['user_id' => $user2->id, 'percentage' => 40],
     ]]);
+    $request->setRouteResolver(fn () => new class($tally)
+    {
+        public function __construct(private Tally $tally) {}
+
+        public function parameter(string $key): Tally
+        {
+            return $this->tally;
+        }
+    });
 
     $validator = Validator::make($request->all(), $request->rules());
     $request->withValidator($validator);
 
     expect($validator->fails())->toBeTrue();
     expect($validator->errors()->first('shares'))->toBe('The total percentage must equal 100.');
+});
+
+it('fails if a current collaborator is missing from the payload', function () {
+    $owner = User::factory()->create();
+    $user2 = User::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
+    $tally->users()->attach($owner->id, ['default_share_percentage' => 50]);
+    $tally->users()->attach($user2->id, ['default_share_percentage' => 50]);
+
+    $request = new UpdateTallySharesRequest();
+    $request->merge(['shares' => [
+        ['user_id' => $owner->id, 'percentage' => 100],
+    ]]);
+    $request->setRouteResolver(fn () => new class($tally)
+    {
+        public function __construct(private Tally $tally) {}
+
+        public function parameter(string $key): Tally
+        {
+            return $this->tally;
+        }
+    });
+
+    $validator = Validator::make($request->all(), $request->rules());
+    $request->withValidator($validator);
+
+    expect($validator->fails())->toBeTrue();
+    expect($validator->errors()->first('shares'))->toBe('All current collaborators must be included in the update.');
 });
 
 it('denies guest', function () {

@@ -412,6 +412,33 @@ it('returns 422 when cancelling a non-pending invitation', function () {
         ->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY);
 });
 
+it('resets percentage to zero when invitee is already attached to the tally', function () {
+    $owner = User::factory()->create();
+    $tally = Tally::factory()->withOwner($owner)->create();
+    $invitee = User::factory()->create(['email' => 'invitee@example.com']);
+
+    // Simulate invitee already attached with non-zero percentage (e.g. from a DB default or prior state)
+    $tally->users()->attach($invitee->id, ['default_share_percentage' => 100]);
+
+    $invitation = $tally->invitations()->create([
+        'invited_by_user_id' => $owner->id,
+        'email' => 'invitee@example.com',
+        'token' => 'already-attached-token',
+        'status' => TallyInvitation::STATUS_PENDING,
+        'expires_at' => now()->addDays(7),
+    ]);
+
+    $this->actingAs($invitee)
+        ->get(route('invitations.accept', $invitation->uuid))
+        ->assertRedirectToRoute('tallies.index');
+
+    $invitation->refresh();
+    expect($invitation->status)->toBe(TallyInvitation::STATUS_ACCEPTED);
+
+    $pivot = $tally->users()->where('user_id', $invitee->id)->first()->pivot;
+    expect($pivot->default_share_percentage)->toEqual(0);
+});
+
 it('denies non-owner from cancelling an invitation', function () {
     $owner = User::factory()->create();
     $tally = Tally::factory()->withOwner($owner)->create();
