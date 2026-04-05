@@ -9,6 +9,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useForm } from '@inertiajs/vue3';
 import { Loader2, Plus, Share2, Trash2, X } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 interface Collaborator {
     id: number;
@@ -82,8 +85,8 @@ const fetchCollaborators = async () => {
     errors.value = {};
     try {
         const [sharesResponse, invitationsResponse] = await Promise.all([
-            fetch(route('api.tallies.shares.index', props.tally.uuid)),
-            fetch(route('api.tallies.invitations.index', props.tally.uuid)),
+            fetch(route('api.tallies.shares.index', props.tally.uuid), { headers: { Accept: 'application/json' } }),
+            fetch(route('api.tallies.invitations.index', props.tally.uuid), { headers: { Accept: 'application/json' } }),
         ]);
 
         if (sharesResponse.ok) {
@@ -123,7 +126,7 @@ const addCollaborator = async () => {
         const result = await response.json();
 
         if (response.ok) {
-            successMessage.value = $t('tallies.share.invitation_sent', { email: newCollaboratorEmail.value });
+            successMessage.value = t('tallies.share.invitation_sent', { email: newCollaboratorEmail.value });
             newCollaboratorEmail.value = '';
             await fetchCollaborators();
         } else {
@@ -364,13 +367,13 @@ const getInitials = (name: string) => {
                     <div v-else-if="collaborators.length === 0" class="py-4 text-center text-sm text-gray-500">
                         {{ $t('tallies.share.no_collaborators') }}
                     </div>
-                    <div v-else class="max-h-[300px] overflow-y-auto pr-2">
+                    <div v-else class="max-h-75">
                         <div
                             v-for="collaborator in collaborators"
                             :key="collaborator.id"
-                            class="flex items-center justify-between gap-3 border-b py-3 last:border-0"
+                            class="flex items-center justify-between border-b py-3"
                         >
-                            <div class="flex min-w-0 items-center gap-3">
+                            <div class="flex min-w-0 flex-1 items-center gap-3">
                                 <Avatar class="h-8 w-8 shrink-0">
                                     <AvatarFallback>{{ getInitials(collaborator.name) }}</AvatarFallback>
                                 </Avatar>
@@ -379,13 +382,13 @@ const getInitials = (name: string) => {
                                     <p class="mt-1 truncate text-xs text-gray-500">{{ collaborator.email }}</p>
                                 </div>
                             </div>
-                            <div class="flex shrink-0 items-center gap-2">
-                                <div class="relative w-24">
+                            <div class="flex shrink-0 items-center">
+                                <div class="relative w-20">
                                     <Input
                                         v-model.number="collaborator.percentage"
                                         type="number"
                                         step="0.01"
-                                        class="h-8 pr-7 text-right"
+                                        class="h-8 pr-7 text-right w-full"
                                         min="0"
                                         max="100"
                                     />
