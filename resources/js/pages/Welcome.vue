@@ -231,7 +231,6 @@ onBeforeUnmount(() => {
                         {{ $t('common.dashboard') }}
                     </Link>
                     <Link
-                        v-else
                         :href="route('tallies.index')"
                         class="rounded-full border border-border px-6 py-2 text-sm font-medium transition-all hover:bg-accent hover:text-accent-foreground"
                     >
