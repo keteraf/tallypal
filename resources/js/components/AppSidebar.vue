@@ -5,7 +5,7 @@ import NavUser from '@/components/NavUser.vue';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { Activity, LayoutGrid, LucideBookOpenText, Telescope } from 'lucide-vue-next';
+import { Activity, LayoutGrid, LucideBookOpenText, Tally5Icon, Telescope } from 'lucide-vue-next';
 import { useI18n } from 'vue-i18n';
 import { GitHubIcon } from 'vue3-simple-icons';
 import AppLogo from './AppLogo.vue';
@@ -15,8 +15,13 @@ const { t } = useI18n();
 const mainNavItems: NavItem[] = [
     {
         title: t('navigation.dashboard'),
-        href: '/dashboard',
+        href: route('dashboard'),
         icon: LayoutGrid,
+    },
+    {
+        title: t('welcome.my_tallies'),
+        href: route('tallies.index'),
+        icon: Tally5Icon,
     },
 ];
 
