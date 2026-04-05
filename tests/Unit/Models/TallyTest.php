@@ -6,6 +6,7 @@ use App\Models\Tally;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 covers(Tally::class);
 
@@ -53,6 +54,26 @@ it('can attach users', function () {
 
     expect($tally->fresh()->users)->toHaveCount(1)
         ->and($tally->users->first()->id)->toBe($user->id);
+});
+
+it('has many transactions', function () {
+    $tally = Tally::factory()->create();
+    expect($tally->transactions())->toBeInstanceOf(HasMany::class);
+});
+
+it('has many invitations', function () {
+    $tally = Tally::factory()->create();
+    expect($tally->invitations())->toBeInstanceOf(HasMany::class);
+});
+
+it('returns uuid as the unique id column', function () {
+    $tally = new Tally();
+    expect($tally->uniqueIds())->toBe(['uuid']);
+});
+
+it('returns uuid as the route key name', function () {
+    $tally = new Tally();
+    expect($tally->getRouteKeyName())->toBe('uuid');
 });
 
 it('creates with factory', function () {

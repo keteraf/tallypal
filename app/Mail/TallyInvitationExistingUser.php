@@ -39,8 +39,8 @@ class TallyInvitationExistingUser extends Mailable implements ShouldQueue
             with: [
                 'inviterName' => $invitedBy->name,
                 'tallyName' => $tally->name,
-                'acceptUrl' => URL::signedRoute('invitations.accept', ['invitation' => $this->invitation->uuid]),
-                'declineUrl' => URL::signedRoute('invitations.decline', ['invitation' => $this->invitation->uuid]),
+                'acceptUrl' => URL::signedRoute('invitations.accept', ['uuid' => $this->invitation->uuid]),
+                'declineUrl' => URL::signedRoute('invitations.decline', ['uuid' => $this->invitation->uuid]),
             ],
         );
     }

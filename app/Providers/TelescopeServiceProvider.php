@@ -15,8 +15,21 @@ class TelescopeServiceProvider extends TelescopeApplicationServiceProvider
     /**
      * Register any application services.
      */
+    public function boot(): void
+    {
+        if ($this->app->environment('production')) {
+            return;
+        }
+
+        parent::boot();
+    }
+
     public function register(): void
     {
+        if ($this->app->environment('production')) {
+            return;
+        }
+
         // Telescope::night();
 
         $this->hideSensitiveRequestDetails();
