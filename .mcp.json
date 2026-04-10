@@ -7,6 +7,13 @@
                 "boost:mcp"
             ]
         },
+        "shadcn": {
+            "command": "npx",
+            "args": [
+                "shadcn-vue@latest",
+                "mcp"
+            ]
+        },
         "nightwatch": {
             "type": "http",
             "url": "https://nightwatch.laravel.com/mcp"

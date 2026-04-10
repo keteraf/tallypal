@@ -49,7 +49,8 @@ export default {
         back: 'Back',
         info: {
             title: 'Why TallyPal?',
-            description: 'No spreadsheets, no stress. TallyPal makes counting things actually enjoyable — start in seconds and always know where you stand.',
+            description:
+                'No spreadsheets, no stress. TallyPal makes counting things actually enjoyable — start in seconds and always know where you stand.',
             cards: {
                 setup: {
                     title: 'Up and Running',
@@ -97,7 +98,7 @@ export default {
         },
         contact: {
             title: 'Get in touch',
-            description: "Got questions or ideas? Drop us a message — we actually read every one.",
+            description: 'Got questions or ideas? Drop us a message — we actually read every one.',
             tagline: 'Fast reply. Real humans.',
             form_title: 'Contact TallyPal',
             form_description: "Tell us what's on your mind and we'll get back to you.",
@@ -267,6 +268,20 @@ export default {
             owes_each_other: '{debtor} owes {creditor} {amount}',
         },
         empty_state: 'Nothing here yet — add your first transaction above.',
+    },
+    dashboard: {
+        total_users: 'Total Users',
+        total_tallies: 'Total Tallies',
+        total_transactions: 'Total Transactions',
+        pending_invitations: 'Pending Invitations',
+        this_month: 'new this month',
+        shared: 'shared',
+        all_time: 'all time',
+        awaiting_response: 'awaiting response',
+        users_over_time: 'Users Registered',
+        tallies_over_time: 'Tallies Created',
+        transactions_over_time: 'Transactions',
+        last_30_days: 'Last 30 days',
     },
     navigation: {
         platform: 'Platform',

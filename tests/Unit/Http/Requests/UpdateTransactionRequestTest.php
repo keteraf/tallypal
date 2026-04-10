@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use App\Http\Requests\Transactions\UpdateTransactionRequest;
+use App\Models\Category;
+use App\Models\Currency;
 use App\Models\Tally;
 use App\Models\Transaction;
 use App\Models\User;
@@ -72,17 +74,76 @@ it('denies guest request', function () {
 });
 
 it('has validation rules', function () {
+    $tally = Tally::factory()->create();
+    $transaction = Transaction::factory()->create(['tally_id' => $tally->tally_id]);
+
     $request = new UpdateTransactionRequest();
-    expect($request->rules())->toBe([
-        'party_id' => 'required|exists:users,id',
-        'category_id' => 'required|exists:categories,category_id',
-        'currency_id' => 'required|exists:currencies,currency_id',
-        'type' => 'required|in:income,expense',
-        'title' => 'required|string',
-        'description' => 'nullable|string',
-        'amount' => 'required|numeric',
-        'transaction_date' => 'required|date',
-    ]);
+    $request->setRouteResolver(fn () => new class($tally, $transaction)
+    {
+        public function __construct(private readonly Tally $tally, private readonly Transaction $transaction) {}
+
+        public function parameter(string $key): Tally|Transaction
+        {
+            return match ($key) {
+                'transaction' => $this->transaction,
+                default => $this->tally,
+            };
+        }
+    });
+
+    $rules = $request->rules();
+
+    expect($rules['party_id'])->toBeArray()
+        ->and($rules['category_id'])->toBe('required|exists:categories,category_id')
+        ->and($rules['currency_id'])->toBe('required|exists:currencies,currency_id')
+        ->and($rules['type'])->toBe('required|in:income,expense')
+        ->and($rules['title'])->toBe('required|string|max:25')
+        ->and($rules['description'])->toBe('nullable|string')
+        ->and($rules['amount'])->toBe('required|numeric')
+        ->and($rules['transaction_date'])->toBe('required|date');
+});
+
+it('rejects party_id not belonging to the tally', function () {
+    $owner = User::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
+    $transaction = Transaction::factory()->create(['tally_id' => $tally->tally_id]);
+    $outsider = User::factory()->create();
+    $currency = Currency::query()->firstOrFail();
+    $category = Category::query()->firstOrFail();
+
+    $this->actingAs($owner)
+        ->patch(route('tallies.transactions.update', [$tally, $transaction]), [
+            'party_id' => $outsider->id,
+            'category_id' => $category->category_id,
+            'currency_id' => $currency->currency_id,
+            'type' => 'expense',
+            'title' => 'Test',
+            'amount' => 10,
+            'transaction_date' => now()->toDateString(),
+        ])
+        ->assertSessionHasErrors(['party_id']);
+});
+
+it('rejects title longer than 25 characters', function () {
+    $owner = User::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
+    $transaction = Transaction::factory()->create(['tally_id' => $tally->tally_id]);
+    $party = User::factory()->create();
+    $tally->users()->attach($party->id, ['default_share_percentage' => 50]);
+    $currency = Currency::query()->firstOrFail();
+    $category = Category::query()->firstOrFail();
+
+    $this->actingAs($owner)
+        ->patch(route('tallies.transactions.update', [$tally, $transaction]), [
+            'party_id' => $party->id,
+            'category_id' => $category->category_id,
+            'currency_id' => $currency->currency_id,
+            'type' => 'expense',
+            'title' => str_repeat('a', 26),
+            'amount' => 10,
+            'transaction_date' => now()->toDateString(),
+        ])
+        ->assertSessionHasErrors(['title']);
 });
 
 it('normalizes numeric amount before validation', function () {

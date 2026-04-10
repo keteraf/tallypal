@@ -57,7 +57,7 @@ export default {
                 },
                 clear: {
                     title: 'Tutto sotto controllo',
-                    description: "I totali li hai sempre davanti agli occhi. Niente casino, niente confusione.",
+                    description: 'I totali li hai sempre davanti agli occhi. Niente casino, niente confusione.',
                 },
                 trust: {
                     title: 'Affidabile al 100%',
@@ -268,6 +268,20 @@ export default {
             owes_each_other: '{debtor} deve a {creditor} {amount}',
         },
         empty_state: 'Nessuna transazione ancora — aggiungi la prima qui sopra.',
+    },
+    dashboard: {
+        total_users: 'Utenti totali',
+        total_tallies: 'Conteggi totali',
+        total_transactions: 'Transazioni totali',
+        pending_invitations: 'Inviti in attesa',
+        this_month: 'nuovi questo mese',
+        shared: 'condivisi',
+        all_time: 'tutti',
+        awaiting_response: 'in attesa di risposta',
+        users_over_time: 'Utenti registrati',
+        tallies_over_time: 'Conteggi creati',
+        transactions_over_time: 'Transazioni',
+        last_30_days: 'Ultimi 30 giorni',
     },
     navigation: {
         platform: 'Piattaforma',

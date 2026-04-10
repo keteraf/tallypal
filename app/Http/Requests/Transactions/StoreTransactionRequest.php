@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Transactions;
 
+use App\Models\Tally;
 use App\Models\Transaction;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreTransactionRequest extends FormRequest
 {
@@ -24,12 +26,15 @@ class StoreTransactionRequest extends FormRequest
      */
     public function rules(): array
     {
+        $tally = $this->route('tally');
+        $tallyId = $tally instanceof Tally ? $tally->tally_id : null;
+
         return [
-            'party_id' => 'required|exists:users,id',
+            'party_id' => ['required', Rule::exists('tally_user', 'user_id')->where('tally_id', $tallyId)],
             'category_id' => 'required|exists:categories,category_id',
             'currency_id' => 'required|exists:currencies,currency_id',
             'type' => 'required|in:income,expense',
-            'title' => 'required|string',
+            'title' => 'required|string|max:25',
             'description' => 'nullable|string',
             'amount' => 'required|numeric',
             'transaction_date' => 'required|date',

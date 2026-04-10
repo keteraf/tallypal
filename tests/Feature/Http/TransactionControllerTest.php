@@ -72,6 +72,7 @@ it('stores a transaction with valid payload', function (): void {
 
     $tally = Tally::factory()->create(['owner_id' => $me->id]);
     $party = User::factory()->create();
+    $tally->users()->attach($party->id, ['default_share_percentage' => 50]);
     $currency = Currency::query()->firstOrFail();
     $category = Category::query()->firstOrFail();
 
@@ -270,6 +271,7 @@ it('updates a transaction', function (): void {
     $tally = Tally::factory()->create(['owner_id' => $me->id]);
     $transaction = Transaction::factory()->forTally($tally)->create();
     $party = User::factory()->create();
+    $tally->users()->attach($party->id, ['default_share_percentage' => 50]);
     $currency = Currency::query()->firstOrFail();
     $category = Category::query()->firstOrFail();
 

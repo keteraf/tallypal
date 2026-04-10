@@ -40,7 +40,7 @@ it('prevents unauthorized users from deleting a tally', function (): void {
     $this->deleteJson(route('api.tallies.destroy', $tally))->assertForbidden();
 });
 
-it('allows parties to view and update a tally but not delete it', function (): void {
+it('allows parties to view a tally but not update or delete it', function (): void {
     $owner = User::factory()->create();
     $tally = Tally::factory()->create(['owner_id' => $owner->id]);
 
@@ -50,7 +50,7 @@ it('allows parties to view and update a tally but not delete it', function (): v
     Sanctum::actingAs($party);
 
     $this->getJson(route('api.tallies.show', $tally))->assertSuccessful();
-    $this->patchJson(route('api.tallies.update', $tally), ['name' => 'New Name'])->assertSuccessful();
+    $this->patchJson(route('api.tallies.update', $tally), ['name' => 'New Name'])->assertForbidden();
     $this->deleteJson(route('api.tallies.destroy', $tally))->assertForbidden();
 });
 
