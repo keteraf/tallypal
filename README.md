@@ -1,206 +1,98 @@
-# Tallypal API Backend
+# 🧮 TallyPal
 
-A Laravel-based REST API backend for **Tallypal**, a personal finance tracker that allows you to share tallies (financial records) with friends, family, or anyone you want.
+> Track money. Share tallies. Stay in sync.
 
-## Overview
+A personal finance tracker with a native web frontend for immediate use and a REST API for third-party and native app integrations. Create tallies, log transactions, invite collaborators, and split expenses — all in one place.
 
-Tallypal is a collaborative personal finance management system where users can:
-- Create and manage financial tallies
-- Share tallies with other users
-- Track income and expense transactions
-- Organize transactions by categories and currencies
-- Manage shared percentages for collaborative expenses
+---
 
-## Tech Stack
+## ✨ Features
 
-- **PHP**: 8.4
-- **Laravel**: 12
-- **Database**: SQLite (default)
-- **Authentication**: Laravel Sanctum 4
-- **API Resources**: Laravel API Resources for JSON responses
-- **Testing**: Pest 4
-- **Code Quality**: Laravel Pint, PHPStan, Rector
+- 📒 **Tallies** — shared ledgers you own and control
+- 💸 **Transactions** — log income and expenses per tally, with category and currency
+- 🤝 **Sharing** — invite users by email, configure custom split percentages per member
+- 🔌 **API** — full REST API for external integrations and native clients
 
-## Requirements
+---
 
-- PHP 8.4 or higher
-- Composer
-- Node.js and npm (for frontend assets)
-- SQLite (or MySQL/PostgreSQL for production)
+## 🛠 Stack
 
-## Installation
+| Layer         | Tech                                               |
+|---------------|----------------------------------------------------|
+| Backend       | PHP 8.4, Laravel 13, Sanctum, Spatie Permissions   |
+| Frontend      | Vue 3, TypeScript, Inertia.js v2, Tailwind CSS v4  |
+| UI            | Reka UI, Lucide, Vue I18n                          |
+| Routing       | Wayfinder (typed route bindings), Ziggy            |
+| Testing       | Pest 4, PHPStan, Rector, Pint                      |
+| Observability | Telescope, Pulse, Nightwatch                       |
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd tallypal
-   ```
+---
 
-2. **Install PHP dependencies**
-   ```bash
-   composer install
-   ```
+## 🚀 Getting Started
 
-3. **Install frontend dependencies**
-   ```bash
-   npm install
-   ```
-
-4. **Environment setup**
-   ```bash
-   cp .env.example .env
-   php artisan key:generate
-   ```
-
-5. **Database setup**
-   ```bash
-   # For SQLite (default)
-   touch database/database.sqlite
-   
-   # Or configure MySQL/PostgreSQL in .env
-   php artisan migrate
-   ```
-
-6. **Build frontend assets** (if needed)
-   ```bash
-   npm run build
-   ```
-
-## API Overview
-
-The API is RESTful and uses Laravel Sanctum for authentication. All authenticated endpoints require a Bearer token in the `Authorization` header.
-
-### Base URL
-
-All API endpoints are prefixed with `/api`:
-
-```
-http://your-domain.com/api
+```bash
+git clone <repo> && cd tallypal
+composer install && npm install
+cp .env.example .env && php artisan key:generate
+touch database/database.sqlite && php artisan migrate
+npm run build
 ```
 
-### Authentication
-
-The API uses Laravel Sanctum for token-based authentication:
-
-1. **Register**: `POST /api/register`
-2. **Login**: `POST /api/login`
-3. **Get User**: `GET /api/user` (requires authentication)
-4. **Logout**: `POST /api/logout` (requires authentication)
-
-After login/register, include the token in requests:
-```
-Authorization: Bearer {token}
-```
-
-### Main Resources
-
-The API provides the following main resource endpoints:
-
-- **Tallies** (`/api/tallies`): Manage financial tallies
-- **Transactions** (`/api/tallies/{tally}/transactions`): Manage transactions within a tally
-- **Tally Shares** (`/api/tallies/{tally}/shares`): Manage user shares for a tally
-
-All resource endpoints follow RESTful conventions (GET, POST, PUT, PATCH, DELETE).
-
-## Database Schema
-
-### Core Tables
-
-- **users**: User accounts
-- **tallies**: Financial tallies (owned by users)
-- **tally_user**: Pivot table for shared tallies with default share percentages
-- **transactions**: Income and expense transactions
-- **categories**: Transaction categories
-- **currencies**: Supported currencies
-
-### Relationships
-
-- A `Tally` belongs to a `User` (owner)
-- A `Tally` can be shared with multiple `User`s (many-to-many)
-- A `Transaction` belongs to a `Tally`, `User` (party), `Category`, and `Currency`
-- Transactions can be either `income` or `expense` type
-
-## Development
-
-### Running the Development Server
+Start everything at once (Laravel + Vite + queue worker + log viewer):
 
 ```bash
 composer run dev
 ```
 
-This starts:
-- Laravel development server
-- Queue worker
-- Log viewer (Pail)
-- Vite dev server
+---
 
-### Code Quality
+## 📁 Project Structure
 
-**Linting:**
-```bash
-composer run lint
+```
+app/
+├── Actions/       # Single-purpose business logic
+├── DTOs/          # Typed data transfer objects
+├── Enums/         # PHP 8.1+ enums
+├── Http/
+│   └── Controllers/   # Inertia pages + API endpoints
+├── Models/
+├── Policies/
+├── Repositories/
+└── Services/
+
+resources/js/
+├── pages/         # Inertia Vue pages
+├── components/    # Shared Vue components
+└── layouts/
 ```
 
-**Type Checking:**
-```bash
-composer run test:types
-```
+---
 
-**Refactoring Check:**
-```bash
-composer run test:refactor
-```
+## 📐 Conventions
 
-**Run All Checks:**
-```bash
-composer run test
-```
+- **Actions** over fat controllers — one class, one job
+- **DTOs** for structured data across layers
+- **Repositories** for data access
+- **Wayfinder** for frontend routes — import from `@/actions/` or `@/routes/`, never hardcode URLs
+- **Inertia** for all UI responses — no Blade templates, no manual JSON for page data
+- Named routes everywhere via `route()` helper
+- PHP 8 constructor property promotion + explicit return types throughout
 
-### Testing
+---
 
-Run tests with Pest:
+## ✅ Code Quality
 
 ```bash
-# Run all tests
-php artisan test
+composer test              # full suite: lint + types + refactor + tests + mutation tests
+composer run lint          # auto-format with Pint
+composer run test:types    # PHPStan static analysis
+composer run test:unit     # Pest with coverage (≥90% required)
 
-# Run specific test file
-php artisan test tests/Feature/Auth/LoginTest.php
-
-# Run with coverage
-php artisan test --coverage
+npm run lint               # Prettier + ESLint fix
 ```
 
-The test suite includes:
-- Feature tests for API endpoints
-- Unit tests for actions, DTOs, and models
-- Authentication and authorization tests
+---
 
-## Key Features
-
-### Tally Management
-- Create, read, update, and delete tallies
-- Each tally has an owner and can be shared with multiple users
-- Shared users have configurable default share percentages
-
-### Transaction Tracking
-- Track income and expense transactions
-- Associate transactions with categories and currencies
-- Link transactions to specific parties (users)
-- Filter and paginate transactions
-
-### Sharing System
-- Share tallies with other users by email
-- Update share percentages for collaborative expenses
-- Remove users from shared tallies
-
-## License
+## 📄 License
 
 MIT
-
-## Contributing
-
-1. Follow the existing code style (enforced by Laravel Pint)
-2. Write tests for new features
-3. Ensure all tests pass before submitting
-4. Follow Laravel best practices and conventions
