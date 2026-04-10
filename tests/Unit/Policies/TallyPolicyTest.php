@@ -54,13 +54,13 @@ it('allows owner to update their tally', function () {
     expect($this->policy->update($user, $tally))->toBeTrue();
 });
 
-it('allows party member to update the tally', function () {
+it('denies party member from updating the tally', function () {
     $owner = User::factory()->create();
     $tally = Tally::factory()->create(['owner_id' => $owner->id]);
     $member = User::factory()->create();
     $tally->users()->attach($member->id);
 
-    expect($this->policy->update($member, $tally))->toBeTrue();
+    expect($this->policy->update($member, $tally))->toBeFalse();
 });
 
 it('allows owner to delete their tally', function () {

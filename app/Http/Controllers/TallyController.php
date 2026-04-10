@@ -14,6 +14,7 @@ use App\Http\Requests\Tally\UpdateTallyRequest;
 use App\Models\Tally;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -32,15 +33,22 @@ final class TallyController extends Controller
                     ->orWhereHas('users', fn ($query) => $query->where('user_id', $userId));
             })
             ->with(['owner'])
-            ->withSum(['transactions as income_total' => fn (\Illuminate\Contracts\Database\Eloquent\Builder $query) => $query->where('type', 'income')], 'amount')
-            ->withSum(['transactions as expense_total' => fn (\Illuminate\Contracts\Database\Eloquent\Builder $query) => $query->where('type', 'expense')], 'amount')
+            ->addSelect([
+                'income_total' => DB::table('transactions')
+                    ->join('currencies', 'transactions.currency_id', '=', 'currencies.currency_id')
+                    ->selectRaw('COALESCE(SUM(transactions.amount / POWER(10, currencies.decimals)), 0)')
+                    ->whereColumn('transactions.tally_id', 'tallies.tally_id')
+                    ->where('transactions.type', 'income'),
+                'expense_total' => DB::table('transactions')
+                    ->join('currencies', 'transactions.currency_id', '=', 'currencies.currency_id')
+                    ->selectRaw('COALESCE(SUM(transactions.amount / POWER(10, currencies.decimals)), 0)')
+                    ->whereColumn('transactions.tally_id', 'tallies.tally_id')
+                    ->where('transactions.type', 'expense'),
+            ])
             ->get()
             ->map(function (Tally $tally): Tally {
-                $incomeTotal = $tally->income_total;
-                $tally->income_total = (is_numeric($incomeTotal) ? (float) $incomeTotal : 0.0) / 100; // @pest-mutate-ignore
-
-                $expenseTotal = $tally->expense_total;
-                $tally->expense_total = (is_numeric($expenseTotal) ? (float) $expenseTotal : 0.0) / 100; // @pest-mutate-ignore
+                $tally->income_total = (float) ($tally->income_total ?? 0); // @pest-mutate-ignore
+                $tally->expense_total = (float) ($tally->expense_total ?? 0); // @pest-mutate-ignore
 
                 return $tally;
             });

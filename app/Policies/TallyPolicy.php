@@ -38,7 +38,7 @@ class TallyPolicy
      */
     public function update(User $user, Tally $tally): bool
     {
-        return $this->isOwnerOrParty($user, $tally);
+        return (int) $tally->owner_id === (int) $user->id; // @pest-mutate-ignore
     }
 
     /**

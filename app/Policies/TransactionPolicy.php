@@ -23,7 +23,9 @@ class TransactionPolicy
      */
     public function view(User $user, Transaction $transaction): bool
     {
-        return $this->isOwnerOrPartyOfTally($user, $transaction->tally()->firstOrFail());
+        $tally = $transaction->tally;
+
+        return $tally instanceof Tally && $this->isOwnerOrPartyOfTally($user, $tally);
     }
 
     /**
@@ -39,7 +41,9 @@ class TransactionPolicy
      */
     public function update(User $user, Transaction $transaction): bool
     {
-        return $this->isOwnerOrPartyOfTally($user, $transaction->tally()->firstOrFail());
+        $tally = $transaction->tally;
+
+        return $tally instanceof Tally && $this->isOwnerOrPartyOfTally($user, $tally);
     }
 
     /**
@@ -47,7 +51,9 @@ class TransactionPolicy
      */
     public function delete(User $user, Transaction $transaction): bool
     {
-        return $this->isOwnerOrPartyOfTally($user, $transaction->tally()->firstOrFail());
+        $tally = $transaction->tally;
+
+        return $tally instanceof Tally && $this->isOwnerOrPartyOfTally($user, $tally);
     }
 
     /**
@@ -55,7 +61,9 @@ class TransactionPolicy
      */
     public function restore(User $user, Transaction $transaction): bool
     {
-        return $this->isOwnerOrPartyOfTally($user, $transaction->tally()->firstOrFail());
+        $tally = $transaction->tally;
+
+        return $tally instanceof Tally && $this->isOwnerOrPartyOfTally($user, $tally);
     }
 
     /**
@@ -63,7 +71,9 @@ class TransactionPolicy
      */
     public function forceDelete(User $user, Transaction $transaction): bool
     {
-        return $this->isOwnerOrPartyOfTally($user, $transaction->tally()->firstOrFail());
+        $tally = $transaction->tally;
+
+        return $tally instanceof Tally && $this->isOwnerOrPartyOfTally($user, $tally);
     }
 
     private function isOwnerOrPartyOfTally(User $user, Tally $tally): bool

@@ -43,6 +43,7 @@ it('displays the transaction edit page', function () {
 it('updates a transaction via web route', function () {
     $user = User::factory()->create();
     $tally = Tally::factory()->create(['owner_id' => $user->id]);
+    $tally->users()->attach($user->id, ['default_share_percentage' => 100]);
     $currency = Currency::where('code', 'USD')->first() ?? Currency::factory()->create(['decimals' => 2]);
     $transaction = Transaction::factory()->forTally($tally)->withCurrency($currency)->create();
 

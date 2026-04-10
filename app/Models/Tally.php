@@ -18,8 +18,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $name
  * @property string $description
  * @property int $owner_id
- * @property mixed $income_total
- * @property mixed $expense_total
+ * @property float|null $income_total
+ * @property float|null $expense_total
  */
 class Tally extends Model
 {
