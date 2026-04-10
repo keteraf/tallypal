@@ -368,11 +368,7 @@ const getInitials = (name: string) => {
                         {{ $t('tallies.share.no_collaborators') }}
                     </div>
                     <div v-else class="max-h-75">
-                        <div
-                            v-for="collaborator in collaborators"
-                            :key="collaborator.id"
-                            class="flex items-center justify-between border-b py-3"
-                        >
+                        <div v-for="collaborator in collaborators" :key="collaborator.id" class="flex items-center justify-between border-b py-3">
                             <div class="flex min-w-0 flex-1 items-center gap-3">
                                 <Avatar class="h-8 w-8 shrink-0">
                                     <AvatarFallback>{{ getInitials(collaborator.name) }}</AvatarFallback>
@@ -388,7 +384,7 @@ const getInitials = (name: string) => {
                                         v-model.number="collaborator.percentage"
                                         type="number"
                                         step="0.01"
-                                        class="h-8 pr-7 text-right w-full"
+                                        class="h-8 w-full pr-7 text-right"
                                         min="0"
                                         max="100"
                                     />
