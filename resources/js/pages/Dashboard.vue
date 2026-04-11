@@ -61,7 +61,7 @@ const formatXTick = (d: number | Date) => {
     <Head :title="$t('common.dashboard')" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="flex h-full flex-1 flex-col gap-6 p-4">
+        <div class="flex flex-col gap-6 p-4">
             <!-- Stat tiles -->
             <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <Card>
@@ -125,9 +125,10 @@ const formatXTick = (d: number | Date) => {
                         <CardDescription>{{ $t('dashboard.last_30_days') }}</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div class="h-52">
+                        <div class="w-full overflow-hidden">
                             <VisXYContainer
                                 :data="usersChartData"
+                                :height="208"
                                 :margin="{ left: 40, right: 8, top: 8, bottom: 24 }"
                                 :y-domain="[0, undefined]"
                             >
@@ -153,9 +154,10 @@ const formatXTick = (d: number | Date) => {
                         <CardDescription>{{ $t('dashboard.last_30_days') }}</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div class="h-52">
+                        <div class="w-full overflow-hidden">
                             <VisXYContainer
                                 :data="talliesChartData"
+                                :height="208"
                                 :margin="{ left: 40, right: 8, top: 8, bottom: 24 }"
                                 :y-domain="[0, undefined]"
                             >
@@ -181,9 +183,10 @@ const formatXTick = (d: number | Date) => {
                         <CardDescription>{{ $t('dashboard.last_30_days') }}</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div class="h-52">
+                        <div class="w-full overflow-hidden">
                             <VisXYContainer
                                 :data="transactionsChartData"
+                                :height="208"
                                 :margin="{ left: 40, right: 8, top: 8, bottom: 24 }"
                                 :y-domain="[0, undefined]"
                             >
