@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import InputError from '@/components/InputError.vue';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useForm } from '@inertiajs/vue3';
 import { Loader2, Plus, Share2, Trash2, X } from 'lucide-vue-next';
@@ -26,12 +24,7 @@ interface PendingInvitation {
     email: string;
     status: string;
     expires_at: string | null;
-    invited_by: {
-        id: number;
-        uuid: string;
-        name: string;
-        email: string;
-    };
+    invited_by: { id: number; uuid: string; name: string; email: string };
 }
 
 const props = defineProps<{
@@ -61,10 +54,8 @@ const newCollaboratorEmail = ref('');
 const errors = ref<Record<string, string[]>>({});
 const successMessage = ref('');
 
-// Inertia forms
 const inviteForm = useForm<{ email: string }>({ email: '' });
 
-// Helper to read Sanctum's XSRF token from cookie for API requests
 const getXsrfToken = (): string => {
     const name = 'XSRF-TOKEN=';
     const decodedCookie = decodeURIComponent(document.cookie);
@@ -153,10 +144,7 @@ const cancelInvitation = async (invitationUuid: string) => {
             }),
             {
                 method: 'DELETE',
-                headers: {
-                    Accept: 'application/json',
-                    'X-XSRF-TOKEN': getXsrfToken(),
-                },
+                headers: { Accept: 'application/json', 'X-XSRF-TOKEN': getXsrfToken() },
             },
         );
 
@@ -186,10 +174,7 @@ const removeCollaborator = async (collaboratorUuid: string) => {
             }),
             {
                 method: 'DELETE',
-                headers: {
-                    Accept: 'application/json',
-                    'X-XSRF-TOKEN': getXsrfToken(),
-                },
+                headers: { Accept: 'application/json', 'X-XSRF-TOKEN': getXsrfToken() },
             },
         );
 
@@ -274,132 +259,140 @@ const getInitials = (name: string) => {
 
 <template>
     <Dialog v-model:open="isOpen">
-        <DialogContent class="sm:max-w-[425px]">
+        <DialogContent class="sm:max-w-[520px]">
             <DialogHeader>
-                <DialogTitle class="flex items-center gap-2">
-                    <Share2 class="h-5 w-5" />
-                    {{ $t('tallies.share.title', { name: tally?.name }) }}
+                <DialogTitle class="flex items-center gap-3">
+                    <span class="text-brand"><Share2 class="size-[18px]" /></span>
+                    {{ $t('tallies.share.title_lead') }}
+                    <em class="not-italic-[0]" style="font-style: italic; color: var(--brand)">{{ tally?.name }}</em>
                 </DialogTitle>
-                <DialogDescription>
-                    {{ $t('tallies.share.description') }}
-                </DialogDescription>
+                <DialogDescription>{{ $t('tallies.share.description') }}</DialogDescription>
             </DialogHeader>
 
-            <div class="grid gap-4 py-4 sm:gap-6">
-                <div class="space-y-2">
-                    <Label for="email">{{ $t('tallies.share.invite_collaborator') }}</Label>
-                    <div class="flex flex-col gap-2 sm:flex-row">
+            <div class="px-7 py-6">
+                <div class="mb-7 flex flex-col gap-2">
+                    <label for="email" class="eyebrow">{{ $t('tallies.share.invite_collaborator') }}</label>
+                    <div class="grid grid-cols-[1fr_auto] items-end gap-3">
                         <Input
                             id="email"
                             v-model="newCollaboratorEmail"
                             :placeholder="$t('common.placeholder.email')"
                             type="email"
                             :disabled="isInviting"
-                            class="flex-1"
+                            class="text-sm"
                             @keyup.enter="addCollaborator"
                         />
                         <Button
+                            variant="ghost"
+                            type="button"
                             :disabled="isInviting || inviteForm.processing || !newCollaboratorEmail"
-                            class="w-full sm:w-auto"
                             @click="addCollaborator"
                         >
-                            <Loader2 v-if="isInviting || inviteForm.processing" class="mr-2 h-4 w-4 animate-spin" />
-                            <Plus v-else class="mr-2 h-4 w-4" />
+                            <Loader2 v-if="isInviting || inviteForm.processing" class="size-4 animate-spin" />
+                            <Plus v-else class="size-4" />
                             {{ $t('tallies.share.invite_button') }}
                         </Button>
                     </div>
                     <InputError v-if="errors.email" :message="errors.email[0]" />
-                    <p v-if="successMessage" class="text-sm text-green-600">{{ successMessage }}</p>
+                    <p v-if="successMessage" class="text-sm text-pos">{{ successMessage }}</p>
                 </div>
 
-                <!-- Pending Invitations -->
-                <div v-if="isLoading || pendingInvitations.length > 0" class="space-y-3">
-                    <Label>{{ $t('tallies.share.pending_invitations') }}</Label>
+                <div v-if="isLoading || pendingInvitations.length > 0" class="mb-7">
+                    <h6 class="eyebrow mb-3">{{ $t('tallies.share.pending_invitations') }}</h6>
                     <div v-if="isLoading" class="space-y-2">
-                        <div v-for="i in 2" :key="i" class="flex items-center justify-between gap-3 border-b py-2 last:border-0">
+                        <div
+                            v-for="i in 2"
+                            :key="i"
+                            class="flex items-center justify-between gap-3 border-t border-rule-2 py-3 last:border-b last:border-rule-2"
+                        >
                             <Skeleton class="h-4 w-40" />
                             <Skeleton class="h-7 w-7 rounded-full" />
                         </div>
                     </div>
-                    <div v-else class="space-y-0">
+                    <div v-else>
                         <div
                             v-for="invitation in pendingInvitations"
                             :key="invitation.uuid"
-                            class="flex items-center justify-between gap-3 border-b py-2 last:border-0"
+                            class="flex items-center justify-between gap-3 border-t border-rule-2 py-3 last:border-b last:border-rule-2"
                         >
-                            <div class="flex min-w-0 items-center gap-2">
-                                <p class="truncate text-sm text-muted-foreground">{{ invitation.email }}</p>
-                                <span class="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+                            <div class="flex min-w-0 items-center gap-3">
+                                <p class="truncate text-sm text-foreground">{{ invitation.email }}</p>
+                                <span
+                                    class="shrink-0 rounded-full border border-rule px-2 py-0.5 font-mono text-[10px] tracking-[0.1em] text-muted-foreground uppercase"
+                                >
                                     {{ $t('tallies.share.invitation_pending_badge') }}
                                 </span>
                             </div>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                class="h-7 w-7 shrink-0 text-muted-foreground hover:text-red-600"
+                            <button
+                                type="button"
+                                class="inline-flex size-7 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-paper-2 hover:text-neg"
                                 :disabled="isCancellingInvitation === invitation.uuid"
                                 :title="$t('tallies.share.cancel_invitation')"
                                 @click="cancelInvitation(invitation.uuid)"
                             >
-                                <Loader2 v-if="isCancellingInvitation === invitation.uuid" class="h-3.5 w-3.5 animate-spin" />
-                                <X v-else class="h-3.5 w-3.5" />
-                            </Button>
+                                <Loader2 v-if="isCancellingInvitation === invitation.uuid" class="size-3.5 animate-spin" />
+                                <X v-else class="size-3.5" />
+                            </button>
                         </div>
                     </div>
                 </div>
 
-                <div class="space-y-4">
-                    <Label>{{ $t('tallies.share.collaborators') }}</Label>
+                <div>
+                    <h6 class="eyebrow mb-3">{{ $t('tallies.share.collaborators') }}</h6>
                     <div v-if="isLoading" class="space-y-3">
-                        <div v-for="i in 3" :key="i" class="flex items-center justify-between gap-3 border-b py-3 last:border-0">
+                        <div
+                            v-for="i in 3"
+                            :key="i"
+                            class="flex items-center justify-between gap-3 border-t border-rule-2 py-3.5 last:border-b last:border-rule-2"
+                        >
                             <div class="flex min-w-0 items-center gap-3">
-                                <Skeleton class="h-8 w-8 shrink-0 rounded-full" />
+                                <Skeleton class="size-9 shrink-0 rounded-full" />
                                 <div class="min-w-0 space-y-2">
-                                    <Skeleton class="h-4 w-24" />
-                                    <Skeleton class="h-3 w-16" />
+                                    <Skeleton class="h-3 w-24" />
+                                    <Skeleton class="h-2 w-16" />
                                 </div>
                             </div>
-                            <div class="flex shrink-0 items-center gap-2">
-                                <Skeleton class="h-8 w-24" />
-                            </div>
+                            <Skeleton class="h-7 w-20 rounded-sm" />
                         </div>
                     </div>
-                    <div v-else-if="collaborators.length === 0" class="py-4 text-center text-sm text-gray-500">
+                    <div v-else-if="collaborators.length === 0" class="border-t border-rule-2 py-4 text-center text-sm text-muted-foreground">
                         {{ $t('tallies.share.no_collaborators') }}
                     </div>
-                    <div v-else class="max-h-75">
-                        <div v-for="collaborator in collaborators" :key="collaborator.id" class="flex items-center justify-between border-b py-3">
-                            <div class="flex min-w-0 flex-1 items-center gap-3">
-                                <Avatar class="h-8 w-8 shrink-0">
-                                    <AvatarFallback>{{ getInitials(collaborator.name) }}</AvatarFallback>
-                                </Avatar>
-                                <div class="min-w-0 flex-1">
-                                    <p class="truncate text-sm leading-none font-medium">{{ collaborator.name }}</p>
-                                    <p class="mt-1 truncate text-xs text-gray-500">{{ collaborator.email }}</p>
-                                </div>
+                    <div v-else>
+                        <div
+                            v-for="collaborator in collaborators"
+                            :key="collaborator.id"
+                            class="grid grid-cols-[auto_1fr_auto] items-center gap-3.5 border-t border-rule-2 py-3.5 last:border-b last:border-rule-2"
+                        >
+                            <span
+                                class="inline-flex size-9 items-center justify-center rounded-full border border-brand/20 bg-brand-soft font-mono text-[13px] font-medium text-brand"
+                            >
+                                {{ getInitials(collaborator.name) }}
+                            </span>
+                            <div class="min-w-0">
+                                <p class="truncate font-medium text-foreground">{{ collaborator.name }}</p>
+                                <p class="truncate font-mono text-[12px] tracking-[0.02em] text-muted-foreground">{{ collaborator.email }}</p>
                             </div>
-                            <div class="flex shrink-0 items-center">
-                                <div class="relative w-20">
-                                    <Input
+                            <div class="flex items-center">
+                                <div class="inline-flex items-center rounded-sm border border-rule px-3 py-1.5">
+                                    <input
                                         v-model.number="collaborator.percentage"
                                         type="number"
                                         step="0.01"
-                                        class="h-8 w-full pr-7 text-right"
                                         min="0"
                                         max="100"
+                                        class="tabular w-12 border-0 bg-transparent text-right font-mono text-sm text-foreground outline-none"
                                     />
-                                    <span class="absolute top-1/2 right-2.5 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+                                    <span class="font-mono text-[13px] text-muted-foreground">%</span>
                                 </div>
-                                <div v-if="collaborator.id !== tally?.owner_id" class="flex w-8 justify-center">
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        class="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
-                                        @click="removeCollaborator(collaborator.uuid)"
-                                    >
-                                        <Trash2 class="h-4 w-4" />
-                                    </Button>
-                                </div>
+                                <button
+                                    v-if="collaborator.id !== tally?.owner_id"
+                                    type="button"
+                                    class="ml-1 inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-paper-2 hover:text-neg"
+                                    @click="removeCollaborator(collaborator.uuid)"
+                                >
+                                    <Trash2 class="size-4" />
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -407,19 +400,14 @@ const getInitials = (name: string) => {
                 </div>
             </div>
 
-            <DialogFooter class="flex flex-col items-start gap-4 border-t pt-4 sm:flex-row sm:items-center sm:justify-start">
-                <div class="flex flex-col items-start sm:w-full">
-                    <span class="text-sm font-medium" :class="isPercentageValid ? 'text-green-600' : 'text-red-600'">
-                        {{ $t('tallies.share.total', { total: totalPercentage }) }}
-                    </span>
-                    <span v-if="!isPercentageValid" class="text-[10px] text-red-500">
-                        {{ $t('tallies.share.must_equal_100') }}
-                    </span>
-                </div>
-                <div class="flex gap-2 sm:w-auto">
-                    <Button variant="outline" class="sm:flex-none" @click="isOpen = false">{{ $t('common.cancel') }}</Button>
-                    <Button :disabled="!isPercentageValid || isSaving || isLoading" class="sm:flex-none" @click="saveShares">
-                        <Loader2 v-if="isSaving" class="mr-2 h-4 w-4 animate-spin" />
+            <DialogFooter class="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <span class="font-mono text-[13px] tracking-[0.04em]" :class="isPercentageValid ? 'text-pos' : 'text-neg'">
+                    {{ $t('tallies.share.total', { total: totalPercentage }) }}
+                </span>
+                <div class="flex gap-2">
+                    <Button variant="ghost" type="button" @click="isOpen = false">{{ $t('common.cancel') }}</Button>
+                    <Button :disabled="!isPercentageValid || isSaving || isLoading" type="button" @click="saveShares">
+                        <Loader2 v-if="isSaving" class="size-4 animate-spin" />
                         {{ $t('tallies.share.save_changes') }}
                     </Button>
                 </div>

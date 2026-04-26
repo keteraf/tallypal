@@ -26,3 +26,4 @@ yarn-error.log
 /resources/js/actions/
 /resources/js/routes/
 /.output.txt
+/docs/

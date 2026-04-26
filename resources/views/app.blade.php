@@ -23,12 +23,7 @@
         {{-- Inline style to set the HTML background color based on our theme in app.css --}}
         <style>
             html {
-                background-color: oklch(1 0 0);
-            }
-
-            html.dark {
-                background-color: oklch(0.145 0 0);
-                color-scheme: dark;
+                background-color: oklch(0.985 0.005 85);
             }
 
             .beta-ribbon-layer {
@@ -49,12 +44,13 @@
                 transform: rotate(45deg);
                 transform-origin: center;
                 text-align: center;
-                font-size: 0.65rem;
-                font-weight: 700;
-                letter-spacing: 0.08em;
-                color: oklch(0.98 0.02 95);
-                background: oklch(0.62 0.18 45);
-                box-shadow: 0 8px 20px oklch(0 0 0 / 0.28);
+                font-size: 0.6rem;
+                font-weight: 500;
+                letter-spacing: 0.14em;
+                font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+                color: oklch(0.985 0.005 85);
+                background: oklch(0.62 0.14 35);
+                box-shadow: 0 8px 20px oklch(0 0 0 / 0.18);
             }
 
             @media (max-width: 640px) {
@@ -62,7 +58,7 @@
                     width: 6.5rem;
                     top: 0.9rem;
                     right: -1.75rem;
-                    font-size: 0.58rem;
+                    font-size: 0.55rem;
                     padding: 0.3rem 0;
                 }
             }
@@ -76,7 +72,7 @@
 
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Afacad+Flux:wght@100..1000&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Geist:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
         @routes
         @vite(['resources/js/app.ts', "resources/js/pages/{$page['component']}.vue"])

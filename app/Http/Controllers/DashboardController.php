@@ -22,7 +22,7 @@ final class DashboardController extends Controller
     public function __invoke(): Response|RedirectResponse
     {
         if (! auth()->user()?->hasRole('Super Admin')) {
-            return redirect()->route('tallies.index');
+            return redirect()->route('home.dashboard');
         }
 
         $since = now()->subDays(29)->startOfDay();

@@ -8,11 +8,15 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-    --font-sans: 'Afacad Flux', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-serif: 'Newsreader', 'Times New Roman', Georgia, serif;
+    --font-sans:
+        'Geist', ui-sans-serif, system-ui, -apple-system, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
 
     --radius-lg: var(--radius);
-    --radius-md: calc(var(--radius) - 2px);
-    --radius-sm: calc(var(--radius) - 4px);
+    --radius-md: calc(var(--radius) - 1px);
+    --radius-sm: calc(var(--radius) - 2px);
+    --radius-xl: calc(var(--radius) + 4px);
 
     --color-background: var(--background);
     --color-foreground: var(--foreground);
@@ -56,15 +60,24 @@
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
+
+    /* design-system tokens */
+    --color-paper: var(--paper);
+    --color-paper-2: var(--paper-2);
+    --color-ink: var(--ink);
+    --color-ink-2: var(--ink-2);
+    --color-ink-3: var(--ink-3);
+    --color-rule: var(--rule);
+    --color-rule-2: var(--rule-2);
+    --color-brand: var(--brand);
+    --color-brand-soft: var(--brand-soft);
+    --color-pos: var(--pos);
+    --color-neg: var(--neg);
 }
 
 /*
   The default border color has changed to `currentColor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
+  so we've added these compatibility styles to keep visual parity with v3.
 */
 @layer base {
     *,
@@ -72,89 +85,112 @@
     ::before,
     ::backdrop,
     ::file-selector-button {
-        border-color: var(--color-gray-200, currentColor);
-    }
-}
-
-@layer utilities {
-    body,
-    html {
-        --font-sans:
-            'Afacad Flux', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+        border-color: var(--rule, currentColor);
     }
 }
 
 :root {
-    --background: hsl(0 0% 100%);
-    --foreground: hsl(0 0% 3.9%);
-    --card: hsl(0 0% 100%);
-    --card-foreground: hsl(0 0% 3.9%);
-    --popover: hsl(0 0% 100%);
-    --popover-foreground: hsl(0 0% 3.9%);
-    --primary: hsl(0 0% 9%);
-    --primary-foreground: hsl(0 0% 98%);
-    --secondary: hsl(0 0% 92.1%);
-    --secondary-foreground: hsl(0 0% 9%);
-    --muted: hsl(0 0% 96.1%);
-    --muted-foreground: hsl(0 0% 45.1%);
-    --accent: hsl(0 0% 96.1%);
-    --accent-foreground: hsl(0 0% 9%);
-    --destructive: hsl(0 84.2% 60.2%);
-    --destructive-foreground: hsl(0 0% 98%);
-    --border: hsl(0 0% 92.8%);
-    --input: hsl(0 0% 89.8%);
-    --ring: hsl(0 0% 3.9%);
-    --chart-1: hsl(12 76% 61%);
-    --chart-2: hsl(173 58% 39%);
-    --chart-3: hsl(197 37% 24%);
-    --chart-4: hsl(43 74% 66%);
-    --chart-5: hsl(27 87% 67%);
-    --radius: 0.5rem;
-    --sidebar-background: hsl(0 0% 98%);
-    --sidebar-foreground: hsl(240 5.3% 26.1%);
-    --sidebar-primary: hsl(0 0% 10%);
-    --sidebar-primary-foreground: hsl(0 0% 98%);
-    --sidebar-accent: hsl(0 0% 94%);
-    --sidebar-accent-foreground: hsl(0 0% 30%);
-    --sidebar-border: hsl(0 0% 91%);
-    --sidebar-ring: hsl(217.2 91.2% 59.8%);
-    --sidebar: hsl(0 0% 98%);
+    /* design tokens — light */
+    --paper: oklch(0.985 0.005 85);
+    --paper-2: oklch(0.965 0.006 85);
+    --ink: oklch(0.18 0.01 60);
+    --ink-2: oklch(0.38 0.01 60);
+    --ink-3: oklch(0.58 0.01 60);
+    --rule: oklch(0.88 0.008 70);
+    --rule-2: oklch(0.93 0.006 70);
+    --brand: oklch(0.62 0.14 35);
+    --brand-soft: oklch(0.94 0.04 50);
+    --pos: oklch(0.55 0.11 150);
+    --neg: oklch(0.55 0.16 25);
+
+    /* shadcn-aliased semantic tokens */
+    --background: var(--paper);
+    --foreground: var(--ink);
+    --card: var(--paper);
+    --card-foreground: var(--ink);
+    --popover: var(--paper);
+    --popover-foreground: var(--ink);
+    --primary: var(--ink);
+    --primary-foreground: var(--paper);
+    --secondary: var(--paper-2);
+    --secondary-foreground: var(--ink);
+    --muted: var(--paper-2);
+    --muted-foreground: var(--ink-3);
+    --accent: var(--paper-2);
+    --accent-foreground: var(--ink);
+    --destructive: var(--neg);
+    --destructive-foreground: var(--paper);
+    --border: var(--rule);
+    --input: var(--rule);
+    --ring: var(--brand);
+
+    --chart-1: oklch(0.62 0.14 35);
+    --chart-2: oklch(0.55 0.12 220);
+    --chart-3: oklch(0.5 0.12 145);
+    --chart-4: oklch(0.55 0.14 290);
+    --chart-5: oklch(0.6 0.13 80);
+
+    --radius: 0.25rem;
+
+    --sidebar-background: var(--paper);
+    --sidebar-foreground: var(--ink-2);
+    --sidebar-primary: var(--ink);
+    --sidebar-primary-foreground: var(--paper);
+    --sidebar-accent: var(--paper-2);
+    --sidebar-accent-foreground: var(--ink);
+    --sidebar-border: var(--rule-2);
+    --sidebar-ring: var(--brand);
+    --sidebar: var(--paper);
 }
 
 .dark {
-    --background: hsl(0 0% 3.9%);
-    --foreground: hsl(0 0% 98%);
-    --card: hsl(0 0% 3.9%);
-    --card-foreground: hsl(0 0% 98%);
-    --popover: hsl(0 0% 3.9%);
-    --popover-foreground: 0 0% 98%;
-    --primary: hsl(0 0% 98%);
-    --primary-foreground: hsl(0 0% 9%);
-    --secondary: hsl(0 0% 14.9%);
-    --secondary-foreground: hsl(0 0% 98%);
-    --muted: hsl(0 0% 16.08%);
-    --muted-foreground: hsl(0 0% 63.9%);
-    --accent: hsl(0 0% 14.9%);
-    --accent-foreground: hsl(0 0% 98%);
-    --destructive: hsl(0 84% 60%);
-    --destructive-foreground: hsl(0 0% 98%);
-    --border: hsl(0 0% 14.9%);
-    --input: hsl(0 0% 14.9%);
-    --ring: hsl(0 0% 83.1%);
-    --chart-1: hsl(220 70% 50%);
-    --chart-2: hsl(160 60% 45%);
-    --chart-3: hsl(30 80% 55%);
-    --chart-4: hsl(280 65% 60%);
-    --chart-5: hsl(340 75% 55%);
-    --sidebar-background: hsl(0 0% 7%);
-    --sidebar-foreground: hsl(0 0% 95.9%);
-    --sidebar-primary: hsl(360, 100%, 100%);
-    --sidebar-primary-foreground: hsl(0 0% 100%);
-    --sidebar-accent: hsl(0 0% 15.9%);
-    --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
-    --sidebar-border: hsl(0 0% 15.9%);
-    --sidebar-ring: hsl(217.2 91.2% 59.8%);
-    --sidebar: hsl(240 5.9% 10%);
+    --paper: oklch(0.14 0.008 60);
+    --paper-2: oklch(0.18 0.008 60);
+    --ink: oklch(0.95 0.005 85);
+    --ink-2: oklch(0.78 0.008 80);
+    --ink-3: oklch(0.58 0.008 80);
+    --rule: oklch(0.28 0.008 60);
+    --rule-2: oklch(0.22 0.008 60);
+    --brand: oklch(0.74 0.13 38);
+    --brand-soft: oklch(0.28 0.06 40);
+    --pos: oklch(0.78 0.13 150);
+    --neg: oklch(0.74 0.16 25);
+
+    --background: var(--paper);
+    --foreground: var(--ink);
+    --card: var(--paper);
+    --card-foreground: var(--ink);
+    --popover: var(--paper);
+    --popover-foreground: var(--ink);
+    --primary: var(--ink);
+    --primary-foreground: var(--paper);
+    --secondary: var(--paper-2);
+    --secondary-foreground: var(--ink);
+    --muted: var(--paper-2);
+    --muted-foreground: var(--ink-3);
+    --accent: var(--paper-2);
+    --accent-foreground: var(--ink);
+    --destructive: var(--neg);
+    --destructive-foreground: var(--paper);
+    --border: var(--rule);
+    --input: var(--rule);
+    --ring: var(--brand);
+
+    --chart-1: oklch(0.74 0.13 38);
+    --chart-2: oklch(0.7 0.13 220);
+    --chart-3: oklch(0.7 0.12 145);
+    --chart-4: oklch(0.7 0.13 290);
+    --chart-5: oklch(0.72 0.12 80);
+
+    --sidebar-background: var(--paper);
+    --sidebar-foreground: var(--ink-2);
+    --sidebar-primary: var(--ink);
+    --sidebar-primary-foreground: var(--paper);
+    --sidebar-accent: var(--paper-2);
+    --sidebar-accent-foreground: var(--ink);
+    --sidebar-border: var(--rule-2);
+    --sidebar-ring: var(--brand);
+    --sidebar: var(--paper);
 }
 
 @layer base {
@@ -163,5 +199,34 @@
     }
     body {
         @apply bg-background text-foreground;
+        font-family: var(--font-sans), sans-serif;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+    }
+    ::selection {
+        background: var(--brand);
+        color: var(--paper);
+    }
+}
+
+@layer utilities {
+    .font-serif {
+        font-family: var(--font-serif), serif;
+    }
+    .font-mono {
+        font-family: var(--font-mono), monospace;
+    }
+    /* Editorial mono uppercase tracker — used for labels, eyebrows, badges. */
+    .eyebrow {
+        font-family: var(--font-mono), monospace;
+        font-size: 0.6875rem;
+        line-height: 1;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--ink-3);
+    }
+    /* Tabular numerals for ledger amounts. */
+    .tabular {
+        font-variant-numeric: tabular-nums;
     }
 }

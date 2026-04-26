@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/vue3';
@@ -41,8 +40,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 type ChartPoint = { date: Date; count: number };
 
-const toChartData = (series: TimeSeriesPoint[]): ChartPoint[] =>
-    series.map((d) => ({ date: new Date(d.date), count: d.count }));
+const toChartData = (series: TimeSeriesPoint[]): ChartPoint[] => series.map((d) => ({ date: new Date(d.date), count: d.count }));
 
 const usersChartData = computed(() => toChartData(props.usersOverTime));
 const talliesChartData = computed(() => toChartData(props.talliesOverTime));
@@ -55,156 +53,156 @@ const formatXTick = (d: number | Date) => {
     const date = typeof d === 'number' ? new Date(d) : d;
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
+
+const stats = computed(() => [
+    {
+        icon: Users,
+        label: t('dashboard.total_users'),
+        value: props.stats.total_users.toLocaleString(),
+        helper: `+${props.stats.new_users_30d} ${t('dashboard.this_month')}`,
+    },
+    {
+        icon: BookOpen,
+        label: t('dashboard.total_tallies'),
+        value: props.stats.total_tallies.toLocaleString(),
+        helper: `${props.stats.shared_tallies} ${t('dashboard.shared')}`,
+    },
+    {
+        icon: ArrowLeftRight,
+        label: t('dashboard.total_transactions'),
+        value: props.stats.total_transactions.toLocaleString(),
+        helper: t('dashboard.all_time'),
+    },
+    {
+        icon: Mail,
+        label: t('dashboard.pending_invitations'),
+        value: props.stats.pending_invitations.toLocaleString(),
+        helper: t('dashboard.awaiting_response'),
+    },
+]);
 </script>
 
 <template>
     <Head :title="$t('common.dashboard')" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="flex flex-col gap-6 p-4">
-            <!-- Stat tiles -->
-            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <Card>
-                    <CardHeader class="pb-2">
-                        <div class="flex items-center gap-2">
-                            <Users class="text-muted-foreground h-4 w-4" />
-                            <CardDescription>{{ $t('dashboard.total_users') }}</CardDescription>
-                        </div>
-                        <CardTitle class="text-3xl font-bold">{{ stats.total_users.toLocaleString() }}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p class="text-muted-foreground text-xs">+{{ stats.new_users_30d }} {{ $t('dashboard.this_month') }}</p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader class="pb-2">
-                        <div class="flex items-center gap-2">
-                            <BookOpen class="text-muted-foreground h-4 w-4" />
-                            <CardDescription>{{ $t('dashboard.total_tallies') }}</CardDescription>
-                        </div>
-                        <CardTitle class="text-3xl font-bold">{{ stats.total_tallies.toLocaleString() }}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p class="text-muted-foreground text-xs">{{ stats.shared_tallies }} {{ $t('dashboard.shared') }}</p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader class="pb-2">
-                        <div class="flex items-center gap-2">
-                            <ArrowLeftRight class="text-muted-foreground h-4 w-4" />
-                            <CardDescription>{{ $t('dashboard.total_transactions') }}</CardDescription>
-                        </div>
-                        <CardTitle class="text-3xl font-bold">{{ stats.total_transactions.toLocaleString() }}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p class="text-muted-foreground text-xs">{{ $t('dashboard.all_time') }}</p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader class="pb-2">
-                        <div class="flex items-center gap-2">
-                            <Mail class="text-muted-foreground h-4 w-4" />
-                            <CardDescription>{{ $t('dashboard.pending_invitations') }}</CardDescription>
-                        </div>
-                        <CardTitle class="text-3xl font-bold">{{ stats.pending_invitations.toLocaleString() }}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p class="text-muted-foreground text-xs">{{ $t('dashboard.awaiting_response') }}</p>
-                    </CardContent>
-                </Card>
+        <div class="flex flex-col gap-9 p-6 md:p-8">
+            <div class="border-b border-rule pb-6">
+                <div class="eyebrow mb-3">{{ $t('dashboard.crumb') }}</div>
+                <h1 class="m-0 font-serif text-[clamp(36px,5vw,56px)] leading-none tracking-[-0.02em]">
+                    {{ $t('dashboard.title_lead') }}
+                    <em class="not-italic-[0]" style="font-style: italic; color: var(--brand)">{{ $t('dashboard.title_em') }}</em>
+                </h1>
             </div>
 
-            <!-- Charts -->
-            <div class="grid gap-4 lg:grid-cols-3">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>{{ $t('dashboard.users_over_time') }}</CardTitle>
-                        <CardDescription>{{ $t('dashboard.last_30_days') }}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div class="w-full overflow-hidden">
-                            <VisXYContainer
-                                :data="usersChartData"
-                                :height="208"
-                                :margin="{ left: 40, right: 8, top: 8, bottom: 24 }"
-                                :y-domain="[0, undefined]"
-                            >
-                                <VisGroupedBar :x="xAccessor" :y="yAccessor" color="var(--chart-1)" :rounded-corners="4" />
-                                <VisAxis
-                                    type="x"
-                                    :x="xAccessor"
-                                    :tick-line="false"
-                                    :domain-line="false"
-                                    :grid-line="false"
-                                    :num-ticks="5"
-                                    :tick-format="formatXTick"
-                                />
-                                <VisAxis type="y" :num-ticks="3" :tick-line="false" :domain-line="false" />
-                            </VisXYContainer>
-                        </div>
-                    </CardContent>
-                </Card>
+            <div class="grid grid-cols-1 overflow-hidden rounded-sm border border-rule sm:grid-cols-2 lg:grid-cols-4">
+                <div
+                    v-for="(stat, idx) in stats"
+                    :key="stat.label"
+                    class="border-b border-rule-2 px-7 py-6"
+                    :class="{
+                        'lg:border-r': (idx + 1) % 4 !== 0,
+                        'sm:border-r sm:max-lg:border-r-0': (idx + 1) % 2 !== 0,
+                        'lg:border-b-0': idx >= stats.length - 4,
+                        'sm:max-lg:border-b-0': idx >= stats.length - 2,
+                    }"
+                >
+                    <div class="mb-3.5 flex items-center gap-2">
+                        <component :is="stat.icon" class="size-4 text-muted-foreground" />
+                        <span class="eyebrow">{{ stat.label }}</span>
+                    </div>
+                    <div class="font-serif text-[40px] leading-none tracking-[-0.02em]">{{ stat.value }}</div>
+                    <div class="mt-3 font-mono text-[12px] text-muted-foreground">{{ stat.helper }}</div>
+                </div>
+            </div>
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>{{ $t('dashboard.tallies_over_time') }}</CardTitle>
-                        <CardDescription>{{ $t('dashboard.last_30_days') }}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div class="w-full overflow-hidden">
-                            <VisXYContainer
-                                :data="talliesChartData"
-                                :height="208"
-                                :margin="{ left: 40, right: 8, top: 8, bottom: 24 }"
-                                :y-domain="[0, undefined]"
-                            >
-                                <VisGroupedBar :x="xAccessor" :y="yAccessor" color="var(--chart-2)" :rounded-corners="4" />
-                                <VisAxis
-                                    type="x"
-                                    :x="xAccessor"
-                                    :tick-line="false"
-                                    :domain-line="false"
-                                    :grid-line="false"
-                                    :num-ticks="5"
-                                    :tick-format="formatXTick"
-                                />
-                                <VisAxis type="y" :num-ticks="3" :tick-line="false" :domain-line="false" />
-                            </VisXYContainer>
-                        </div>
-                    </CardContent>
-                </Card>
+            <div class="grid gap-6 lg:grid-cols-3">
+                <section class="overflow-hidden rounded-sm border border-rule">
+                    <div class="flex items-baseline justify-between border-b border-rule-2 px-6 py-4">
+                        <span class="font-serif text-lg text-foreground italic">{{ $t('dashboard.users_over_time') }}</span>
+                        <span class="font-mono text-[10px] tracking-[0.08em] text-muted-foreground uppercase">{{
+                            $t('dashboard.last_30_days')
+                        }}</span>
+                    </div>
+                    <div class="px-4 py-4">
+                        <VisXYContainer
+                            :data="usersChartData"
+                            :height="208"
+                            :margin="{ left: 40, right: 8, top: 8, bottom: 24 }"
+                            :y-domain="[0, undefined]"
+                        >
+                            <VisGroupedBar :x="xAccessor" :y="yAccessor" color="var(--brand)" :rounded-corners="2" />
+                            <VisAxis
+                                type="x"
+                                :x="xAccessor"
+                                :tick-line="false"
+                                :domain-line="false"
+                                :grid-line="false"
+                                :num-ticks="5"
+                                :tick-format="formatXTick"
+                            />
+                            <VisAxis type="y" :num-ticks="3" :tick-line="false" :domain-line="false" />
+                        </VisXYContainer>
+                    </div>
+                </section>
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>{{ $t('dashboard.transactions_over_time') }}</CardTitle>
-                        <CardDescription>{{ $t('dashboard.last_30_days') }}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div class="w-full overflow-hidden">
-                            <VisXYContainer
-                                :data="transactionsChartData"
-                                :height="208"
-                                :margin="{ left: 40, right: 8, top: 8, bottom: 24 }"
-                                :y-domain="[0, undefined]"
-                            >
-                                <VisLine :x="xAccessor" :y="yAccessor" color="var(--chart-4)" :curve-type="CurveType.Natural" />
-                                <VisAxis
-                                    type="x"
-                                    :x="xAccessor"
-                                    :tick-line="false"
-                                    :domain-line="false"
-                                    :grid-line="false"
-                                    :num-ticks="5"
-                                    :tick-format="formatXTick"
-                                />
-                                <VisAxis type="y" :num-ticks="3" :tick-line="false" :domain-line="false" />
-                            </VisXYContainer>
-                        </div>
-                    </CardContent>
-                </Card>
+                <section class="overflow-hidden rounded-sm border border-rule">
+                    <div class="flex items-baseline justify-between border-b border-rule-2 px-6 py-4">
+                        <span class="font-serif text-lg text-foreground italic">{{ $t('dashboard.tallies_over_time') }}</span>
+                        <span class="font-mono text-[10px] tracking-[0.08em] text-muted-foreground uppercase">{{
+                            $t('dashboard.last_30_days')
+                        }}</span>
+                    </div>
+                    <div class="px-4 py-4">
+                        <VisXYContainer
+                            :data="talliesChartData"
+                            :height="208"
+                            :margin="{ left: 40, right: 8, top: 8, bottom: 24 }"
+                            :y-domain="[0, undefined]"
+                        >
+                            <VisGroupedBar :x="xAccessor" :y="yAccessor" color="var(--ink-2)" :rounded-corners="2" />
+                            <VisAxis
+                                type="x"
+                                :x="xAccessor"
+                                :tick-line="false"
+                                :domain-line="false"
+                                :grid-line="false"
+                                :num-ticks="5"
+                                :tick-format="formatXTick"
+                            />
+                            <VisAxis type="y" :num-ticks="3" :tick-line="false" :domain-line="false" />
+                        </VisXYContainer>
+                    </div>
+                </section>
+
+                <section class="overflow-hidden rounded-sm border border-rule">
+                    <div class="flex items-baseline justify-between border-b border-rule-2 px-6 py-4">
+                        <span class="font-serif text-lg text-foreground italic">{{ $t('dashboard.transactions_over_time') }}</span>
+                        <span class="font-mono text-[10px] tracking-[0.08em] text-muted-foreground uppercase">{{
+                            $t('dashboard.last_30_days')
+                        }}</span>
+                    </div>
+                    <div class="px-4 py-4">
+                        <VisXYContainer
+                            :data="transactionsChartData"
+                            :height="208"
+                            :margin="{ left: 40, right: 8, top: 8, bottom: 24 }"
+                            :y-domain="[0, undefined]"
+                        >
+                            <VisLine :x="xAccessor" :y="yAccessor" color="var(--brand)" :curve-type="CurveType.Natural" />
+                            <VisAxis
+                                type="x"
+                                :x="xAccessor"
+                                :tick-line="false"
+                                :domain-line="false"
+                                :grid-line="false"
+                                :num-ticks="5"
+                                :tick-format="formatXTick"
+                            />
+                            <VisAxis type="y" :num-ticks="3" :tick-line="false" :domain-line="false" />
+                        </VisXYContainer>
+                    </div>
+                </section>
             </div>
         </div>
     </AppLayout>

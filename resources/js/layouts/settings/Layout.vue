@@ -1,24 +1,25 @@
 <script setup lang="ts">
-import Heading from '@/components/Heading.vue';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 
-const sidebarNavItems: NavItem[] = [
+const { t } = useI18n();
+
+const sidebarNavItems = computed<NavItem[]>(() => [
     {
-        title: 'Profile',
+        title: t('settings.nav.profile'),
         href: '/settings/profile',
     },
     {
-        title: 'Password',
+        title: t('settings.nav.password'),
         href: '/settings/password',
     },
     {
-        title: 'Appearance',
+        title: t('settings.nav.appearance'),
         href: '/settings/appearance',
     },
-];
+]);
 
 const page = usePage();
 
@@ -26,30 +27,34 @@ const currentPath = page.props.ziggy?.location ? new URL(page.props.ziggy.locati
 </script>
 
 <template>
-    <div class="px-4 py-6">
-        <Heading title="Settings" description="Manage your profile and account settings" />
+    <div class="mx-auto w-full max-w-[1320px] px-6 py-10 md:px-8">
+        <div class="mb-9 border-b border-rule pb-6">
+            <div class="eyebrow mb-3">{{ $t('settings.crumb') }}</div>
+            <h1 class="m-0 font-serif text-[clamp(36px,5vw,56px)] leading-none tracking-[-0.02em]">
+                {{ $t('settings.title_lead') }}
+                <em class="not-italic-[0]" style="font-style: italic; color: var(--brand)">{{ $t('settings.title_em') }}</em>
+            </h1>
+        </div>
 
-        <div class="flex flex-col space-y-8 md:space-y-0 lg:flex-row lg:space-y-0 lg:space-x-12">
-            <aside class="w-full max-w-xl lg:w-48">
-                <nav class="flex flex-col space-y-1 space-x-0">
-                    <Button
+        <div class="grid gap-10 lg:grid-cols-[200px_1fr] lg:gap-14">
+            <aside>
+                <h6 class="eyebrow mb-3.5">{{ $t('settings.nav.sections') }}</h6>
+                <nav class="flex flex-col">
+                    <Link
                         v-for="item in sidebarNavItems"
                         :key="item.href"
-                        variant="ghost"
-                        :class="['w-full justify-start', { 'bg-muted': currentPath === item.href }]"
-                        as-child
+                        :href="item.href"
+                        class="flex items-center justify-between border-b border-rule-2 py-2.5 text-sm transition-colors"
+                        :class="currentPath === item.href ? 'font-medium text-foreground' : 'text-muted-foreground hover:text-foreground'"
                     >
-                        <Link :href="item.href">
-                            {{ item.title }}
-                        </Link>
-                    </Button>
+                        <span>{{ item.title }}</span>
+                        <span v-if="currentPath === item.href" class="font-mono text-[10px] tracking-[0.06em] text-brand">●</span>
+                    </Link>
                 </nav>
             </aside>
 
-            <Separator class="my-6 md:hidden" />
-
-            <div class="flex-1 md:max-w-2xl">
-                <section class="max-w-xl space-y-12">
+            <div class="min-w-0">
+                <section class="max-w-[680px] space-y-12">
                     <slot />
                 </section>
             </div>

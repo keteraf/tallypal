@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Models\Tally;
 use App\Models\User;
 
-test('normal users are redirected to tallies page after login', function () {
+test('normal users are redirected to home dashboard after login', function () {
     $user = User::factory()->create();
     // Assuming no role means "normal user"
 
@@ -15,7 +15,7 @@ test('normal users are redirected to tallies page after login', function () {
     ]);
 
     $this->assertAuthenticated();
-    $response->assertRedirect(route('tallies.index', absolute: false));
+    $response->assertRedirect(route('home.dashboard', absolute: false));
 });
 
 test('users can access the tallies page', function () {
@@ -40,10 +40,10 @@ test('unauthenticated users cannot access the tallies page', function () {
     $response->assertRedirect('/login');
 });
 
-test('normal users accessing dashboard are redirected to tallies', function () {
+test('normal users accessing dashboard are redirected to home dashboard', function () {
     $user = User::factory()->create();
 
     $response = $this->actingAs($user)->get('/dashboard');
 
-    $response->assertRedirect(route('tallies.index', absolute: false));
+    $response->assertRedirect(route('home.dashboard', absolute: false));
 });
