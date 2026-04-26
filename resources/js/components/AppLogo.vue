@@ -1,12 +1,31 @@
 <script setup lang="ts">
-import AppLogoIcon from '@/components/AppLogoIcon.vue';
+interface Props {
+    showBeta?: boolean;
+    size?: 'sm' | 'md' | 'lg';
+}
+
+withDefaults(defineProps<Props>(), {
+    showBeta: false,
+    size: 'md',
+});
 </script>
 
 <template>
-    <div class="flex aspect-square size-8 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
-        <AppLogoIcon class="size-5 fill-current text-white dark:text-black" />
-    </div>
-    <div class="ml-1 grid flex-1 text-left text-sm">
-        <span class="mb-0.5 truncate leading-tight font-semibold">{{ $t('welcome.app_name') }}</span>
-    </div>
+    <span
+        class="inline-flex items-baseline gap-2.5 font-serif font-medium tracking-[-0.01em]"
+        :class="{
+            'text-[18px]': size === 'sm',
+            'text-[22px]': size === 'md',
+            'text-[28px]': size === 'lg',
+        }"
+    >
+        <span class="inline-block size-[7px] -translate-y-[2px] rounded-full bg-brand" aria-hidden="true" />
+        <span class="text-foreground">tally<em class="not-italic-[0] font-medium" style="font-style: italic; color: var(--brand)">pal</em></span>
+        <span
+            v-if="showBeta"
+            class="ml-1 rounded-[2px] border border-rule px-1.5 py-[3px] font-mono text-[10px] tracking-[0.12em] text-muted-foreground uppercase"
+        >
+            Beta
+        </span>
+    </span>
 </template>

@@ -1,8 +1,4 @@
 <script setup lang="ts">
-import { useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
-
-// Components
 import HeadingSmall from '@/components/HeadingSmall.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
@@ -18,6 +14,8 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useForm } from '@inertiajs/vue3';
+import { ref } from 'vue';
 
 const passwordInput = ref<HTMLInputElement | null>(null);
 
@@ -45,9 +43,9 @@ const closeModal = () => {
 <template>
     <div class="space-y-6">
         <HeadingSmall :title="$t('common.delete') + ' account'" :description="$t('settings.profile.delete_description')" />
-        <div class="space-y-4 rounded-lg border border-red-100 bg-red-50 p-4 dark:border-red-200/10 dark:bg-red-700/10">
-            <div class="relative space-y-0.5 text-red-600 dark:text-red-100">
-                <p class="font-medium">{{ $t('common.warning') }}</p>
+        <div class="space-y-4 rounded-sm border border-neg/30 bg-neg/[0.05] px-5 py-4">
+            <div class="space-y-1 text-neg">
+                <p class="font-mono text-[11px] tracking-[0.12em] uppercase">{{ $t('common.warning') }}</p>
                 <p class="text-sm">{{ $t('settings.profile.delete_warning') }}</p>
             </div>
             <Dialog>
@@ -55,14 +53,11 @@ const closeModal = () => {
                     <Button variant="destructive">{{ $t('common.delete') }} account</Button>
                 </DialogTrigger>
                 <DialogContent>
-                    <form class="space-y-6" @submit="deleteUser">
-                        <DialogHeader class="space-y-3">
-                            <DialogTitle>{{ $t('settings.profile.delete_confirm_title') }}</DialogTitle>
-                            <DialogDescription>
-                                {{ $t('settings.profile.delete_confirm_description') }}
-                            </DialogDescription>
-                        </DialogHeader>
-
+                    <DialogHeader>
+                        <DialogTitle>{{ $t('settings.profile.delete_confirm_title') }}</DialogTitle>
+                        <DialogDescription>{{ $t('settings.profile.delete_confirm_description') }}</DialogDescription>
+                    </DialogHeader>
+                    <form class="space-y-4 px-7 py-5" @submit="deleteUser">
                         <div class="grid gap-2">
                             <Label for="password" class="sr-only">{{ $t('common.password') }}</Label>
                             <Input
@@ -76,9 +71,9 @@ const closeModal = () => {
                             <InputError :message="form.errors.password" />
                         </div>
 
-                        <DialogFooter class="gap-2">
+                        <DialogFooter class="mx-0 -mb-1 border-0 bg-transparent px-0 py-0">
                             <DialogClose as-child>
-                                <Button variant="secondary" @click="closeModal"> {{ $t('common.cancel') }} </Button>
+                                <Button variant="ghost" type="button" @click="closeModal"> {{ $t('common.cancel') }} </Button>
                             </DialogClose>
 
                             <Button type="submit" variant="destructive" :disabled="form.processing"> {{ $t('common.delete') }} account </Button>

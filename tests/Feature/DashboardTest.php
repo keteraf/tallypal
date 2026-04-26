@@ -13,11 +13,11 @@ test('guests are redirected to the login page', function () {
     $this->get('/dashboard')->assertRedirect('/login');
 });
 
-test('authenticated non-admin users are redirected to tallies', function () {
+test('authenticated non-admin users are redirected to home dashboard', function () {
     $user = User::factory()->create();
     $this->actingAs($user);
 
-    $this->get('/dashboard')->assertRedirect(route('tallies.index'));
+    $this->get('/dashboard')->assertRedirect(route('home.dashboard'));
 });
 
 test('authenticated Super Admin users can visit the dashboard', function () {
