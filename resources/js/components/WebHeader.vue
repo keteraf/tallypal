@@ -11,7 +11,7 @@ import UserMenuContent from '@/components/UserMenuContent.vue';
 import { getInitials } from '@/composables/useInitials';
 import type { BreadcrumbItem, NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
-import { LogOut, Menu, Tally5 } from 'lucide-vue-next';
+import { LayoutGrid, LogOut, Menu, Tally5 } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 
@@ -27,19 +27,33 @@ const page = usePage();
 const auth = computed(() => page.props.auth);
 const { t } = useI18n();
 
+const isSuperAdmin = computed(() => auth.value.user?.roles?.includes('Super Admin'));
+
 const isCurrentRoute = computed(() => (url: string) => page.url === url);
 
 const activeItemStyles = computed(
     () => (url: string) => (isCurrentRoute.value(url) ? 'text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100' : ''),
 );
 
-const mainNavItems: NavItem[] = [
-    {
-        title: t('tallies.title'),
-        href: '/tallies',
-        icon: Tally5,
-    },
-];
+const mainNavItems = computed<NavItem[]>(() => {
+    const items: NavItem[] = [
+        {
+            title: t('tallies.title'),
+            href: '/tallies',
+            icon: Tally5,
+        },
+    ];
+
+    if (isSuperAdmin.value) {
+        items.unshift({
+            title: t('navigation.dashboard'),
+            href: route('dashboard'),
+            icon: LayoutGrid,
+        });
+    }
+
+    return items;
+});
 </script>
 
 <template>
