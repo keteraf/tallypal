@@ -2,6 +2,36 @@
 
 declare(strict_types=1);
 
+// Workaround for pest-plugin-mutate timing issue: the covers() function resolves
+// MutationTestRunner from the container, but the Mutate plugin boots after test files load.
+// Register a disabled stub so covers() doesn't throw; the real runner overwrites it later.
+Pest\Support\Container::getInstance()->add(
+    Pest\Mutate\Contracts\MutationTestRunner::class,
+    new class implements Pest\Mutate\Contracts\MutationTestRunner
+    {
+        public function enable(): void {}
+
+        public function isEnabled(): bool
+        {
+            return false;
+        }
+
+        public function setOriginalArguments(array $arguments): void {}
+
+        public function setStartTime(float $startTime): void {}
+
+        public function isCodeCoverageRequested(): bool
+        {
+            return false;
+        }
+
+        public function run(): int
+        {
+            return 0;
+        }
+    }
+);
+
 /*
 |--------------------------------------------------------------------------
 | Test Case
