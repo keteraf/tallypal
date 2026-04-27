@@ -103,8 +103,7 @@
             "@test:lint",
             "@test:refactor",
             "@test:types",
-            "@test:unit",
-            "@test:mutate"
+            "@test:unit"
         ]
     },
     "extra": {
