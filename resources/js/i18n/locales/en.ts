@@ -154,7 +154,7 @@ export default {
             eyebrow: '§ 03 · Questions',
             title_lead: 'Asked,',
             title_em: 'answered.',
-            lede: "If something's missing here, write to hello@tallypal.it — a real person reads everything.",
+            lede: "If something's missing here, get in touch — a real person reads everything.",
             items: [
                 {
                     q: 'How is Tallypal different from a spreadsheet?',

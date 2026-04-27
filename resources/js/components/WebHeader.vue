@@ -59,10 +59,10 @@ const mainNavItems = computed<NavItem[]>(() => {
 <template>
     <div>
         <header class="sticky top-0 z-50 border-b border-rule-2 bg-background/85 backdrop-blur-md">
-            <div class="mx-auto flex h-[68px] w-full max-w-[1320px] items-center justify-between gap-6 px-6 md:px-8">
+            <div class="mx-auto flex h-17 w-full max-w-330 items-center justify-between gap-3 px-4 sm:gap-6 sm:px-6 md:px-8">
                 <!-- Mobile menu trigger + brand -->
                 <div class="flex items-center gap-3">
-                    <div class="lg:hidden">
+                    <div v-if="auth.user" class="lg:hidden">
                         <Sheet>
                             <SheetTrigger :as-child="true">
                                 <button
@@ -113,7 +113,7 @@ const mainNavItems = computed<NavItem[]>(() => {
                 </div>
 
                 <!-- Desktop nav -->
-                <nav class="hidden items-center gap-7 lg:flex">
+                <nav v-if="auth.user" class="hidden items-center gap-7 lg:flex">
                     <Link
                         v-for="item in mainNavItems"
                         :key="item.title"
@@ -151,11 +151,11 @@ const mainNavItems = computed<NavItem[]>(() => {
                     <template v-else>
                         <Link
                             :href="route('login')"
-                            class="hidden text-sm text-muted-foreground transition-colors hover:text-foreground sm:inline-block"
+                            class="text-sm text-muted-foreground transition-colors hover:text-foreground"
                         >
                             {{ $t('common.login') }}
                         </Link>
-                        <Button as-child size="default">
+                        <Button as-child size="sm">
                             <Link :href="route('register')">{{ $t('common.register') }} →</Link>
                         </Button>
                     </template>
@@ -164,7 +164,7 @@ const mainNavItems = computed<NavItem[]>(() => {
         </header>
 
         <div v-if="props.breadcrumbs.length > 1" class="border-b border-rule-2">
-            <div class="mx-auto flex h-12 w-full max-w-[1320px] items-center px-6 text-muted-foreground md:px-8">
+            <div class="mx-auto flex h-12 w-full max-w-330 items-center px-6 text-muted-foreground md:px-8">
                 <Breadcrumbs :breadcrumbs="props.breadcrumbs" />
             </div>
         </div>
