@@ -120,7 +120,7 @@ final class HomeController extends Controller
                     ->where('transactions.type', TransactionType::EXPENSE->value)
                     ->where('transactions.created_at', '>=', $monthStart),
             ])
-            ->orderByRaw('COALESCE(last_tx_at, tallies.created_at) DESC')
+            ->orderByRaw('COALESCE((SELECT MAX(created_at) FROM transactions WHERE transactions.tally_id = tallies.tally_id), tallies.created_at) DESC')
             ->get();
 
         return $tallies->map(function (Tally $tally) use ($userId): array {
