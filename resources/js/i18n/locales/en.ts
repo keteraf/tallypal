@@ -437,6 +437,9 @@ export default {
         telescope: 'Telescope',
         github_repo: 'Github Repo',
         documentation: 'Documentation',
+        features: 'Features',
+        pricing: 'Pricing',
+        faq: 'FAQ',
     },
     user_menu: {
         settings: 'Settings',

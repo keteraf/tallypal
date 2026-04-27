@@ -19,11 +19,11 @@ withDefaults(defineProps<Props>(), {
             'text-[28px]': size === 'lg',
         }"
     >
-        <span class="inline-block size-[7px] -translate-y-[2px] rounded-full bg-brand" aria-hidden="true" />
+        <span class="inline-block size-1.75 -translate-y-0.5 rounded-full bg-brand" aria-hidden="true" />
         <span class="text-foreground">tally<em class="not-italic-[0] font-medium" style="font-style: italic; color: var(--brand)">pal</em></span>
         <span
             v-if="showBeta"
-            class="ml-1 hidden rounded-[2px] border border-rule px-1.5 py-[3px] font-mono text-[10px] tracking-[0.12em] text-muted-foreground uppercase sm:inline-block"
+            class="ml-1 hidden rounded-[2px] border border-rule px-1.5 py-0.75 font-mono text-[10px] tracking-[0.12em] text-muted-foreground uppercase sm:inline-block"
         >
             Beta
         </span>
