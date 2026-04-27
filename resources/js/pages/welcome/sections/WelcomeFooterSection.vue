@@ -24,7 +24,6 @@ const footerColumns = (): FooterCol[] => [
         links: [
             { label: t('welcome.footer.links.about'), href: '#' },
             { label: t('welcome.footer.links.press'), href: '#' },
-            { label: 'hello@tallypal.it', href: 'mailto:hello@tallypal.it' },
         ],
     },
     {

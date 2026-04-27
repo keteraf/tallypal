@@ -154,7 +154,7 @@ export default {
             eyebrow: '§ 03 · Domande',
             title_lead: 'Chieste,',
             title_em: 'risposte.',
-            lede: 'Se manca qualcosa, scrivi a hello@tallypal.it — una persona vera legge tutto.',
+            lede: 'Se manca qualcosa, contattaci — una persona vera legge tutto.',
             items: [
                 {
                     q: 'In cosa Tallypal è diverso da un foglio Excel?',

@@ -23,7 +23,7 @@ withDefaults(defineProps<Props>(), {
         <span class="text-foreground">tally<em class="not-italic-[0] font-medium" style="font-style: italic; color: var(--brand)">pal</em></span>
         <span
             v-if="showBeta"
-            class="ml-1 rounded-[2px] border border-rule px-1.5 py-[3px] font-mono text-[10px] tracking-[0.12em] text-muted-foreground uppercase"
+            class="ml-1 hidden rounded-[2px] border border-rule px-1.5 py-[3px] font-mono text-[10px] tracking-[0.12em] text-muted-foreground uppercase sm:inline-block"
         >
             Beta
         </span>

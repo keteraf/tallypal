@@ -25,43 +25,6 @@
             html {
                 background-color: oklch(0.985 0.005 85);
             }
-
-            .beta-ribbon-layer {
-                position: fixed;
-                inset: 0;
-                z-index: 9999;
-                overflow: hidden;
-                pointer-events: none;
-                user-select: none;
-            }
-
-            .beta-ribbon {
-                position: absolute;
-                top: 1rem;
-                right: -2.1rem;
-                width: 8rem;
-                padding: 0.35rem 0;
-                transform: rotate(45deg);
-                transform-origin: center;
-                text-align: center;
-                font-size: 0.6rem;
-                font-weight: 500;
-                letter-spacing: 0.14em;
-                font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
-                color: oklch(0.985 0.005 85);
-                background: oklch(0.62 0.14 35);
-                box-shadow: 0 8px 20px oklch(0 0 0 / 0.18);
-            }
-
-            @media (max-width: 640px) {
-                .beta-ribbon {
-                    width: 6.5rem;
-                    top: 0.9rem;
-                    right: -1.75rem;
-                    font-size: 0.55rem;
-                    padding: 0.3rem 0;
-                }
-            }
         </style>
 
         <title inertia>{{ config('app.name', 'Laravel') }}</title>
@@ -79,9 +42,6 @@
         @inertiaHead
     </head>
     <body class="font-sans antialiased">
-        <div class="beta-ribbon-layer" aria-hidden="true">
-            <div class="beta-ribbon">BETA</div>
-        </div>
         @inertia
     </body>
 </html>

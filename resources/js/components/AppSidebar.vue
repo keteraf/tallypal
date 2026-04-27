@@ -41,29 +41,31 @@ const mainNavItems = computed<NavItem[]>(() => {
 
     return items;
 });
-
-const footerNavItems: NavItem[] = [
-    {
-        title: t('navigation.pulse'),
-        href: '/pulse',
-        icon: Activity,
-    },
-    {
-        title: t('navigation.telescope'),
-        href: '/telescope',
-        icon: Telescope,
-    },
-    {
-        title: t('navigation.github_repo'),
-        href: 'https://github.com/keteraf/tallypal',
-        icon: GitHubIcon,
-    },
-    {
-        title: t('navigation.documentation'),
-        href: 'https://laravel.com/docs/starter-kits#vue',
-        icon: LucideBookOpenText,
-    },
-];
+const footerNavItems: NavItem[] = [];
+if (isSuperAdmin.value) {
+    footerNavItems.push(
+        {
+            title: t('navigation.pulse'),
+            href: '/pulse',
+            icon: Activity,
+        },
+        {
+            title: t('navigation.telescope'),
+            href: '/telescope',
+            icon: Telescope,
+        },
+        {
+            title: t('navigation.github_repo'),
+            href: 'https://github.com/keteraf/tallypal',
+            icon: GitHubIcon,
+        },
+        {
+            title: t('navigation.documentation'),
+            href: 'https://laravel.com/docs/starter-kits#vue',
+            icon: LucideBookOpenText,
+        },
+    );
+}
 </script>
 
 <template>
