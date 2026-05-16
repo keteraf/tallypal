@@ -30,6 +30,8 @@ const isSuperAdmin = computed(() => auth.value.user?.roles?.includes('Super Admi
 
 const isCurrentRoute = computed(() => (url: string) => page.url === url);
 
+const isWelcomePage = computed(() => page.url === '/');
+
 const mainNavItems = computed<NavItem[]>(() => {
     const items: NavItem[] = [
         {
@@ -57,8 +59,8 @@ const mainNavItems = computed<NavItem[]>(() => {
 </script>
 
 <template>
-    <div>
-        <header class="sticky top-0 z-50 border-b border-rule-2 bg-background/85 backdrop-blur-md">
+    <div class="sticky top-0 z-50">
+        <header class="border-b border-rule-2 bg-background/85 backdrop-blur-md">
             <div class="mx-auto flex h-17 w-full max-w-330 items-center justify-between gap-3 px-4 sm:gap-6 sm:px-6 md:px-8">
                 <!-- Mobile menu trigger + brand -->
                 <div class="flex items-center gap-3">
@@ -91,6 +93,12 @@ const mainNavItems = computed<NavItem[]>(() => {
                                             {{ item.title }}
                                         </span>
                                     </Link>
+                                    <template v-if="isWelcomePage">
+                                        <div class="my-2 border-t border-rule"></div>
+                                        <a href="#features" class="flex items-center gap-3 border-b border-rule-2 py-3 text-sm text-muted-foreground transition-colors hover:text-foreground">{{ $t('navigation.features') }}</a>
+                                        <a href="#pricing" class="flex items-center gap-3 border-b border-rule-2 py-3 text-sm text-muted-foreground transition-colors hover:text-foreground">{{ $t('navigation.pricing') }}</a>
+                                        <a href="#faq" class="flex items-center gap-3 border-b border-rule-2 py-3 text-sm text-muted-foreground transition-colors hover:text-foreground">{{ $t('navigation.faq') }}</a>
+                                    </template>
                                 </nav>
                                 <div v-if="auth.user" class="mt-6 border-t border-rule pt-4">
                                     <Link
@@ -113,16 +121,24 @@ const mainNavItems = computed<NavItem[]>(() => {
                 </div>
 
                 <!-- Desktop nav -->
-                <nav v-if="auth.user" class="hidden items-center gap-7 lg:flex">
-                    <Link
-                        v-for="item in mainNavItems"
-                        :key="item.title"
-                        :href="item.href"
-                        class="text-sm transition-colors"
-                        :class="isCurrentRoute(item.href) ? 'font-medium text-foreground' : 'text-muted-foreground hover:text-foreground'"
-                    >
-                        {{ item.title }}
-                    </Link>
+                <nav class="hidden items-center gap-7 lg:flex">
+                    <template v-if="auth.user">
+                        <Link
+                            v-for="item in mainNavItems"
+                            :key="item.title"
+                            :href="item.href"
+                            class="text-sm transition-colors"
+                            :class="isCurrentRoute(item.href) ? 'font-medium text-foreground' : 'text-muted-foreground hover:text-foreground'"
+                        >
+                            {{ item.title }}
+                        </Link>
+                    </template>
+                    <span v-if="auth.user && isWelcomePage" class="h-4 w-px bg-rule"></span>
+                    <template v-if="isWelcomePage || !auth.user">
+                        <a href="#features" class="text-sm text-muted-foreground transition-colors hover:text-foreground">{{ $t('navigation.features') }}</a>
+                        <a href="#pricing" class="text-sm text-muted-foreground transition-colors hover:text-foreground">{{ $t('navigation.pricing') }}</a>
+                        <a href="#faq" class="text-sm text-muted-foreground transition-colors hover:text-foreground">{{ $t('navigation.faq') }}</a>
+                    </template>
                 </nav>
 
                 <div class="flex items-center gap-2">
@@ -155,9 +171,7 @@ const mainNavItems = computed<NavItem[]>(() => {
                         >
                             {{ $t('common.login') }}
                         </Link>
-                        <Button as-child size="sm">
-                            <Link :href="route('register')">{{ $t('common.register') }} →</Link>
-                        </Button>
+
                     </template>
                 </div>
             </div>
