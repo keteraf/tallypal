@@ -12,18 +12,17 @@ use Throwable;
 
 final readonly class StoreTransactionAction
 {
-    /**
-     * Execute the action.
-     *
-     * @throws Throwable
-     */
     public function handle(TransactionDTO $transactionDTO, Tally $tally): Transaction
     {
-        return DB::transaction(function () use ($transactionDTO, $tally): Transaction {
-            /** @var Transaction $transaction */
-            $transaction = $tally->transactions()->create($transactionDTO->toArray());
+        try {
+            return DB::transaction(function () use ($transactionDTO, $tally): Transaction {
+                /** @var Transaction $transaction */
+                $transaction = $tally->transactions()->create($transactionDTO->toArray());
 
-            return $transaction;
-        });
+                return $transaction;
+            });
+        } catch (Throwable $e) {
+            abort($e->getCode(), $e->getMessage());
+        }
     }
 }

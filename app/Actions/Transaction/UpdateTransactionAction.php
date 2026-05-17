@@ -11,15 +11,16 @@ use Throwable;
 
 final readonly class UpdateTransactionAction
 {
-    /**
-     * @throws Throwable
-     */
     public function handle(Transaction $transaction, TransactionDTO $transactionDTO): Transaction
     {
-        DB::transaction(function () use ($transaction, $transactionDTO): void {
-            $transaction->update($transactionDTO->toArray());
-        });
+        try {
+            DB::transaction(function () use ($transaction, $transactionDTO): void {
+                $transaction->update($transactionDTO->toArray());
+            });
 
-        return $transaction->refresh();
+            return $transaction->refresh();
+        } catch (Throwable $e) {
+            abort($e->getCode(), $e->getMessage());
+        }
     }
 }

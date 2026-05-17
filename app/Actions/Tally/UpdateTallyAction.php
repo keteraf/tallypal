@@ -11,15 +11,16 @@ use Throwable;
 
 final readonly class UpdateTallyAction
 {
-    /**
-     * @throws Throwable
-     */
     public function handle(Tally $tally, TallyDTO $tallyDTO): Tally
     {
-        DB::transaction(function () use ($tally, $tallyDTO): void {
-            $tally->update($tallyDTO->toArray());
-        });
+        try {
+            DB::transaction(function () use ($tally, $tallyDTO): void {
+                $tally->update($tallyDTO->toArray());
+            });
 
-        return $tally->refresh();
+            return $tally->refresh();
+        } catch (Throwable $e) {
+            abort($e->getCode(), $e->getMessage());
+        }
     }
 }

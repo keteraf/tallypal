@@ -11,19 +11,20 @@ use Throwable;
 
 final readonly class StoreTallyAction
 {
-    /**
-     * @throws Throwable
-     */
     public function handle(TallyDTO $tallyDTO): Tally
     {
-        return DB::transaction(function () use ($tallyDTO): Tally {
-            $tally = Tally::query()->create($tallyDTO->toArray());
+        try {
+            return DB::transaction(function () use ($tallyDTO): Tally {
+                $tally = Tally::query()->create($tallyDTO->toArray());
 
-            $tally->users()->attach($tallyDTO->getOwnerId(), [
-                'default_share_percentage' => 100.00,
-            ]);
+                $tally->users()->attach($tallyDTO->getOwnerId(), [
+                    'default_share_percentage' => 100.00,
+                ]);
 
-            return $tally;
-        });
+                return $tally;
+            });
+        } catch (Throwable $e) {
+            abort($e->getCode(), $e->getMessage());
+        }
     }
 }

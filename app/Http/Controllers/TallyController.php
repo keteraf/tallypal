@@ -47,6 +47,7 @@ final class TallyController extends Controller
 
     /**
      * Store a newly created tally in storage.
+     *
      * @throws Throwable
      */
     public function store(StoreTallyRequest $request, StoreTallyAction $action): RedirectResponse

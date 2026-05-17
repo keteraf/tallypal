@@ -6,24 +6,29 @@ namespace App\Actions\TallyShare;
 
 use App\Models\TallyInvitation;
 use App\Models\User;
+use Throwable;
 
 class AcceptTallyInvitationAction
 {
     public function handle(TallyInvitation $invitation, User $user): void
     {
-        $tally = $invitation->tally()->firstOrFail();
+        try {
+            $tally = $invitation->tally()->firstOrFail();
 
-        /** @var int $userId */
-        $userId = $user->getKey();
+            /** @var int $userId */
+            $userId = $user->getKey();
 
-        $alreadyAttached = $tally->users()->where('user_id', $userId)->exists();
+            $alreadyAttached = $tally->users()->where('user_id', $userId)->exists();
 
-        if ($alreadyAttached) {
-            $tally->users()->updateExistingPivot($userId, ['default_share_percentage' => 0]);
-        } else {
-            $tally->users()->syncWithoutDetaching([$userId => ['default_share_percentage' => 0]]);
+            if ($alreadyAttached) {
+                $tally->users()->updateExistingPivot($userId, ['default_share_percentage' => 0]);
+            } else {
+                $tally->users()->syncWithoutDetaching([$userId => ['default_share_percentage' => 0]]);
+            }
+
+            $invitation->update(['status' => TallyInvitation::STATUS_ACCEPTED]);
+        } catch (Throwable $e) {
+            abort($e->getCode(), $e->getMessage());
         }
-
-        $invitation->update(['status' => TallyInvitation::STATUS_ACCEPTED]);
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\TallyShare;
 
 use App\Models\Tally;
+use Throwable;
 
 class UpdateTallySharesAction
 {
@@ -13,10 +14,14 @@ class UpdateTallySharesAction
      */
     public function handle(Tally $tally, array $shares): void
     {
-        $syncData = collect($shares)->mapWithKeys(fn (array $share): array => [
-            $share['user_id'] => ['default_share_percentage' => $share['percentage']],
-        ])->toArray();
+        try {
+            $syncData = collect($shares)->mapWithKeys(fn (array $share): array => [
+                $share['user_id'] => ['default_share_percentage' => $share['percentage']],
+            ])->toArray();
 
-        $tally->users()->sync($syncData);
+            $tally->users()->sync($syncData);
+        } catch (Throwable $e) {
+            abort($e->getCode(), $e->getMessage());
+        }
     }
 }
