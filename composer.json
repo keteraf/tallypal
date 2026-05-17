@@ -95,9 +95,9 @@
         "refactor": "rector",
         "test:lint": "pint --test",
         "test:refactor": "rector --dry-run",
-        "test:types": "phpstan analyse",
-        "test:unit": "pest --colors=always --parallel @additional_args --coverage --min=90",
-        "test:mutate": "pest --colors=always --parallel @additional_args --mutate --min=90",
+        "test:types": "phpstan analyse --memory-limit 512M",
+        "test:unit": "XDEBUG_MODE=coverage pest --colors=always --parallel @additional_args --coverage --min=90",
+        "test:mutate": "XDEBUG_MODE=coverage pest --colors=always --parallel @additional_args --mutate --min=90",
         "test": [
             "@php artisan config:clear --ansi",
             "@test:lint",
