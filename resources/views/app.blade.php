@@ -35,7 +35,45 @@
 
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        {{-- TODO: self-host these fonts for better performance (eliminate render-blocking third-party requests) --}}
         <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Geist:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+        <meta name="description" content="{{ __('seo.default_description') }}" inertia>
+        <meta name="theme-color" content="#F8F6F1">
+        <meta name="referrer" content="strict-origin-when-cross-origin">
+        <meta property="og:site_name" content="{{ config('app.name') }}" inertia>
+        <meta property="og:type" content="website" inertia>
+        <meta property="og:locale" content="it_IT" inertia>
+        <meta property="og:url" content="{{ url()->current() }}" inertia>
+        <meta property="og:image" content="{{ asset('og/default.png') }}" inertia>
+        <meta name="twitter:card" content="summary_large_image" inertia>
+        <meta name="twitter:image" content="{{ asset('og/default.png') }}" inertia>
+        <link rel="canonical" href="{{ url()->current() }}" inertia>
+
+        <script type="application/ld+json">{!! json_encode([
+            '@context' => 'https://schema.org',
+            '@graph' => [
+                [
+                    '@type' => 'Organization',
+                    '@id' => config('app.url') . '/#organization',
+                    'name' => config('app.name'),
+                    'url' => config('app.url'),
+                    'logo' => [
+                        '@type' => 'ImageObject',
+                        'url' => url('/favicon.svg'),
+                    ],
+                ],
+                [
+                    '@type' => 'WebSite',
+                    '@id' => config('app.url') . '/#website',
+                    'name' => config('app.name'),
+                    'url' => config('app.url'),
+                    'publisher' => [
+                        '@id' => config('app.url') . '/#organization',
+                    ],
+                ],
+            ],
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
 
         @routes
         @vite(['resources/js/app.ts', "resources/js/pages/{$page['component']}.vue"])

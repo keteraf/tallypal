@@ -1,0 +1,21 @@
+[Unit]
+Description=TallyPal Inertia SSR server
+After=network.target
+
+[Service]
+Type=simple
+# Replace with the system user that owns the app files (e.g. www-data, forge, deploy)
+User=__APP_USER__
+# Replace with the absolute path to the application root
+WorkingDirectory=__APP_WORKDIR__
+ExecStart=/usr/bin/php artisan inertia:start-ssr
+Restart=on-failure
+RestartSec=5s
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=tallypal-ssr
+# Ensure the app environment is loaded (adjust if using a .env loader)
+EnvironmentFile=__APP_WORKDIR__/.env
+
+[Install]
+WantedBy=multi-user.target

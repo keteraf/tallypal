@@ -52,6 +52,13 @@ class HandleInertiaRequests extends Middleware
                 'location' => $request->url(),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'seo' => [
+                'site_name' => config('app.name'),
+                'default_description' => __('seo.default_description'),
+                'default_og_image' => asset('og/default.png'),
+                'locale' => 'it_IT',
+                'url' => config('app.url'),
+            ],
         ];
     }
 }

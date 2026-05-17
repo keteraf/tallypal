@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import AppHead from '@/components/seo/AppHead.vue';
 import InputError from '@/components/InputError.vue';
 import TextLink from '@/components/TextLink.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AuthLayout from '@/layouts/AuthLayout.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { useForm } from '@inertiajs/vue3';
 import { LoaderCircle } from 'lucide-vue-next';
 
 defineProps<{
@@ -23,7 +24,7 @@ const submit = () => {
 
 <template>
     <AuthLayout :title="$t('auth.forgot_password.title')" :description="$t('auth.forgot_password.description')">
-        <Head :title="$t('auth.forgot_password.head_title')" />
+        <AppHead :title="$t('auth.forgot_password.head_title')" :noindex="true" />
 
         <div v-if="status" class="mb-4 text-center text-sm font-medium text-green-600">
             {{ status }}

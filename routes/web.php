@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\TallyController;
 use App\Http\Controllers\TallyInvitationController;
 use App\Http\Controllers\TransactionController;
@@ -13,6 +14,14 @@ use Inertia\Inertia;
 Route::get('/', function () {
     return Inertia::render('Welcome', []);
 })->name('home');
+
+Route::get('sitemap.xml', SitemapController::class)->name('sitemap');
+
+Route::get('robots.txt', function () {
+    return response(file_get_contents(public_path('robots.txt')), 200, [
+        'Content-Type' => 'text/plain',
+    ]);
+})->name('robots');
 
 Route::get('invitations/{uuid}/accept', [TallyInvitationController::class, 'accept'])->name('invitations.accept');
 Route::get('invitations/{uuid}/decline', [TallyInvitationController::class, 'decline'])->name('invitations.decline');
