@@ -1,2 +1,12 @@
 User-agent: *
-Disallow:
+Disallow: /home
+Disallow: /dashboard
+Disallow: /tallies
+Disallow: /settings
+Disallow: /invitations
+Disallow: /telescope
+Disallow: /pulse
+Disallow: /horizon
+Disallow: /api/
+
+Sitemap: https://tallypal.it/sitemap.xml

@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import AppHead from '@/components/seo/AppHead.vue';
 import TextLink from '@/components/TextLink.vue';
 import { Button } from '@/components/ui/button';
 import AuthLayout from '@/layouts/AuthLayout.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { useForm } from '@inertiajs/vue3';
 import { LoaderCircle } from 'lucide-vue-next';
 
 defineProps<{
@@ -18,7 +19,7 @@ const submit = () => {
 
 <template>
     <AuthLayout :title="$t('auth.verify_email.title')" :description="$t('auth.verify_email.description')">
-        <Head :title="$t('auth.verify_email.head_title')" />
+        <AppHead :title="$t('auth.verify_email.head_title')" :noindex="true" />
 
         <div v-if="status === 'verification-link-sent'" class="mb-4 text-center text-sm font-medium text-green-600">
             {{ $t('auth.verify_email.verification_link_sent') }}

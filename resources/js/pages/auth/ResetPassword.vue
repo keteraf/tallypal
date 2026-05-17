@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import AppHead from '@/components/seo/AppHead.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AuthLayout from '@/layouts/AuthLayout.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { useForm } from '@inertiajs/vue3';
 import { LoaderCircle } from 'lucide-vue-next';
 
 interface Props {
@@ -32,7 +33,7 @@ const submit = () => {
 
 <template>
     <AuthLayout :title="$t('auth.reset_password.title')" :description="$t('auth.reset_password.description')">
-        <Head :title="$t('auth.reset_password.head_title')" />
+        <AppHead :title="$t('auth.reset_password.head_title')" :noindex="true" />
 
         <form @submit.prevent="submit">
             <div class="grid gap-6">

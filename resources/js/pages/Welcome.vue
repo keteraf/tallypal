@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import AppHead from '@/components/seo/AppHead.vue';
+import JsonLd from '@/components/seo/JsonLd.vue';
 import WebHeader from '@/components/WebHeader.vue';
 import WelcomeFaqSection from '@/pages/welcome/sections/WelcomeFaqSection.vue';
 import WelcomeFeaturesSection from '@/pages/welcome/sections/WelcomeFeaturesSection.vue';
@@ -6,7 +8,6 @@ import WelcomeFooterSection from '@/pages/welcome/sections/WelcomeFooterSection.
 import WelcomeHeroSection from '@/pages/welcome/sections/WelcomeHeroSection.vue';
 import WelcomePricingSection from '@/pages/welcome/sections/WelcomePricingSection.vue';
 import WelcomeStatsSection from '@/pages/welcome/sections/WelcomeStatsSection.vue';
-import { Head } from '@inertiajs/vue3';
 
 defineProps<{
     auth: {
@@ -16,7 +17,8 @@ defineProps<{
 </script>
 
 <template>
-    <Head :title="$t('welcome.title')" />
+    <AppHead />
+    <JsonLd />
 
     <div class="min-h-screen bg-background text-foreground">
         <WebHeader />

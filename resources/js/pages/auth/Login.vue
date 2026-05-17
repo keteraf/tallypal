@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppHead from '@/components/seo/AppHead.vue';
 import InputError from '@/components/InputError.vue';
 import TextLink from '@/components/TextLink.vue';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AuthBase from '@/layouts/AuthLayout.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { useForm } from '@inertiajs/vue3';
 import { LoaderCircle } from 'lucide-vue-next';
 
 defineProps<{
@@ -29,7 +30,7 @@ const submit = () => {
 
 <template>
     <AuthBase :title="$t('auth.login.title')" :description="$t('auth.login.description')">
-        <Head :title="$t('auth.login.head_title')" />
+        <AppHead :title="$t('auth.login.head_title')" :noindex="true" />
 
         <div v-if="status" class="mb-4 text-center text-sm font-medium text-green-600">
             {{ status }}
