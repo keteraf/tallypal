@@ -5,13 +5,14 @@ import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { SegmentedControl } from '@/components/ui/segmented-control';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Stepper } from '@/components/ui/stepper';
 import { Textarea } from '@/components/ui/textarea';
 import WebLayout from '@/layouts/WebLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Form, Head, Link, usePage } from '@inertiajs/vue3';
-import { DateFormatter, getLocalTimeZone, today } from '@internationalized/date';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
+import { DateFormatter, getLocalTimeZone, parseDate, today } from '@internationalized/date';
 import { CalendarIcon } from 'lucide-vue-next';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 interface Props {
@@ -31,35 +32,93 @@ const page = usePage();
 const { t } = useI18n();
 
 const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: t('tallies.title'),
-        href: route('tallies.index'),
-    },
-    {
-        title: props.tally.name,
-        href: route('tallies.transactions.index', props.tally.uuid),
-    },
-    {
-        title: t('transactions.add_button'),
-        href: route('tallies.transactions.create', props.tally.uuid),
-    },
+    { title: t('tallies.title'), href: route('tallies.index') },
+    { title: props.tally.name, href: route('tallies.transactions.index', props.tally.uuid) },
+    { title: t('transactions.add_button'), href: route('tallies.transactions.create', props.tally.uuid) },
 ];
 
 const df = new DateFormatter('en-US', { dateStyle: 'long' });
-
-const dateValue = ref<any>(today(getLocalTimeZone()));
 const isCalendarOpen = ref(false);
 
-const transactionType = ref<'expense' | 'income'>('expense');
+const form = useForm({
+    title: '',
+    amount: '',
+    party_id: page.props.auth.user.id.toString(),
+    category_id: '',
+    currency_id: '',
+    type: 'expense' as 'expense' | 'income',
+    transaction_date: today(getLocalTimeZone()).toString(),
+    description: '',
+});
 
-const partyLabel = (type: string | undefined) => {
-    return type === 'income' ? t('transactions.fields.received_by') : t('transactions.fields.paid_by');
-};
+const currentStep = ref(1);
+const totalSteps = 3;
+
+const dateValue = computed({
+    get: () => (form.transaction_date ? parseDate(form.transaction_date) : today(getLocalTimeZone())),
+    set: (val) => {
+        if (val) {
+            form.transaction_date = val.toString();
+            isCalendarOpen.value = false;
+        }
+    },
+});
 
 const typeOptions = [
     { value: 'expense' as const, label: t('transactions.fields.expense') },
     { value: 'income' as const, label: t('transactions.fields.income'), accent: 'positive' as const },
 ];
+
+const partyLabel = computed(() =>
+    form.type === 'income' ? t('transactions.fields.received_by') : t('transactions.fields.paid_by'),
+);
+
+const steps = computed(() => [
+    { label: t('transactions.steps.what') },
+    { label: t('transactions.steps.how_much') },
+    { label: t('transactions.steps.when') },
+]);
+
+const canAdvance = computed(() => {
+    if (currentStep.value === 1) {
+        return form.title.trim().length > 0 && form.category_id !== '';
+    }
+    if (currentStep.value === 2) {
+        return form.amount !== '' && parseFloat(form.amount) > 0 && form.currency_id !== '';
+    }
+    return true;
+});
+
+function nextStep() {
+    if (canAdvance.value && currentStep.value < totalSteps) {
+        currentStep.value++;
+    }
+}
+
+function prevStep() {
+    if (currentStep.value > 1) {
+        currentStep.value--;
+    }
+}
+
+const stepFields: Record<number, string[]> = {
+    1: ['title', 'type', 'category_id', 'party_id', 'description'],
+    2: ['amount', 'currency_id'],
+    3: ['transaction_date'],
+};
+
+function submit() {
+    form.post(route('tallies.transactions.store', props.tally.uuid), {
+        onError: (errors) => {
+            for (let s = 1; s <= totalSteps; s++) {
+                if (stepFields[s].some((f) => f in errors)) {
+                    currentStep.value = s;
+                    break;
+                }
+            }
+        },
+    });
+}
 </script>
 
 <template>
@@ -73,54 +132,34 @@ const typeOptions = [
             </h1>
 
             <div class="max-w-220 rounded-sm border border-rule bg-background px-9 pt-9 pb-7">
-                <Form
-                    :action="route('tallies.transactions.store', tally.uuid)"
-                    method="post"
-                    :defaults="{
-                        title: '',
-                        amount: '',
-                        party_id: page.props.auth.user.id,
-                        category_id: '',
-                        currency_id: '',
-                        type: 'expense',
-                        transaction_date: dateValue.toString(),
-                        description: '',
-                    }"
-                    #default="{ errors, processing }"
-                >
-                    <div class="grid gap-7 md:grid-cols-2 md:gap-x-7 md:gap-y-7">
-                        <div class="flex flex-col gap-2">
-                            <label for="title" class="eyebrow">{{ $t('transactions.fields.title') }}</label>
-                            <Input id="title" name="title" :placeholder="$t('transactions.fields.title_placeholder')" required autofocus />
-                            <div v-if="errors.title" class="text-sm font-medium text-destructive">{{ errors.title }}</div>
-                        </div>
+                <Stepper :steps="steps" :model-value="currentStep" class="mb-9" />
 
-                        <div class="flex flex-col gap-2">
-                            <label for="amount" class="eyebrow">{{ $t('transactions.fields.amount') }}</label>
-                            <Input
-                                id="amount"
-                                name="amount"
-                                type="number"
-                                step="0.01"
-                                :placeholder="$t('transactions.fields.amount_placeholder')"
-                                class="tabular font-mono text-[22px] tracking-[-0.01em]"
-                                required
-                            />
-                            <div v-if="errors.amount" class="text-sm font-medium text-destructive">{{ errors.amount }}</div>
-                        </div>
+                <!-- Step 1: What -->
+                <div v-if="currentStep === 1" class="flex flex-col gap-7">
+                    <div class="flex flex-col gap-2">
+                        <label for="title" class="eyebrow">{{ $t('transactions.fields.title') }}</label>
+                        <Input
+                            id="title"
+                            v-model="form.title"
+                            :placeholder="$t('transactions.fields.title_placeholder')"
+                            maxlength="25"
+                            autofocus
+                        />
+                        <div v-if="form.errors.title" class="text-sm font-medium text-destructive">{{ form.errors.title }}</div>
+                    </div>
 
-                        <div class="flex flex-col gap-2">
-                            <label class="eyebrow">{{ $t('transactions.fields.type') }}</label>
-                            <SegmentedControl v-model="transactionType" :options="typeOptions" name="type" />
-                            <input type="hidden" name="type" :value="transactionType" />
-                            <div v-if="errors.type" class="text-sm font-medium text-destructive">{{ errors.type }}</div>
-                        </div>
+                    <div class="flex flex-col gap-2">
+                        <label class="eyebrow">{{ $t('transactions.fields.type') }}</label>
+                        <SegmentedControl v-model="form.type" :options="typeOptions" />
+                        <div v-if="form.errors.type" class="text-sm font-medium text-destructive">{{ form.errors.type }}</div>
+                    </div>
 
+                    <div class="grid gap-7 md:grid-cols-2">
                         <div class="flex flex-col gap-2">
-                            <label for="party_id" class="eyebrow">{{ partyLabel(transactionType) }}</label>
-                            <Select name="party_id" :default-value="page.props.auth.user.id.toString()" required>
+                            <label for="party_id" class="eyebrow">{{ partyLabel }}</label>
+                            <Select v-model="form.party_id">
                                 <SelectTrigger id="party_id">
-                                    <SelectValue :placeholder="partyLabel(transactionType)" />
+                                    <SelectValue :placeholder="partyLabel" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectGroup>
@@ -130,12 +169,12 @@ const typeOptions = [
                                     </SelectGroup>
                                 </SelectContent>
                             </Select>
-                            <div v-if="errors.party_id" class="text-sm font-medium text-destructive">{{ errors.party_id }}</div>
+                            <div v-if="form.errors.party_id" class="text-sm font-medium text-destructive">{{ form.errors.party_id }}</div>
                         </div>
 
                         <div class="flex flex-col gap-2">
                             <label for="category_id" class="eyebrow">{{ $t('transactions.fields.category') }}</label>
-                            <Select name="category_id" required>
+                            <Select v-model="form.category_id">
                                 <SelectTrigger id="category_id">
                                     <SelectValue :placeholder="$t('transactions.fields.category_placeholder')" />
                                 </SelectTrigger>
@@ -145,76 +184,105 @@ const typeOptions = [
                                             v-for="category in categories"
                                             :key="category.category_id"
                                             :value="category.category_id.toString()"
-                                            >{{ category.name }}</SelectItem
-                                        >
+                                        >{{ category.name }}</SelectItem>
                                     </SelectGroup>
                                 </SelectContent>
                             </Select>
-                            <div v-if="errors.category_id" class="text-sm font-medium text-destructive">{{ errors.category_id }}</div>
-                        </div>
-
-                        <div class="flex flex-col gap-2">
-                            <label for="currency_id" class="eyebrow">{{ $t('transactions.fields.currency') }}</label>
-                            <Select name="currency_id" required>
-                                <SelectTrigger id="currency_id">
-                                    <SelectValue :placeholder="$t('transactions.fields.currency_placeholder')" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectGroup>
-                                        <SelectItem
-                                            v-for="currency in currencies"
-                                            :key="currency.currency_id"
-                                            :value="currency.currency_id.toString()"
-                                            >{{ currency.code }} · {{ currency.name }}</SelectItem
-                                        >
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
-                            <div v-if="errors.currency_id" class="text-sm font-medium text-destructive">{{ errors.currency_id }}</div>
-                        </div>
-
-                        <div class="flex flex-col gap-2 md:col-span-2">
-                            <label for="transaction_date" class="eyebrow">{{ $t('transactions.fields.date') }}</label>
-                            <Popover v-model:open="isCalendarOpen">
-                                <PopoverTrigger as-child>
-                                    <button
-                                        type="button"
-                                        class="flex items-center gap-3 border-0 border-b border-rule bg-transparent px-0 pt-2.5 pb-2.5 text-left text-foreground transition-colors hover:border-foreground"
-                                    >
-                                        <CalendarIcon class="size-4 text-muted-foreground" />
-                                        <span :class="dateValue ? '' : 'text-muted-foreground'">
-                                            {{
-                                                dateValue
-                                                    ? df.format(dateValue.toDate(getLocalTimeZone()))
-                                                    : $t('transactions.fields.date_placeholder')
-                                            }}
-                                        </span>
-                                    </button>
-                                </PopoverTrigger>
-                                <PopoverContent class="w-auto p-0">
-                                    <Calendar v-model="dateValue" initial-focus @update:model-value="isCalendarOpen = false" />
-                                </PopoverContent>
-                            </Popover>
-                            <input type="hidden" name="transaction_date" :value="dateValue?.toString()" />
-                            <div v-if="errors.transaction_date" class="text-sm font-medium text-destructive">{{ errors.transaction_date }}</div>
-                        </div>
-
-                        <div class="flex flex-col gap-2 md:col-span-2">
-                            <label for="description" class="eyebrow">{{ $t('transactions.fields.description') }}</label>
-                            <Textarea id="description" name="description" :placeholder="$t('transactions.fields.description_placeholder')" />
-                            <div v-if="errors.description" class="text-sm font-medium text-destructive">{{ errors.description }}</div>
+                            <div v-if="form.errors.category_id" class="text-sm font-medium text-destructive">{{ form.errors.category_id }}</div>
                         </div>
                     </div>
 
-                    <div class="mt-9 flex justify-end gap-3 border-t border-rule-2 pt-6">
-                        <Button variant="ghost" as-child>
-                            <Link :href="route('tallies.transactions.index', tally.uuid)">{{ $t('common.cancel') }}</Link>
-                        </Button>
-                        <Button type="submit" :disabled="processing">
-                            {{ processing ? $t('common.creating') : $t('transactions.add_button') }} →
-                        </Button>
+                    <div class="flex flex-col gap-2">
+                        <label for="description" class="eyebrow">{{ $t('transactions.fields.description') }}</label>
+                        <Textarea
+                            id="description"
+                            v-model="form.description"
+                            :placeholder="$t('transactions.fields.description_placeholder')"
+                        />
+                        <div v-if="form.errors.description" class="text-sm font-medium text-destructive">{{ form.errors.description }}</div>
                     </div>
-                </Form>
+                </div>
+
+                <!-- Step 2: How Much -->
+                <div v-else-if="currentStep === 2" class="flex flex-col gap-7">
+                    <div class="flex flex-col gap-2">
+                        <label for="amount" class="eyebrow">{{ $t('transactions.fields.amount') }}</label>
+                        <Input
+                            id="amount"
+                            v-model="form.amount"
+                            type="number"
+                            step="0.01"
+                            :placeholder="$t('transactions.fields.amount_placeholder')"
+                            class="tabular font-mono text-[22px] tracking-[-0.01em]"
+                            autofocus
+                        />
+                        <div v-if="form.errors.amount" class="text-sm font-medium text-destructive">{{ form.errors.amount }}</div>
+                    </div>
+
+                    <div class="flex flex-col gap-2">
+                        <label for="currency_id" class="eyebrow">{{ $t('transactions.fields.currency') }}</label>
+                        <Select v-model="form.currency_id">
+                            <SelectTrigger id="currency_id">
+                                <SelectValue :placeholder="$t('transactions.fields.currency_placeholder')" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectGroup>
+                                    <SelectItem
+                                        v-for="currency in currencies"
+                                        :key="currency.currency_id"
+                                        :value="currency.currency_id.toString()"
+                                    >{{ currency.code }} · {{ currency.name }}</SelectItem>
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+                        <div v-if="form.errors.currency_id" class="text-sm font-medium text-destructive">{{ form.errors.currency_id }}</div>
+                    </div>
+                </div>
+
+                <!-- Step 3: When -->
+                <div v-else class="flex flex-col gap-7">
+                    <div class="flex flex-col gap-2">
+                        <label class="eyebrow">{{ $t('transactions.fields.date') }}</label>
+                        <Popover v-model:open="isCalendarOpen">
+                            <PopoverTrigger as-child>
+                                <button
+                                    type="button"
+                                    class="flex items-center gap-3 border-0 border-b border-rule bg-transparent px-0 pt-2.5 pb-2.5 text-left text-foreground transition-colors hover:border-foreground"
+                                >
+                                    <CalendarIcon class="size-4 text-muted-foreground" />
+                                    <span :class="dateValue ? '' : 'text-muted-foreground'">
+                                        {{
+                                            dateValue
+                                                ? df.format(dateValue.toDate(getLocalTimeZone()))
+                                                : $t('transactions.fields.date_placeholder')
+                                        }}
+                                    </span>
+                                </button>
+                            </PopoverTrigger>
+                            <PopoverContent class="w-auto p-0">
+                                <Calendar v-model="dateValue" initial-focus />
+                            </PopoverContent>
+                        </Popover>
+                        <div v-if="form.errors.transaction_date" class="text-sm font-medium text-destructive">{{ form.errors.transaction_date }}</div>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <div class="mt-9 flex items-center justify-between border-t border-rule-2 pt-6">
+                    <Button v-if="currentStep > 1" variant="ghost" @click="prevStep">
+                        ← {{ $t('transactions.steps.back') }}
+                    </Button>
+                    <Button v-else variant="ghost" as-child>
+                        <Link :href="route('tallies.transactions.index', tally.uuid)">{{ $t('common.cancel') }}</Link>
+                    </Button>
+
+                    <Button v-if="currentStep < totalSteps" :disabled="!canAdvance" @click="nextStep">
+                        {{ $t('transactions.steps.next') }} →
+                    </Button>
+                    <Button v-else :disabled="form.processing" @click="submit">
+                        {{ form.processing ? $t('common.creating') : $t('transactions.add_button') }} →
+                    </Button>
+                </div>
             </div>
         </div>
     </WebLayout>
