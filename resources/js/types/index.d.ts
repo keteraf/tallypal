@@ -2,6 +2,14 @@ import type { LucideIcon } from 'lucide-vue-next';
 import type { Component } from 'vue';
 import type { Config } from 'ziggy-js';
 
+export interface SeoProps {
+    site_name: string;
+    default_description: string;
+    default_og_image: string;
+    locale: string;
+    url: string;
+}
+
 export interface Auth {
     user: User;
 }
@@ -24,6 +32,7 @@ export type AppPageProps<T extends Record<string, unknown> = Record<string, unkn
     auth: Auth;
     ziggy: Config & { location: string };
     sidebarOpen: boolean;
+    seo: SeoProps;
 };
 
 export interface User {

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppHead from '@/components/seo/AppHead.vue';
 import HomeBalanceGrid from '@/pages/home/sections/HomeBalanceGrid.vue';
 import HomeCategoriesBreakdown from '@/pages/home/sections/HomeCategoriesBreakdown.vue';
 import HomeEmptyState from '@/pages/home/sections/HomeEmptyState.vue';
@@ -18,7 +19,6 @@ import type {
 } from '@/pages/home/types';
 import WebLayout from '@/layouts/WebLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 
@@ -50,7 +50,7 @@ const addTransactionUrl = computed(() => {
 </script>
 
 <template>
-    <Head :title="$t('home.title')" />
+    <AppHead :title="$t('home.title')" :noindex="true" />
 
     <WebLayout :breadcrumbs="breadcrumbs">
         <div class="mx-auto w-full max-w-330 px-6 py-10 max-[768px]:pb-28 md:px-8">
