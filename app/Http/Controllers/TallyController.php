@@ -12,49 +12,28 @@ use App\Http\Requests\Tally\DestroyTallyRequest;
 use App\Http\Requests\Tally\StoreTallyRequest;
 use App\Http\Requests\Tally\UpdateTallyRequest;
 use App\Models\Tally;
+use App\Models\User;
+use App\Repositories\Contracts\TallyRepositoryInterface;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
+use Throwable;
 
 final class TallyController extends Controller
 {
+    public function __construct(private readonly TallyRepositoryInterface $tallyRepository) {}
+
     /**
      * Display a listing of the tallies.
      */
     public function index(Request $request): Response
     {
-        $userId = $request->user()?->id; // @pest-mutate-ignore
-
-        $tallies = Tally::query()
-            ->where(function ($query) use ($userId): void {
-                $query->where('owner_id', $userId)
-                    ->orWhereHas('users', fn ($query) => $query->where('user_id', $userId));
-            })
-            ->with(['owner'])
-            ->addSelect([
-                'income_total' => DB::table('transactions')
-                    ->join('currencies', 'transactions.currency_id', '=', 'currencies.currency_id')
-                    ->selectRaw('COALESCE(SUM(transactions.amount / POWER(10, currencies.decimals)), 0)')
-                    ->whereColumn('transactions.tally_id', 'tallies.tally_id')
-                    ->where('transactions.type', 'income'),
-                'expense_total' => DB::table('transactions')
-                    ->join('currencies', 'transactions.currency_id', '=', 'currencies.currency_id')
-                    ->selectRaw('COALESCE(SUM(transactions.amount / POWER(10, currencies.decimals)), 0)')
-                    ->whereColumn('transactions.tally_id', 'tallies.tally_id')
-                    ->where('transactions.type', 'expense'),
-            ])
-            ->get()
-            ->map(function (Tally $tally): Tally {
-                $tally->income_total = (float) ($tally->income_total ?? 0); // @pest-mutate-ignore
-                $tally->expense_total = (float) ($tally->expense_total ?? 0); // @pest-mutate-ignore
-
-                return $tally;
-            });
+        /** @var User $user */
+        $user = $request->user(); // @pest-mutate-ignore
 
         return Inertia::render('tallies/Index', [
-            'tallies' => $tallies,
+            'tallies' => $this->tallyRepository->accessibleTalliesWithTotals($user->id),
         ]);
     }
 
@@ -68,6 +47,7 @@ final class TallyController extends Controller
 
     /**
      * Store a newly created tally in storage.
+     * @throws Throwable
      */
     public function store(StoreTallyRequest $request, StoreTallyAction $action): RedirectResponse
     {
@@ -96,6 +76,8 @@ final class TallyController extends Controller
 
     /**
      * Update the specified tally in storage.
+     *
+     * @throws Throwable
      */
     public function update(UpdateTallyRequest $request, Tally $tally, UpdateTallyAction $action): RedirectResponse
     {
@@ -112,6 +94,8 @@ final class TallyController extends Controller
 
     /**
      * Remove the specified tally from storage.
+     *
+     * @throws Throwable
      */
     public function destroy(DestroyTallyRequest $request, Tally $tally, DestroyTallyAction $action): RedirectResponse
     {

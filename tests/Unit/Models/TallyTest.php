@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Models\Currency;
 use App\Models\Tally;
+use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -74,6 +76,55 @@ it('returns uuid as the unique id column', function () {
 it('returns uuid as the route key name', function () {
     $tally = new Tally();
     expect($tally->getRouteKeyName())->toBe('uuid');
+});
+
+it('scopeForUser returns owned tallies', function (): void {
+    $user = User::factory()->create();
+    $owned = Tally::factory()->create(['owner_id' => $user->id]);
+    $other = Tally::factory()->create();
+
+    $result = Tally::query()->forUser((int) $user->id)->pluck('tally_id');
+
+    expect($result->toArray())->toContain($owned->tally_id)
+        ->and($result->toArray())->not->toContain($other->tally_id);
+});
+
+it('scopeForUser returns tallies the user is a member of', function (): void {
+    $owner = User::factory()->create();
+    $member = User::factory()->create();
+    $shared = Tally::factory()->create(['owner_id' => $owner->id]);
+    $shared->users()->attach($member->id, ['default_share_percentage' => 50]);
+
+    $result = Tally::query()->forUser((int) $member->id)->pluck('tally_id');
+
+    expect($result->toArray())->toContain($shared->tally_id);
+});
+
+it('scopeWithIncomeAndExpenseTotals computes totals in decimals', function (): void {
+    $user = User::factory()->create();
+    $currency = Currency::factory()->create(['decimals' => 2]);
+    $tally = Tally::factory()->create(['owner_id' => $user->id]);
+
+    Transaction::factory()->forTally($tally)->withCurrency($currency)
+        ->create(['type' => 'income', 'amount' => 10.0]);
+    Transaction::factory()->forTally($tally)->withCurrency($currency)
+        ->create(['type' => 'expense', 'amount' => 4.0]);
+
+    /** @var Tally $result */
+    $result = Tally::query()->withIncomeAndExpenseTotals()->find($tally->tally_id);
+
+    expect($result->income_total)->toBe(10.0)
+        ->and($result->expense_total)->toBe(4.0);
+});
+
+it('scopeWithIncomeAndExpenseTotals returns zero when no transactions exist', function (): void {
+    $tally = Tally::factory()->create();
+
+    /** @var Tally $result */
+    $result = Tally::query()->withIncomeAndExpenseTotals()->find($tally->tally_id);
+
+    expect($result->income_total)->toBe(0.0)
+        ->and($result->expense_total)->toBe(0.0);
 });
 
 it('creates with factory', function () {

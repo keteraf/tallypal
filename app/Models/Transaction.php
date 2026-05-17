@@ -41,6 +41,8 @@ class Transaction extends Model
     /** @pest-mutate-ignore */
     public const string PRIMARY_KEY = self::KEYS_PREFIX . '_id'; // @pest-mutate-ignore
 
+    public const string NORMALIZED_AMOUNT_EXPRESSION = 'transactions.amount / POWER(10, currencies.decimals)';
+
     protected $table = self::TABLE_NAME;
 
     protected $primaryKey = self::PRIMARY_KEY;

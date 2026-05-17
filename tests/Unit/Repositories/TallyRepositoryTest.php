@@ -11,6 +11,50 @@ use Carbon\CarbonImmutable;
 
 covers(TallyRepository::class);
 
+test('accessibleTalliesWithTotals returns owned and shared tallies', function (): void {
+    $owner = User::factory()->create();
+    $member = User::factory()->create();
+    $owned = Tally::factory()->create(['owner_id' => $owner->id]);
+    $shared = Tally::factory()->create(['owner_id' => $member->id]);
+    $shared->users()->attach($owner->id, ['default_share_percentage' => 50]);
+    Tally::factory()->create();
+
+    $repo = new TallyRepository;
+    $result = $repo->accessibleTalliesWithTotals((int) $owner->id);
+
+    expect($result->pluck('tally_id')->toArray())
+        ->toContain($owned->tally_id)
+        ->toContain($shared->tally_id)
+        ->toHaveCount(2);
+});
+
+test('accessibleTalliesWithTotals computes income and expense totals', function (): void {
+    $user = User::factory()->create();
+    $currency = Currency::factory()->create(['decimals' => 2]);
+    $tally = Tally::factory()->create(['owner_id' => $user->id]);
+
+    Transaction::factory()->forTally($tally)->forParty($user)->withCurrency($currency)
+        ->create(['type' => 'income', 'amount' => 10.0]);
+    Transaction::factory()->forTally($tally)->forParty($user)->withCurrency($currency)
+        ->create(['type' => 'expense', 'amount' => 3.5]);
+
+    $repo = new TallyRepository;
+    $result = $repo->accessibleTalliesWithTotals((int) $user->id);
+
+    $found = $result->firstWhere('tally_id', $tally->tally_id);
+    expect($found->income_total)->toBe(10.0)
+        ->and($found->expense_total)->toBe(3.5);
+});
+
+test('accessibleTalliesWithTotals returns empty collection when user has no tallies', function (): void {
+    $user = User::factory()->create();
+
+    $repo = new TallyRepository;
+    $result = $repo->accessibleTalliesWithTotals((int) $user->id);
+
+    expect($result)->toBeEmpty();
+});
+
 test('accessibleTallyIds returns owned tallies', function (): void {
     $user = User::factory()->create();
     $tally = Tally::factory()->create(['owner_id' => $user->id]);
