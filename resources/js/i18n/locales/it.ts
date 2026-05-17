@@ -454,4 +454,19 @@ export default {
         logout: 'Esci',
         language: 'Lingua',
     },
+    errors: {
+        not_found: {
+            eyebrow: '404 · Non trovato',
+            title_lead: 'Pagina',
+            title_em: 'non trovata.',
+            description: 'La pagina che stai cercando non esiste o è stata spostata.',
+        },
+        generic: {
+            eyebrow: 'Qualcosa è andato storto',
+            title_lead: 'Ops!',
+            title_em: 'Qualcosa è andato storto.',
+            description: 'Ci stiamo lavorando — riprova tra un momento o torna alla home.',
+        },
+        back_home: 'Torna alla home',
+    },
 };

@@ -453,4 +453,19 @@ export default {
         logout: 'Log out',
         language: 'Language',
     },
+    errors: {
+        not_found: {
+            eyebrow: '404 · Not found',
+            title_lead: 'Page',
+            title_em: 'not found.',
+            description: "The page you're looking for doesn't exist or has been moved.",
+        },
+        generic: {
+            eyebrow: 'Something went wrong',
+            title_lead: 'Oops!',
+            title_em: 'Something went wrong.',
+            description: "We're working on it — try again in a moment or head back home.",
+        },
+        back_home: 'Back to home',
+    },
 };
