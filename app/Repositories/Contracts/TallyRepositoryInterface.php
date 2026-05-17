@@ -4,11 +4,19 @@ declare(strict_types=1);
 
 namespace App\Repositories\Contracts;
 
+use App\Models\Tally;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
 interface TallyRepositoryInterface
 {
+    /**
+     * Return all tallies accessible by the given user with income/expense totals.
+     *
+     * @return Collection<int, Tally>
+     */
+    public function accessibleTalliesWithTotals(int $userId): Collection;
+
     /**
      * Return all tally IDs accessible by the given user (owned + shared).
      *

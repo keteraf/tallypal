@@ -53,8 +53,8 @@ final class TransactionStatsRepository implements TransactionStatsRepositoryInte
         /** @var object{income: float|int|string, expense: float|int|string}|null $row */
         $row = DB::table(Transaction::TABLE_NAME)
             ->join('currencies', 'transactions.currency_id', '=', 'currencies.currency_id')
-            ->selectRaw('COALESCE(SUM(CASE WHEN transactions.type = ? THEN transactions.amount / POWER(10, currencies.decimals) ELSE 0 END), 0) as income', [TransactionType::INCOME->value])
-            ->selectRaw('COALESCE(SUM(CASE WHEN transactions.type = ? THEN transactions.amount / POWER(10, currencies.decimals) ELSE 0 END), 0) as expense', [TransactionType::EXPENSE->value])
+            ->selectRaw('COALESCE(SUM(CASE WHEN transactions.type = ? THEN ' . Transaction::NORMALIZED_AMOUNT_EXPRESSION . ' ELSE 0 END), 0) as income', [TransactionType::INCOME->value])
+            ->selectRaw('COALESCE(SUM(CASE WHEN transactions.type = ? THEN ' . Transaction::NORMALIZED_AMOUNT_EXPRESSION . ' ELSE 0 END), 0) as expense', [TransactionType::EXPENSE->value])
             ->whereIn('transactions.tally_id', $tallyIds->all())
             ->where('transactions.transaction_date', '>=', $monthStart->toDateString())
             ->where('transactions.transaction_date', '<=', $now->toDateString())
@@ -117,7 +117,7 @@ final class TransactionStatsRepository implements TransactionStatsRepositoryInte
         /** @var Collection<int, object{transaction_date: string, total: float|int|string}> $rows */
         $rows = DB::table(Transaction::TABLE_NAME)
             ->join('currencies', 'transactions.currency_id', '=', 'currencies.currency_id')
-            ->selectRaw('transactions.transaction_date, transactions.amount / POWER(10, currencies.decimals) as total')
+            ->selectRaw('transactions.transaction_date, ' . Transaction::NORMALIZED_AMOUNT_EXPRESSION . ' as total')
             ->whereIn('transactions.tally_id', $tallyIds->all())
             ->where('transactions.type', TransactionType::EXPENSE->value)
             ->where('transactions.transaction_date', '>=', $start->toDateString())
@@ -158,7 +158,7 @@ final class TransactionStatsRepository implements TransactionStatsRepositoryInte
         $rows = DB::table(Transaction::TABLE_NAME)
             ->join('currencies', 'transactions.currency_id', '=', 'currencies.currency_id')
             ->leftJoin('categories', 'transactions.category_id', '=', 'categories.category_id')
-            ->selectRaw('COALESCE(categories.name, ?) as category_name, COALESCE(SUM(transactions.amount / POWER(10, currencies.decimals)), 0) as total', ['Uncategorised'])
+            ->selectRaw('COALESCE(categories.name, ?) as category_name, COALESCE(SUM(' . Transaction::NORMALIZED_AMOUNT_EXPRESSION . '), 0) as total', ['Uncategorised'])
             ->whereIn('transactions.tally_id', $tallyIds->all())
             ->where('transactions.type', TransactionType::EXPENSE->value)
             ->where('transactions.transaction_date', '>=', $monthStart->toDateString())

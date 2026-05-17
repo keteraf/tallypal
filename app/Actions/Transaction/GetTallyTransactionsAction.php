@@ -6,6 +6,7 @@ namespace App\Actions\Transaction;
 
 use App\Models\Tally;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Throwable;
 
 final readonly class GetTallyTransactionsAction
 {
@@ -16,10 +17,14 @@ final readonly class GetTallyTransactionsAction
      */
     public function handle(Tally $tally, int $perPage = 15): LengthAwarePaginator
     {
-        return $tally->transactions()
-            ->with(['party', 'currency', 'category'])
-            ->latest()
-            ->paginate($perPage)
-            ->withQueryString();
+        try {
+            return $tally->transactions()
+                ->with(['party', 'currency', 'category'])
+                ->latest()
+                ->paginate($perPage)
+                ->withQueryString();
+        } catch (Throwable $e) {
+            abort($e->getCode(), $e->getMessage());
+        }
     }
 }

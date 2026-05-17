@@ -10,15 +10,16 @@ use Throwable;
 
 final readonly class DestroyTallyAction
 {
-    /**
-     * @throws Throwable
-     */
     public function handle(Tally $tally): void
     {
-        DB::transaction(function () use ($tally): void {
-            $tally->transactions()->delete();
-            $tally->users()->detach();
-            $tally->delete();
-        });
+        try {
+            DB::transaction(function () use ($tally): void {
+                $tally->transactions()->delete();
+                $tally->users()->detach();
+                $tally->delete();
+            });
+        } catch (Throwable $e) {
+            abort($e->getCode(), $e->getMessage());
+        }
     }
 }

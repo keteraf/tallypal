@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\TransactionType;
 use Database\Factories\TallyFactory;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 /**
  * @property-read int $tally_id
@@ -49,6 +53,44 @@ class Tally extends Model
         'income_total', // @pest-mutate-ignore
         'expense_total', // @pest-mutate-ignore
     ];
+
+    /** @pest-mutate-ignore */
+    protected $casts = [
+        'income_total' => 'float', // @pest-mutate-ignore
+        'expense_total' => 'float', // @pest-mutate-ignore
+    ];
+
+    /**
+     * @param  Builder<Tally>  $query
+     */
+    #[Scope]
+    public function forUser(Builder $query, int $userId): void
+    {
+        $query->where(function (Builder $q) use ($userId): void {
+            $q->where('owner_id', $userId)
+                ->orWhereHas('users', fn (Builder $q) => $q->where('user_id', $userId));
+        });
+    }
+
+    /**
+     * @param  Builder<Tally>  $query
+     */
+    #[Scope]
+    public function withIncomeAndExpenseTotals(Builder $query): void
+    {
+        $query->addSelect([
+            'income_total' => DB::table(Transaction::TABLE_NAME)
+                ->join('currencies', 'transactions.currency_id', '=', 'currencies.currency_id')
+                ->selectRaw('COALESCE(SUM(' . Transaction::NORMALIZED_AMOUNT_EXPRESSION . '), 0)')
+                ->whereColumn('transactions.tally_id', 'tallies.tally_id')
+                ->where('transactions.type', TransactionType::INCOME->value),
+            'expense_total' => DB::table(Transaction::TABLE_NAME)
+                ->join('currencies', 'transactions.currency_id', '=', 'currencies.currency_id')
+                ->selectRaw('COALESCE(SUM(' . Transaction::NORMALIZED_AMOUNT_EXPRESSION . '), 0)')
+                ->whereColumn('transactions.tally_id', 'tallies.tally_id')
+                ->where('transactions.type', TransactionType::EXPENSE->value),
+        ]);
+    }
 
     /** @return array<int, string> */
     public function uniqueIds(): array

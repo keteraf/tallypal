@@ -10,13 +10,14 @@ use Throwable;
 
 final readonly class DestroyTransactionAction
 {
-    /**
-     * @throws Throwable
-     */
     public function handle(Transaction $transaction): void
     {
-        DB::transaction(function () use ($transaction): void {
-            $transaction->delete();
-        });
+        try {
+            DB::transaction(function () use ($transaction): void {
+                $transaction->delete();
+            });
+        } catch (Throwable $e) {
+            abort($e->getCode(), $e->getMessage());
+        }
     }
 }

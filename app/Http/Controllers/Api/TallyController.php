@@ -27,14 +27,9 @@ class TallyController extends Controller
      */
     public function index(): AnonymousResourceCollection
     {
-        $userId = auth()->id();
-
         $tallies = Tally::query()
+            ->forUser((int) auth()->id())
             ->with(['owner', 'users'])
-            ->where(function ($query) use ($userId): void {
-                $query->where('owner_id', $userId)
-                    ->orWhereHas('users', fn ($query) => $query->where('user_id', $userId));
-            })
             ->get();
 
         return TallyResource::collection($tallies);

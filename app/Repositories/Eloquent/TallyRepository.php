@@ -16,14 +16,25 @@ use Illuminate\Support\Facades\DB;
 final class TallyRepository implements TallyRepositoryInterface
 {
     /**
+     * @return Collection<int, Tally>
+     */
+    public function accessibleTalliesWithTotals(int $userId): Collection
+    {
+        return Tally::query()
+            ->with('owner')
+            ->forUser($userId)
+            ->withIncomeAndExpenseTotals()
+            ->get();
+    }
+
+    /**
      * @return Collection<int, int>
      */
     public function accessibleTallyIds(int $userId): Collection
     {
         /** @var Collection<int, int> */
         return Tally::query()
-            ->where('owner_id', $userId)
-            ->orWhereHas('users', fn ($query) => $query->where('user_id', $userId))
+            ->forUser($userId)
             ->pluck(Tally::PRIMARY_KEY)
             ->map(fn (mixed $id): int => is_numeric($id) ? (int) $id : 0);
     }
@@ -43,7 +54,7 @@ final class TallyRepository implements TallyRepositoryInterface
                     ->whereColumn('transactions.tally_id', 'tallies.tally_id'),
                 'monthly_total' => DB::table(Transaction::TABLE_NAME)
                     ->join('currencies', 'transactions.currency_id', '=', 'currencies.currency_id')
-                    ->selectRaw('COALESCE(SUM(transactions.amount / POWER(10, currencies.decimals)), 0)')
+                    ->selectRaw('COALESCE(SUM(' . Transaction::NORMALIZED_AMOUNT_EXPRESSION . '), 0)')
                     ->whereColumn('transactions.tally_id', 'tallies.tally_id')
                     ->where('transactions.type', TransactionType::EXPENSE->value)
                     ->where('transactions.created_at', '>=', $monthStart),
@@ -89,7 +100,7 @@ final class TallyRepository implements TallyRepositoryInterface
         /** @var Collection<int, float|int|string> $perUser */
         $perUser = DB::table(Transaction::TABLE_NAME)
             ->join('currencies', 'transactions.currency_id', '=', 'currencies.currency_id')
-            ->selectRaw('transactions.party_id, COALESCE(SUM(transactions.amount / POWER(10, currencies.decimals)), 0) as total')
+            ->selectRaw('transactions.party_id, COALESCE(SUM(' . Transaction::NORMALIZED_AMOUNT_EXPRESSION . '), 0) as total')
             ->where('transactions.tally_id', $sharedTally->getKey())
             ->where('transactions.type', TransactionType::EXPENSE->value)
             ->where('transactions.transaction_date', '>=', $monthStart->toDateString())
@@ -109,15 +120,15 @@ final class TallyRepository implements TallyRepositoryInterface
             ->values();
 
         return [
-            'uuid' => (string) $sharedTally->uuid,
-            'name' => (string) $sharedTally->name,
+            'uuid' => $sharedTally->uuid,
+            'name' => $sharedTally->name,
             'total_spent' => $totalSpent,
             'members' => $members->map(function (User $member) use ($perUser, $totalSpent): array {
                 $amount = (float) ($perUser[$member->id] ?? 0);
 
                 return [
-                    'name' => (string) $member->name,
-                    'initials' => $this->initials((string) $member->name),
+                    'name' => $member->name,
+                    'initials' => $this->initials($member->name),
                     'amount' => $amount,
                     'percentage' => $totalSpent > 0 ? round(($amount / $totalSpent) * 100, 1) : 0.0,
                 ];
