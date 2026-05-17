@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import AppLogoIcon from '@/components/AppLogoIcon.vue';
+
 interface Props {
     showBeta?: boolean;
     size?: 'sm' | 'md' | 'lg';
@@ -12,14 +14,20 @@ withDefaults(defineProps<Props>(), {
 
 <template>
     <span
-        class="inline-flex items-baseline gap-2.5 font-serif font-medium tracking-[-0.01em]"
+        class="inline-flex items-center gap-2 font-serif font-medium tracking-[-0.01em]"
         :class="{
             'text-[18px]': size === 'sm',
             'text-[22px]': size === 'md',
             'text-[28px]': size === 'lg',
         }"
     >
-        <span class="inline-block size-1.75 -translate-y-0.5 rounded-full bg-brand" aria-hidden="true" />
+        <AppLogoIcon
+            :class="{
+                'size-5': size === 'sm',
+                'size-6': size === 'md',
+                'size-8': size === 'lg',
+            }"
+        />
         <span class="text-foreground">tally<em class="not-italic-[0] font-medium" style="font-style: italic; color: var(--brand)">pal</em></span>
         <span
             v-if="showBeta"

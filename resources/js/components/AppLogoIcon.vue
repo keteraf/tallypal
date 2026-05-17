@@ -1,19 +1,23 @@
 <script setup lang="ts">
-import type { HTMLAttributes } from 'vue';
-
-defineOptions({
-    inheritAttrs: false,
-});
+import logoDark from '../../images/logo-dark.svg';
+import logoLight from '../../images/logo.svg';
 
 interface Props {
-    className?: HTMLAttributes['class'];
+    variant?: 'auto' | 'light' | 'dark';
 }
 
-defineProps<Props>();
+withDefaults(defineProps<Props>(), {
+    variant: 'auto',
+});
 </script>
 
 <template>
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" :class="className" v-bind="$attrs" aria-hidden="true">
-        <circle cx="12" cy="12" r="3.2" fill="currentColor" />
-    </svg>
+    <span class="inline-block leading-none">
+        <img v-if="variant === 'light'" :src="logoLight" alt="tallypal" class="block size-full" />
+        <img v-else-if="variant === 'dark'" :src="logoDark" alt="tallypal" class="block size-full" />
+        <template v-else>
+            <img :src="logoLight" alt="tallypal" class="block size-full dark:hidden" />
+            <img :src="logoDark" alt="tallypal" class="hidden size-full dark:block" />
+        </template>
+    </span>
 </template>
