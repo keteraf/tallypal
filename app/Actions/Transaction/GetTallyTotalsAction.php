@@ -13,7 +13,7 @@ final readonly class GetTallyTotalsAction
     /**
      * Get totals for a tally grouped by type and currency.
      *
-     * @return Collection<int, array{type: string, currency_id: int, total: float, currency: \App\Models\Currency|null}>
+     * @return Collection<int, array{type: 'expense'|'income', currency_id: int, total: float, currency: \App\Models\Currency|null}>
      */
     public function handle(Tally $tally): Collection
     {
