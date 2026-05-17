@@ -258,7 +258,7 @@ final class HomeController extends Controller
             ->where('transactions.type', TransactionType::EXPENSE->value)
             ->where('transactions.transaction_date', '>=', $monthStart->toDateString())
             ->where('transactions.transaction_date', '<=', $now->toDateString())
-            ->groupByRaw('COALESCE(categories.name, ?)', ['Uncategorised'])
+            ->groupBy('categories.category_id', 'categories.name')
             ->orderByDesc('total')
             ->limit(6)
             ->get();
