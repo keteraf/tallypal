@@ -372,6 +372,13 @@ export default {
             description: 'Description',
             description_placeholder: 'Optional description',
         },
+        steps: {
+            what: 'What',
+            how_much: 'How Much',
+            when: 'When',
+            next: 'Next',
+            back: 'Back',
+        },
         debts: {
             you_owe: 'You owe {creditor} {amount}',
             owes_you: '{debtor} owes you {amount}',

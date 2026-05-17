@@ -373,6 +373,13 @@ export default {
             description: 'Descrizione',
             description_placeholder: 'Descrizione opzionale',
         },
+        steps: {
+            what: 'Cosa',
+            how_much: 'Importo',
+            when: 'Quando',
+            next: 'Avanti',
+            back: 'Indietro',
+        },
         debts: {
             you_owe: 'Devi a {creditor} {amount}',
             owes_you: '{debtor} ti deve {amount}',
