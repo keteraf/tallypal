@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Settings;
 
+use App\Actions\DeleteUserAccountAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -15,6 +16,8 @@ use Inertia\Response;
 
 final class ProfileController extends Controller
 {
+    public function __construct(private readonly DeleteUserAccountAction $deleteUserAccountAction) {}
+
     /**
      * Show the user's profile settings page.
      */
@@ -55,7 +58,9 @@ final class ProfileController extends Controller
 
         Auth::logout();
 
-        $user?->delete();
+        if ($user !== null) {
+            $this->deleteUserAccountAction->handle($user);
+        }
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
