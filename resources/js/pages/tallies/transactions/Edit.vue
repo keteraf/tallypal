@@ -77,21 +77,13 @@ const typeOptions = [
     <Head :title="$t('transactions.edit_title', { name: tally.name })" />
 
     <WebLayout :breadcrumbs="breadcrumbs">
-        <div class="mx-auto w-full max-w-[1320px] px-6 py-10 md:px-8">
-            <div class="mb-4 flex items-center gap-2 font-mono text-[11px] tracking-[0.1em] text-muted-foreground uppercase">
-                <Link :href="tallies.index.url()" class="transition-colors hover:text-foreground">{{ $t('tallies.title') }}</Link>
-                <span class="opacity-60">›</span>
-                <Link :href="tallies.transactions.index.url(tally.uuid)" class="transition-colors hover:text-foreground">{{ tally.name }}</Link>
-                <span class="opacity-60">›</span>
-                <span class="text-foreground">{{ $t('common.edit') }}</span>
-            </div>
-
+        <div class="mx-auto w-full max-w-330 px-6 py-10 md:px-8">
             <h1 class="m-0 mb-7 font-serif text-[clamp(32px,4vw,40px)] leading-[1.05] tracking-[-0.02em]">
                 {{ $t('transactions.edit_lead') }}
                 <em class="not-italic-[0]" style="font-style: italic; color: var(--brand)">{{ transaction.title }}</em>
             </h1>
 
-            <div class="max-w-[880px] rounded-sm border border-rule bg-background px-9 pt-9 pb-7">
+            <div class="max-w-220 rounded-sm border border-rule bg-background px-9 pt-9 pb-7">
                 <Form
                     :action="tallies.transactions.update.url({ tally: tally.uuid, transaction: transaction.uuid })"
                     method="patch"

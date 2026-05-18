@@ -127,3 +127,43 @@ it('new user mailable has correct content', function () {
     expect($content->with['tallyName'])->toBe('Family Budget');
     expect($content->with['registerUrl'])->toContain('token-new-content');
 });
+
+it('existing user rendered html contains tallypal brand color', function () {
+    $owner = User::factory()->create(['name' => 'Inviter']);
+    $tally = Tally::factory()->withOwner($owner)->create(['name' => 'Brand Test']);
+
+    $invitation = $tally->invitations()->create([
+        'invited_by_user_id' => $owner->id,
+        'email' => 'brand@example.com',
+        'token' => 'token-brand-existing',
+        'status' => TallyInvitation::STATUS_PENDING,
+        'expires_at' => now()->addDays(7),
+    ]);
+
+    $mailable = new TallyInvitationExistingUser($invitation);
+    $html = $mailable->render();
+
+    expect($html)
+        ->toContain('#C2613B')
+        ->toMatch('/viewbox="0 0 64 64"/i');
+});
+
+it('new user rendered html contains tallypal brand color', function () {
+    $owner = User::factory()->create(['name' => 'Inviter']);
+    $tally = Tally::factory()->withOwner($owner)->create(['name' => 'Brand Test']);
+
+    $invitation = $tally->invitations()->create([
+        'invited_by_user_id' => $owner->id,
+        'email' => 'brand@example.com',
+        'token' => 'token-brand-new',
+        'status' => TallyInvitation::STATUS_PENDING,
+        'expires_at' => now()->addDays(7),
+    ]);
+
+    $mailable = new TallyInvitationNewUser($invitation);
+    $html = $mailable->render();
+
+    expect($html)
+        ->toContain('#C2613B')
+        ->toMatch('/viewbox="0 0 64 64"/i');
+});

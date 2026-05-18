@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="T extends string | number">
-import { computed, type HTMLAttributes } from 'vue';
+import { computed, type HTMLAttributes, type Ref } from 'vue';
 import { useVModel } from '@vueuse/core';
 import { cn } from '@/lib/utils';
 
@@ -21,10 +21,11 @@ const emits = defineEmits<{
     (e: 'update:modelValue', value: T): void;
 }>();
 
-const current = useVModel(props, 'modelValue', emits, {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const current = useVModel(props as any, 'modelValue', emits, {
     passive: true,
     defaultValue: props.defaultValue,
-});
+}) as Ref<T | undefined>;
 
 const selectedValue = computed<T | undefined>(() => current.value ?? props.defaultValue);
 
@@ -51,7 +52,7 @@ const selectOption = (option: SegmentOption<T>) => {
     <div
         role="radiogroup"
         :class="cn(
-            'inline-flex p-[3px] rounded-full border border-rule font-mono text-[11px] tracking-[0.06em] uppercase',
+            'inline-flex p-0.75 rounded-full border border-rule font-mono text-[11px] tracking-[0.06em] uppercase',
             props.class,
         )"
     >
