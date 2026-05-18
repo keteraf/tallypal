@@ -6,7 +6,7 @@ use App\Models\Currency;
 use App\Models\Tally;
 use App\Models\Transaction;
 use App\Models\User;
-use App\Repositories\Eloquent\TransactionStatsRepository;
+use App\Repositories\TransactionStatsRepository;
 use Carbon\CarbonImmutable;
 
 covers(TransactionStatsRepository::class);

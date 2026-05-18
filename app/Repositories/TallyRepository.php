@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Repositories\Eloquent;
+namespace App\Repositories;
 
+use App\Contracts\Repositories\TallyRepositoryInterface;
 use App\Enums\TransactionType;
 use App\Models\Tally;
 use App\Models\Transaction;
 use App\Models\User;
-use App\Repositories\Contracts\TallyRepositoryInterface;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;

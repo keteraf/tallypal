@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Repositories\Eloquent;
+namespace App\Repositories;
 
+use App\Contracts\Repositories\TransactionStatsRepositoryInterface;
 use App\Enums\TransactionType;
 use App\Models\Transaction;
-use App\Repositories\Contracts\TransactionStatsRepositoryInterface;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;

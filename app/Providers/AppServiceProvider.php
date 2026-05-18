@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Contracts\Repositories\TallyRepositoryInterface;
+use App\Contracts\Repositories\TransactionStatsRepositoryInterface;
 use App\Models\Tally;
 use App\Models\TallyUser;
 use App\Models\Transaction;
@@ -11,10 +13,8 @@ use App\Models\User;
 use App\Observers\TallyObserver;
 use App\Observers\TallyUserObserver;
 use App\Observers\TransactionObserver;
-use App\Repositories\Contracts\TallyRepositoryInterface;
-use App\Repositories\Contracts\TransactionStatsRepositoryInterface;
-use App\Repositories\Eloquent\TallyRepository;
-use App\Repositories\Eloquent\TransactionStatsRepository;
+use App\Repositories\TallyRepository;
+use App\Repositories\TransactionStatsRepository;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
