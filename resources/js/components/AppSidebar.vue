@@ -5,6 +5,8 @@ import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
 import ThemeToggle from '@/components/ThemeToggle.vue';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuItem } from '@/components/ui/sidebar';
+import { dashboard, home } from '@/routes';
+import tallies from '@/routes/tallies';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
 import { Activity, House, LayoutGrid, LucideBookOpenText, Tally5Icon, Telescope } from 'lucide-vue-next';
@@ -26,7 +28,7 @@ const mainNavItems = computed<NavItem[]>(() => {
         },
         {
             title: t('welcome.my_tallies'),
-            href: route('tallies.index'),
+            href: tallies.index.url(),
             icon: Tally5Icon,
         },
     ];
@@ -34,7 +36,7 @@ const mainNavItems = computed<NavItem[]>(() => {
     if (isSuperAdmin.value) {
         items.push({
             title: t('navigation.dashboard'),
-            href: route('dashboard'),
+            href: dashboard.url(),
             icon: LayoutGrid,
         });
     }
@@ -73,7 +75,7 @@ if (isSuperAdmin.value) {
         <SidebarHeader>
             <SidebarMenu>
                 <SidebarMenuItem class="flex items-center justify-between gap-2">
-                    <Link :href="route('home')" class="flex items-center px-1 py-2">
+                    <Link :href="home.url()" class="flex items-center px-1 py-2">
                         <AppLogo size="sm" />
                     </Link>
                     <ThemeToggle class="group-data-[collapsible=icon]:hidden" />

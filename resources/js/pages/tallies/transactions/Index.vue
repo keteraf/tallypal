@@ -2,6 +2,7 @@
 import TallyShareDialog from '@/components/tallies/TallyShareDialog.vue';
 import { Button } from '@/components/ui/button';
 import WebLayout from '@/layouts/WebLayout.vue';
+import tallies from '@/routes/tallies';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, usePage, WhenVisible } from '@inertiajs/vue3';
 import { Plus, Settings, Share2 } from 'lucide-vue-next';
@@ -74,11 +75,11 @@ const balances = computed(() => {
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: t('tallies.title'),
-        href: route('tallies.index'),
+        href: tallies.index.url(),
     },
     {
         title: props.tally.name,
-        href: route('tallies.transactions.index', props.tally.uuid),
+        href: tallies.transactions.index.url(props.tally.uuid),
     },
 ];
 
@@ -132,13 +133,13 @@ const splitName = (name: string) => {
                         {{ $t('common.share') }}
                     </Button>
                     <Button variant="ghost" as-child>
-                        <Link :href="route('tallies.edit', tally.uuid)">
+                        <Link :href="tallies.edit.url(tally.uuid)">
                             <Settings class="size-4" />
                             {{ $t('common.edit') }}
                         </Link>
                     </Button>
                     <Button as-child>
-                        <Link :href="route('tallies.transactions.create', tally.uuid)">
+                        <Link :href="tallies.transactions.create.url(tally.uuid)">
                             <Plus class="size-4" />
                             {{ $t('transactions.add_button') }}
                         </Link>
@@ -149,7 +150,7 @@ const splitName = (name: string) => {
                         <Share2 class="size-4" />
                     </Button>
                     <Button variant="ghost" as-child size="icon">
-                        <Link :href="route('tallies.edit', tally.uuid)" :aria-label="$t('common.edit')">
+                        <Link :href="tallies.edit.url(tally.uuid)" :aria-label="$t('common.edit')">
                             <Settings class="size-4" />
                         </Link>
                     </Button>
@@ -216,7 +217,7 @@ const splitName = (name: string) => {
                     <Link
                         v-for="transaction in transactions.data"
                         :key="transaction.transaction_id"
-                        :href="route('tallies.transactions.edit', { tally: tally.uuid, transaction: transaction.uuid })"
+                        :href="tallies.transactions.edit.url({ tally: tally.uuid, transaction: transaction.uuid })"
                         class="grid grid-cols-[36px_1fr_auto] items-center gap-4 border-b border-rule-2 px-7 py-4 transition-colors last:border-b-0 hover:bg-paper-2"
                     >
                         <span
@@ -272,7 +273,7 @@ const splitName = (name: string) => {
             style="padding-bottom: calc(env(safe-area-inset-bottom) + 0.75rem)"
         >
             <Button as-child class="w-full">
-                <Link :href="route('tallies.transactions.create', tally.uuid)">
+                <Link :href="tallies.transactions.create.url(tally.uuid)">
                     <Plus class="size-4" />
                     {{ $t('transactions.add_button') }}
                 </Link>

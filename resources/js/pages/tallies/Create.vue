@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import WebLayout from '@/layouts/WebLayout.vue';
+import tallies from '@/routes/tallies';
 import { type BreadcrumbItem } from '@/types';
 import { Form, Head, Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
@@ -33,7 +34,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
             <div class="max-w-220 rounded-sm border border-rule bg-background px-9 pt-9 pb-7">
                 <Form
-                    :action="route('tallies.store')"
+                    :action="tallies.store.url()"
                     method="post"
                     :defaults="{
                         name: '',

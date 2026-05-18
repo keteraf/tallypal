@@ -18,6 +18,7 @@ import type {
     WeekHistory,
 } from '@/pages/home/types';
 import WebLayout from '@/layouts/WebLayout.vue';
+import tallyRoutes from '@/routes/tallies';
 import { type BreadcrumbItem } from '@/types';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -45,7 +46,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 const addTransactionUrl = computed(() => {
     if (!props.primary_tally) return '/tallies';
-    return route('tallies.transactions.create', props.primary_tally.uuid);
+    return tallyRoutes.transactions.create.url(props.primary_tally.uuid);
 });
 </script>
 

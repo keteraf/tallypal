@@ -16,6 +16,7 @@ use App\Models\Category;
 use App\Models\Currency;
 use App\Models\Tally;
 use App\Models\Transaction;
+use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -39,8 +40,22 @@ class TransactionController extends Controller
         $this->authorize('view', $tally);
 
         return Inertia::render('tallies/transactions/Index', [
-            'tally' => $tally,
-            'transactions' => Inertia::merge(fn (): \Illuminate\Contracts\Pagination\LengthAwarePaginator => $getTransactionsAction->handle($tally)),
+            'tally' => $tally->only(['tally_id', 'uuid', 'name', 'description', 'owner_id']),
+            'transactions' => Inertia::merge(function () use ($getTransactionsAction, $tally) {
+                /** @var \Illuminate\Pagination\LengthAwarePaginator<int, Transaction> $paginator */
+                $paginator = $getTransactionsAction->handle($tally);
+
+                return $paginator->through(fn (Transaction $t): array => [
+                    'transaction_id' => $t->transaction_id,
+                    'uuid' => $t->uuid,
+                    'title' => $t->title,
+                    'amount' => $t->amount,
+                    'type' => $t->type->value,
+                    'transaction_date' => $t->transaction_date,
+                    'category' => $t->category ? ['name' => $t->category->name] : null,
+                    'currency' => $t->currency ? ['symbol' => $t->currency->symbol, 'decimals' => $t->currency->decimals] : null,
+                ]);
+            }),
             'totals' => Inertia::merge(fn (): \Illuminate\Support\Collection => $getTotalsAction->handle($tally)),
             'debts' => Inertia::merge(fn (): \Illuminate\Support\Collection => $getDebtsAction->handle($tally)),
         ]);
@@ -54,10 +69,10 @@ class TransactionController extends Controller
         $this->authorize('view', $tally);
 
         return Inertia::render('tallies/transactions/Create', [
-            'tally' => $tally,
-            'categories' => Category::all(),
-            'currencies' => Currency::all(),
-            'parties' => $tally->users()->get(),
+            'tally' => $tally->only(['tally_id', 'uuid', 'name']),
+            'categories' => Category::all(['category_id', 'name']),
+            'currencies' => Currency::all(['currency_id', 'name', 'code']),
+            'parties' => $tally->users()->get()->map(fn (User $u): array => ['id' => $u->id, 'name' => $u->name]),
         ]);
     }
 
@@ -82,11 +97,11 @@ class TransactionController extends Controller
         $this->authorize('view', $transaction);
 
         return Inertia::render('tallies/transactions/Edit', [
-            'tally' => $tally,
-            'transaction' => $transaction,
-            'categories' => Category::all(),
-            'currencies' => Currency::all(),
-            'parties' => $tally->users()->get(),
+            'tally' => $tally->only(['tally_id', 'uuid', 'name']),
+            'transaction' => $transaction->only(['transaction_id', 'uuid', 'title', 'amount', 'party_id', 'category_id', 'currency_id', 'type', 'transaction_date', 'description']),
+            'categories' => Category::all(['category_id', 'name']),
+            'currencies' => Currency::all(['currency_id', 'name', 'code']),
+            'parties' => $tally->users()->get()->map(fn (User $u): array => ['id' => $u->id, 'name' => $u->name]),
         ]);
     }
 

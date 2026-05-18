@@ -61,8 +61,11 @@ it('shows only owned and shared tallies on index', function (): void {
         ->assertInertia(fn (AssertableInertia $page): AssertableInertia => $page
             ->component('tallies/Index')
             ->has('tallies', 2)
-            ->has('tallies.0.owner')
-            ->has('tallies.1.owner')
+            ->has('tallies.0.tally_id')
+            ->has('tallies.0.uuid')
+            ->has('tallies.0.owner_id')
+            ->missing('tallies.0.owner')
+            ->missing('tallies.0.created_at')
             ->where('tallies.0.name', fn (string $name): bool => in_array($name, ['Owned', 'Shared'], true))
             ->where('tallies.1.name', fn (string $name): bool => in_array($name, ['Owned', 'Shared'], true))
         );

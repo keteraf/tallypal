@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import apiTallies from '@/routes/api/tallies';
 import { useForm } from '@inertiajs/vue3';
 import { Loader2, Plus, Share2, Trash2, X } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
@@ -76,8 +77,8 @@ const fetchCollaborators = async () => {
     errors.value = {};
     try {
         const [sharesResponse, invitationsResponse] = await Promise.all([
-            fetch(route('api.tallies.shares.index', props.tally.uuid), { headers: { Accept: 'application/json' } }),
-            fetch(route('api.tallies.invitations.index', props.tally.uuid), { headers: { Accept: 'application/json' } }),
+            fetch(apiTallies.shares.index.url(props.tally.uuid), { headers: { Accept: 'application/json' } }),
+            fetch(apiTallies.invitations.index.url(props.tally.uuid), { headers: { Accept: 'application/json' } }),
         ]);
 
         if (sharesResponse.ok) {
@@ -104,7 +105,7 @@ const addCollaborator = async () => {
     successMessage.value = '';
 
     try {
-        const response = await fetch(route('api.tallies.shares.store', props.tally.uuid), {
+        const response = await fetch(apiTallies.shares.store.url(props.tally.uuid), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -138,9 +139,9 @@ const cancelInvitation = async (invitationUuid: string) => {
 
     try {
         const response = await fetch(
-            route('api.tallies.invitations.destroy', {
+            apiTallies.invitations.destroy.url({
                 tally: props.tally.uuid,
-                invitation: invitationUuid,
+                invitation: invitationUuid as unknown as number,
             }),
             {
                 method: 'DELETE',
@@ -168,7 +169,7 @@ const removeCollaborator = async (collaboratorUuid: string) => {
 
     try {
         const response = await fetch(
-            route('api.tallies.shares.destroy', {
+            apiTallies.shares.destroy.url({
                 tally: props.tally.uuid,
                 share: collaboratorUuid,
             }),
@@ -210,7 +211,7 @@ const saveShares = async () => {
     };
 
     try {
-        const response = await fetch(route('api.tallies.shares.update', props.tally.uuid), {
+        const response = await fetch(apiTallies.shares.update.url(props.tally.uuid), {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',

@@ -8,6 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/compon
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import UserMenuContent from '@/components/UserMenuContent.vue';
 import { getInitials } from '@/composables/useInitials';
+import { dashboard, home, login, logout } from '@/routes';
 import type { BreadcrumbItem, NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
 import { House, LayoutGrid, LogOut, Menu, Tally5 } from 'lucide-vue-next';
@@ -49,7 +50,7 @@ const mainNavItems = computed<NavItem[]>(() => {
     if (isSuperAdmin.value) {
         items.unshift({
             title: t('navigation.dashboard'),
-            href: route('dashboard'),
+            href: dashboard.url(),
             icon: LayoutGrid,
         });
     }
@@ -102,7 +103,7 @@ const mainNavItems = computed<NavItem[]>(() => {
                                 </nav>
                                 <div v-if="auth.user" class="mt-6 border-t border-rule pt-4">
                                     <Link
-                                        :href="route('logout')"
+                                        :href="logout.url()"
                                         method="post"
                                         as="button"
                                         class="flex w-full items-center gap-3 py-3 text-sm text-muted-foreground transition-colors hover:text-foreground"
@@ -115,7 +116,7 @@ const mainNavItems = computed<NavItem[]>(() => {
                         </Sheet>
                     </div>
 
-                    <Link :href="route('home')" class="flex items-center">
+                    <Link :href="home.url()" class="flex items-center">
                         <AppLogo show-beta />
                     </Link>
                 </div>
@@ -166,7 +167,7 @@ const mainNavItems = computed<NavItem[]>(() => {
                     </template>
                     <template v-else>
                         <Link
-                            :href="route('login')"
+                            :href="login.url()"
                             class="text-sm text-muted-foreground transition-colors hover:text-foreground"
                         >
                             {{ $t('common.login') }}

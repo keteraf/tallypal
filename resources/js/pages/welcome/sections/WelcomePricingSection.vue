@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
+import { register } from '@/routes';
 import { Link } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 
@@ -106,7 +107,7 @@ const plans = (): Plan[] => [
                         </li>
                     </ul>
                     <Button :variant="plan.featured ? 'default' : 'ghost'" as-child>
-                        <Link :href="route('register')">{{ plan.ctaLabel }} →</Link>
+                        <Link :href="register.url()">{{ plan.ctaLabel }} →</Link>
                     </Button>
                 </article>
             </div>

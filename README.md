@@ -22,7 +22,7 @@ A personal finance tracker with a native web frontend for immediate use and a RE
 | Backend       | PHP 8.4, Laravel 13, Sanctum, Spatie Permissions   |
 | Frontend      | Vue 3, TypeScript, Inertia.js v2, Tailwind CSS v4  |
 | UI            | Reka UI, Lucide, Vue I18n                          |
-| Routing       | Wayfinder (typed route bindings), Ziggy            |
+| Routing       | Wayfinder (typed route bindings)                   |
 | Testing       | Pest 4, PHPStan, Rector, Pint                      |
 | Observability | Telescope, Pulse, Nightwatch                       |
 

@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import WebLayout from '@/layouts/WebLayout.vue';
+import tallies from '@/routes/tallies';
 import { type BreadcrumbItem } from '@/types';
 import { Form, Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { Trash2 } from 'lucide-vue-next';
@@ -27,15 +28,15 @@ const isOwner = computed(() => page.props.auth.user.id === props.tally.owner_id)
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: t('tallies.title'),
-        href: route('tallies.index'),
+        href: tallies.index.url(),
     },
     {
         title: props.tally.name,
-        href: route('tallies.transactions.index', props.tally.uuid),
+        href: tallies.transactions.index.url(props.tally.uuid),
     },
     {
         title: t('common.edit'),
-        href: route('tallies.edit', props.tally.uuid),
+        href: tallies.edit.url(props.tally.uuid),
     },
 ];
 
@@ -43,7 +44,7 @@ const deleteForm = useForm({});
 const showDeleteDialog = ref(false);
 
 const deleteTally = () => {
-    deleteForm.delete(route('tallies.destroy', props.tally.uuid), {
+    deleteForm.delete(tallies.destroy.url(props.tally.uuid), {
         onSuccess: () => {
             showDeleteDialog.value = false;
         },
@@ -57,9 +58,9 @@ const deleteTally = () => {
     <WebLayout :breadcrumbs="breadcrumbs">
         <div class="mx-auto w-full max-w-[1320px] px-6 py-10 max-[768px]:pb-28 md:px-8">
             <div class="mb-4 flex items-center gap-2 font-mono text-[11px] tracking-[0.1em] text-muted-foreground uppercase">
-                <Link :href="route('tallies.index')" class="transition-colors hover:text-foreground">{{ $t('tallies.title') }}</Link>
+                <Link :href="tallies.index.url()" class="transition-colors hover:text-foreground">{{ $t('tallies.title') }}</Link>
                 <span class="opacity-60">›</span>
-                <Link :href="route('tallies.transactions.index', tally.uuid)" class="transition-colors hover:text-foreground">{{ tally.name }}</Link>
+                <Link :href="tallies.transactions.index.url(tally.uuid)" class="transition-colors hover:text-foreground">{{ tally.name }}</Link>
                 <span class="opacity-60">›</span>
                 <span class="text-foreground">{{ $t('common.edit') }}</span>
             </div>
@@ -95,7 +96,7 @@ const deleteTally = () => {
 
             <div class="max-w-[880px] rounded-sm border border-rule bg-background px-9 pt-9 pb-7">
                 <Form
-                    :action="route('tallies.update', tally.uuid)"
+                    :action="tallies.update.url(tally.uuid)"
                     method="put"
                     :defaults="{
                         name: tally.name,
@@ -131,7 +132,7 @@ const deleteTally = () => {
 
                     <div class="mt-9 flex justify-end gap-3 border-t border-rule-2 pt-6">
                         <Button variant="ghost" as-child>
-                            <Link :href="route('tallies.transactions.index', tally.uuid)">{{ $t('common.cancel') }}</Link>
+                            <Link :href="tallies.transactions.index.url(tally.uuid)">{{ $t('common.cancel') }}</Link>
                         </Button>
                         <Button type="submit" :disabled="processing"> {{ processing ? $t('common.updating') : $t('common.update') }} → </Button>
                     </div>

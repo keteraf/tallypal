@@ -33,7 +33,16 @@ final class TallyController extends Controller
         $user = $request->user(); // @pest-mutate-ignore
 
         return Inertia::render('tallies/Index', [
-            'tallies' => $this->tallyRepository->accessibleTalliesWithTotals($user->id),
+            'tallies' => $this->tallyRepository->accessibleTalliesWithTotals($user->id)
+                ->map(fn (Tally $tally): array => [
+                    'tally_id' => $tally->tally_id,
+                    'uuid' => $tally->uuid,
+                    'name' => $tally->name,
+                    'description' => $tally->description,
+                    'owner_id' => $tally->owner_id,
+                    'income_total' => $tally->income_total ?? 0.0,
+                    'expense_total' => $tally->expense_total ?? 0.0,
+                ]),
         ]);
     }
 
@@ -71,7 +80,7 @@ final class TallyController extends Controller
         $this->authorize('update', $tally);
 
         return Inertia::render('tallies/Edit', [
-            'tally' => $tally,
+            'tally' => $tally->only(['tally_id', 'uuid', 'name', 'description', 'owner_id']),
         ]);
     }
 

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { Stepper } from '@/components/ui/stepper';
 import { Textarea } from '@/components/ui/textarea';
 import WebLayout from '@/layouts/WebLayout.vue';
+import tallies from '@/routes/tallies';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { DateFormatter, getLocalTimeZone, parseDate, today } from '@internationalized/date';
@@ -32,9 +33,9 @@ const page = usePage();
 const { t } = useI18n();
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: t('tallies.title'), href: route('tallies.index') },
-    { title: props.tally.name, href: route('tallies.transactions.index', props.tally.uuid) },
-    { title: t('transactions.add_button'), href: route('tallies.transactions.create', props.tally.uuid) },
+    { title: t('tallies.title'), href: tallies.index.url() },
+    { title: props.tally.name, href: tallies.transactions.index.url(props.tally.uuid) },
+    { title: t('transactions.add_button'), href: tallies.transactions.create.url(props.tally.uuid) },
 ];
 
 const df = new DateFormatter('en-US', { dateStyle: 'long' });
@@ -108,7 +109,7 @@ const stepFields: Record<number, string[]> = {
 };
 
 function submit() {
-    form.post(route('tallies.transactions.store', props.tally.uuid), {
+    form.post(tallies.transactions.store.url(props.tally.uuid), {
         onError: (errors) => {
             for (let s = 1; s <= totalSteps; s++) {
                 if (stepFields[s].some((f) => f in errors)) {
@@ -273,7 +274,7 @@ function submit() {
                         ← {{ $t('transactions.steps.back') }}
                     </Button>
                     <Button v-else variant="ghost" as-child>
-                        <Link :href="route('tallies.transactions.index', tally.uuid)">{{ $t('common.cancel') }}</Link>
+                        <Link :href="tallies.transactions.index.url(tally.uuid)">{{ $t('common.cancel') }}</Link>
                     </Button>
 
                     <Button v-if="currentStep < totalSteps" :disabled="!canAdvance" @click="nextStep">

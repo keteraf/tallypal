@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import tallies from '@/routes/tallies';
 import { Link } from '@inertiajs/vue3';
 import type { PrimaryTally, RecentTransaction } from '../types';
 import { formatCurrency } from '../utils';
@@ -10,8 +11,8 @@ const props = defineProps<{
 }>();
 
 const txFallbackUrl = (uuid?: string) => {
-    if (uuid) return route('tallies.transactions.index', uuid);
-    if (props.primaryTally) return route('tallies.transactions.index', props.primaryTally.uuid);
+    if (uuid) return tallies.transactions.index.url(uuid);
+    if (props.primaryTally) return tallies.transactions.index.url(props.primaryTally.uuid);
     return '/tallies';
 };
 </script>
@@ -22,7 +23,7 @@ const txFallbackUrl = (uuid?: string) => {
             <span class="font-serif text-xl text-foreground italic">{{ $t('home.recent.title') }}</span>
             <Link
                 v-if="primaryTally"
-                :href="route('tallies.transactions.index', primaryTally.uuid)"
+                :href="tallies.transactions.index.url(primaryTally.uuid)"
                 class="font-mono text-[11px] tracking-[0.06em] text-muted-foreground uppercase transition-colors hover:text-foreground"
             >
                 {{ $t('home.recent.view_all') }} →

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import tallies from '@/routes/tallies';
 import { Link } from '@inertiajs/vue3';
 import type { SharedTally } from '../types';
 import { dotClass, formatCurrency, memberClass, splitName } from '../utils';
@@ -53,7 +54,7 @@ defineProps<{
             </span>
         </div>
         <Link
-            :href="route('tallies.transactions.index', sharedTally.uuid)"
+            :href="tallies.transactions.index.url(sharedTally.uuid)"
             class="flex items-center justify-between border-t border-rule px-7 py-4 font-mono text-[12px] tracking-[0.04em] text-muted-foreground uppercase transition-colors hover:text-foreground"
         >
             <span class="font-sans text-sm tracking-normal text-foreground normal-case">{{ $t('home.shared.view_full') }}</span>

@@ -24,6 +24,9 @@ use Illuminate\Support\Facades\DB;
  * @property int $owner_id
  * @property float|null $income_total
  * @property float|null $expense_total
+ *
+ * @method static Builder<static> scopeForUser(Builder<static> $query, int $userId)
+ * @method static Builder<static> scopeWithIncomeAndExpenseTotals(Builder<static> $query)
  */
 class Tally extends Model
 {

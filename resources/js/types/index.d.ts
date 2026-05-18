@@ -1,6 +1,5 @@
 import type { LucideIcon } from 'lucide-vue-next';
 import type { Component } from 'vue';
-import type { Config } from 'ziggy-js';
 
 export interface SeoProps {
     site_name: string;
@@ -30,7 +29,6 @@ export type AppPageProps<T extends Record<string, unknown> = Record<string, unkn
     name: string;
     quote: { message: string; author: string };
     auth: Auth;
-    ziggy: Config & { location: string };
     sidebarOpen: boolean;
     seo: SeoProps;
 };
@@ -42,8 +40,6 @@ export interface User {
     avatar?: string;
     email_verified_at: string | null;
     roles?: string[];
-    created_at: string;
-    updated_at: string;
 }
 
 export type BreadcrumbItemType = BreadcrumbItem;

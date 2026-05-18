@@ -7,6 +7,7 @@ import { SegmentedControl } from '@/components/ui/segmented-control';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import WebLayout from '@/layouts/WebLayout.vue';
+import tallies from '@/routes/tallies';
 import { type BreadcrumbItem } from '@/types';
 import { Form, Head, Link } from '@inertiajs/vue3';
 import { DateFormatter, getLocalTimeZone, parseDate } from '@internationalized/date';
@@ -43,15 +44,15 @@ const { t } = useI18n();
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: t('tallies.title'),
-        href: route('tallies.index'),
+        href: tallies.index.url(),
     },
     {
         title: props.tally.name,
-        href: route('tallies.transactions.index', props.tally.uuid),
+        href: tallies.transactions.index.url(props.tally.uuid),
     },
     {
         title: t('common.edit'),
-        href: route('tallies.transactions.edit', { tally: props.tally.uuid, transaction: props.transaction.uuid }),
+        href: tallies.transactions.edit.url({ tally: props.tally.uuid, transaction: props.transaction.uuid }),
     },
 ];
 
@@ -78,9 +79,9 @@ const typeOptions = [
     <WebLayout :breadcrumbs="breadcrumbs">
         <div class="mx-auto w-full max-w-[1320px] px-6 py-10 md:px-8">
             <div class="mb-4 flex items-center gap-2 font-mono text-[11px] tracking-[0.1em] text-muted-foreground uppercase">
-                <Link :href="route('tallies.index')" class="transition-colors hover:text-foreground">{{ $t('tallies.title') }}</Link>
+                <Link :href="tallies.index.url()" class="transition-colors hover:text-foreground">{{ $t('tallies.title') }}</Link>
                 <span class="opacity-60">›</span>
-                <Link :href="route('tallies.transactions.index', tally.uuid)" class="transition-colors hover:text-foreground">{{ tally.name }}</Link>
+                <Link :href="tallies.transactions.index.url(tally.uuid)" class="transition-colors hover:text-foreground">{{ tally.name }}</Link>
                 <span class="opacity-60">›</span>
                 <span class="text-foreground">{{ $t('common.edit') }}</span>
             </div>
@@ -92,7 +93,7 @@ const typeOptions = [
 
             <div class="max-w-[880px] rounded-sm border border-rule bg-background px-9 pt-9 pb-7">
                 <Form
-                    :action="route('tallies.transactions.update', { tally: tally.uuid, transaction: transaction.uuid })"
+                    :action="tallies.transactions.update.url({ tally: tally.uuid, transaction: transaction.uuid })"
                     method="patch"
                     :defaults="{
                         title: transaction.title,
@@ -239,7 +240,7 @@ const typeOptions = [
 
                     <div class="mt-9 flex justify-end gap-3 border-t border-rule-2 pt-6">
                         <Button variant="ghost" as-child>
-                            <Link :href="route('tallies.transactions.index', tally.uuid)">{{ $t('common.cancel') }}</Link>
+                            <Link :href="tallies.transactions.index.url(tally.uuid)">{{ $t('common.cancel') }}</Link>
                         </Button>
                         <Button type="submit" :disabled="processing">
                             {{ processing ? $t('common.updating') : $t('transactions.update_button') }} →

@@ -2,6 +2,8 @@
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
 import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import UserInfo from '@/components/UserInfo.vue';
+import { logout } from '@/routes';
+import * as profile from '@/routes/profile';
 import type { User } from '@/types';
 import { Link, router } from '@inertiajs/vue3';
 import { LogOut, Settings } from 'lucide-vue-next';
@@ -26,7 +28,7 @@ defineProps<Props>();
     <DropdownMenuSeparator />
     <DropdownMenuGroup>
         <DropdownMenuItem :as-child="true">
-            <Link :href="route('profile.edit')" prefetch as="button">
+            <Link :href="profile.edit.url()" prefetch as="button">
                 <Settings class="h-4 w-4" />
                 {{ $t('user_menu.settings') }}
             </Link>
@@ -36,7 +38,7 @@ defineProps<Props>();
     <LanguageSwitcher />
     <DropdownMenuSeparator />
     <DropdownMenuItem :as-child="true">
-        <Link method="post" :href="route('logout')" @click="handleLogout" as="button">
+        <Link method="post" :href="logout.url()" @click="handleLogout" as="button">
             <LogOut class="h-4 w-4" />
             {{ $t('user_menu.logout') }}
         </Link>

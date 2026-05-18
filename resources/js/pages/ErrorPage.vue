@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import AppLogo from '@/components/AppLogo.vue';
 import { Button } from '@/components/ui/button';
+import { home } from '@/routes';
 import { Head, Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -20,7 +21,7 @@ const is404 = computed(() => props.status === 404);
     <div class="flex min-h-svh flex-col bg-background px-6 py-16 md:px-8">
         <div class="w-full max-w-xl">
             <div class="mb-16">
-                <Link :href="route('home')" class="inline-flex items-center">
+                <Link :href="home.url()" class="inline-flex items-center">
                     <AppLogo size="md" />
                 </Link>
             </div>
@@ -42,7 +43,7 @@ const is404 = computed(() => props.status === 404);
             </p>
 
             <Button as-child>
-                <Link :href="route('home')">{{ t('errors.back_home') }}</Link>
+                <Link :href="home.url()">{{ t('errors.back_home') }}</Link>
             </Button>
         </div>
     </div>
