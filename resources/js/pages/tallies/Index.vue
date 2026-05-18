@@ -2,6 +2,7 @@
 import TallyShareDialog from '@/components/tallies/TallyShareDialog.vue';
 import { Button } from '@/components/ui/button';
 import WebLayout from '@/layouts/WebLayout.vue';
+import tallyRoutes from '@/routes/tallies';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/vue3';
 import { Plus, Share2 } from 'lucide-vue-next';
@@ -71,7 +72,7 @@ const memberLabel = computed(() => (tally: any) => {
                 </div>
                 <div class="hidden min-[769px]:block">
                     <Button v-if="tallies.length > 0" as-child>
-                        <Link :href="route('tallies.create')">
+                        <Link :href="tallyRoutes.create.url()">
                             <Plus class="size-4" />
                             {{ $t('tallies.new_tally') }}
                         </Link>
@@ -85,7 +86,7 @@ const memberLabel = computed(() => (tally: any) => {
                     <p class="mt-2 text-muted-foreground">{{ $t('tallies.empty_description') }}</p>
                 </div>
                 <Button size="lg" as-child>
-                    <Link :href="route('tallies.create')">
+                    <Link :href="tallyRoutes.create.url()">
                         <Plus class="size-4" />
                         {{ $t('tallies.create_new') }}
                     </Link>
@@ -96,7 +97,7 @@ const memberLabel = computed(() => (tally: any) => {
                 <Link
                     v-for="tally in tallies"
                     :key="tally.tally_id"
-                    :href="route('tallies.transactions.index', tally.uuid)"
+                    :href="tallyRoutes.transactions.index.url(tally.uuid)"
                     class="flex min-h-55 flex-col gap-5 border-r border-b border-rule-2 bg-background px-7 py-7 transition-colors hover:bg-paper-2"
                 >
                     <div class="flex items-start justify-between gap-3">
@@ -136,7 +137,7 @@ const memberLabel = computed(() => (tally: any) => {
                 </Link>
 
                 <Link
-                    :href="route('tallies.create')"
+                    :href="tallyRoutes.create.url()"
                     class="flex min-h-55 flex-col items-center justify-center gap-3 border border-r border-b border-dashed border-rule-2 px-7 py-7 text-muted-foreground transition-colors hover:border-brand hover:text-brand"
                 >
                     <span
@@ -154,7 +155,7 @@ const memberLabel = computed(() => (tally: any) => {
             style="padding-bottom: calc(env(safe-area-inset-bottom) + 0.75rem)"
         >
             <Button as-child class="w-full">
-                <Link :href="route('tallies.create')">
+                <Link :href="tallyRoutes.create.url()">
                     <Plus class="size-4" />
                     {{ $t('tallies.new_tally') }}
                 </Link>

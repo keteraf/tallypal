@@ -23,8 +23,7 @@
         "laravel/tinker": "^3.0",
         "laravel/wayfinder": "^0.1.12",
         "nunomaduro/essentials": "^1.0",
-        "spatie/laravel-permission": "^6.24",
-        "tightenco/ziggy": "^2.4"
+        "spatie/laravel-permission": "^6.24"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^4.0",

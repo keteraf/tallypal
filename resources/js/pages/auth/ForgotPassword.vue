@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AuthLayout from '@/layouts/AuthLayout.vue';
+import { login } from '@/routes';
+import * as password from '@/routes/password';
 import { useForm } from '@inertiajs/vue3';
 import { LoaderCircle } from 'lucide-vue-next';
 
@@ -18,7 +20,7 @@ const form = useForm({
 });
 
 const submit = () => {
-    form.post(route('password.email'));
+    form.post(password.email.url());
 };
 </script>
 
@@ -56,7 +58,7 @@ const submit = () => {
 
             <div class="space-x-1 text-center text-sm text-muted-foreground">
                 <span>{{ $t('auth.forgot_password.return_to') }}</span>
-                <TextLink :href="route('login')">{{ $t('auth.forgot_password.login') }}</TextLink>
+                <TextLink :href="login.url()">{{ $t('auth.forgot_password.login') }}</TextLink>
             </div>
         </div>
     </AuthLayout>

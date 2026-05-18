@@ -3,6 +3,8 @@ import AppHead from '@/components/seo/AppHead.vue';
 import TextLink from '@/components/TextLink.vue';
 import { Button } from '@/components/ui/button';
 import AuthLayout from '@/layouts/AuthLayout.vue';
+import { logout } from '@/routes';
+import * as verification from '@/routes/verification';
 import { useForm } from '@inertiajs/vue3';
 import { LoaderCircle } from 'lucide-vue-next';
 
@@ -13,7 +15,7 @@ defineProps<{
 const form = useForm({});
 
 const submit = () => {
-    form.post(route('verification.send'));
+    form.post(verification.send.url());
 };
 </script>
 
@@ -31,7 +33,7 @@ const submit = () => {
                 {{ $t('auth.verify_email.resend_button') }}
             </Button>
 
-            <TextLink :href="route('logout')" method="post" as="button" class="mx-auto block text-sm">
+            <TextLink :href="logout.url()" method="post" as="button" class="mx-auto block text-sm">
                 {{ $t('auth.verify_email.logout') }}
             </TextLink>
         </form>

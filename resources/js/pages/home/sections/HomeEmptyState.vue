@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
+import tallies from '@/routes/tallies';
 import { Link } from '@inertiajs/vue3';
 import { Plus } from 'lucide-vue-next';
 </script>
@@ -11,7 +12,7 @@ import { Plus } from 'lucide-vue-next';
             <p class="mt-2 text-muted-foreground">{{ $t('home.empty_description') }}</p>
         </div>
         <Button size="lg" as-child>
-            <Link :href="route('tallies.create')">
+            <Link :href="tallies.create.url()">
                 <Plus class="size-4" />
                 {{ $t('tallies.create_new') }}
             </Link>

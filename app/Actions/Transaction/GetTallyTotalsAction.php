@@ -13,7 +13,7 @@ final readonly class GetTallyTotalsAction
     /**
      * Get totals for a tally grouped by type and currency.
      *
-     * @return Collection<int, array{type: 'expense'|'income', currency_id: int, total: float, currency: \App\Models\Currency|null}>
+     * @return Collection<int, array{type: 'expense'|'income', currency_id: int, total: float, currency: array{code: string, symbol: string, decimals: int}|null}>
      */
     public function handle(Tally $tally): Collection
     {
@@ -31,7 +31,11 @@ final readonly class GetTallyTotalsAction
                         'type' => $item->type->value,
                         'currency_id' => $item->currency_id,
                         'total' => (float) ($item->raw_total / $factor),
-                        'currency' => $item->currency,
+                        'currency' => $item->currency ? [
+                            'code' => $item->currency->code,
+                            'symbol' => $item->currency->symbol,
+                            'decimals' => $item->currency->decimals,
+                        ] : null,
                     ];
                 });
         } catch (Throwable $e) {

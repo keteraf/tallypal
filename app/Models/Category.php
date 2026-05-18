@@ -8,7 +8,9 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
 /**
+ * @property-read int $category_id
  * @property string $uuid
+ * @property string $name
  */
 class Category extends Model
 {

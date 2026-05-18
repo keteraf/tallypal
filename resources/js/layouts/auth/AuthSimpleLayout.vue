@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppLogo from '@/components/AppLogo.vue';
+import { home } from '@/routes';
 import { Link } from '@inertiajs/vue3';
 
 defineProps<{
@@ -13,7 +14,7 @@ defineProps<{
         <div class="w-full max-w-sm">
             <div class="flex flex-col gap-9">
                 <div class="flex flex-col items-center gap-6">
-                    <Link :href="route('home')" class="inline-flex items-center">
+                    <Link :href="home.url()" class="inline-flex items-center">
                         <AppLogo size="md" />
                     </Link>
                     <div class="space-y-2 text-center">

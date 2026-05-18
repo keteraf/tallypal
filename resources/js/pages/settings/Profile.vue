@@ -2,6 +2,9 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 
+import * as profile from '@/routes/profile';
+import * as verification from '@/routes/verification';
+
 import DeleteUser from '@/components/DeleteUser.vue';
 import HeadingSmall from '@/components/HeadingSmall.vue';
 import InputError from '@/components/InputError.vue';
@@ -36,7 +39,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 const submit = () => {
-    form.patch(route('profile.update'), {
+    form.patch(profile.update.url(), {
         preserveScroll: true,
     });
 };
@@ -82,7 +85,7 @@ const submit = () => {
                         <p class="-mt-4 text-sm text-muted-foreground">
                             {{ $t('settings.profile.unverified_email') }}
                             <Link
-                                :href="route('verification.send')"
+                                :href="verification.send.url()"
                                 method="post"
                                 as="button"
                                 class="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"

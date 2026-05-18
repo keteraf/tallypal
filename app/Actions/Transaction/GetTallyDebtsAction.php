@@ -19,7 +19,7 @@ final readonly class GetTallyDebtsAction
      * Calculate who owes what based on expenses and incomes in a tally.
      *
      * @return Collection<int, array{
-     *     currency: Currency,
+     *     currency: array{code: string, symbol: string, decimals: int},
      *     settlements: array<int, array{
      *         debtor: array{id: int, name: string},
      *         creditor: array{id: int, name: string},
@@ -30,7 +30,7 @@ final readonly class GetTallyDebtsAction
     public function handle(Tally $tally): Collection
     {
         try {
-            /** @var Collection<int, array{currency: Currency, settlements: array<int, array{debtor: array{id: int, name: string}, creditor: array{id: int, name: string}, amount: float}>}> $debtsPerCurrency */
+            /** @var Collection<int, array{currency: array{code: string, symbol: string, decimals: int}, settlements: array<int, array{debtor: array{id: int, name: string}, creditor: array{id: int, name: string}, amount: float}>}> $debtsPerCurrency */
             $debtsPerCurrency = collect();
 
             /** @var Collection<int, User> $users */
@@ -119,7 +119,11 @@ final readonly class GetTallyDebtsAction
 
                 if ($settlements !== []) {
                     $debtsPerCurrency->push([
-                        'currency' => $currency,
+                        'currency' => [
+                            'code' => $currency->code,
+                            'symbol' => $currency->symbol,
+                            'decimals' => $currency->decimals,
+                        ],
                         'settlements' => $settlements,
                     ]);
                 }

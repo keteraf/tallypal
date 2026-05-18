@@ -21,7 +21,6 @@ final class TallyRepository implements TallyRepositoryInterface
     public function accessibleTalliesWithTotals(int $userId): Collection
     {
         return Tally::query()
-            ->with('owner')
             ->forUser($userId)
             ->withIncomeAndExpenseTotals()
             ->get();

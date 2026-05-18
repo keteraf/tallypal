@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
+import { register } from '@/routes';
 import { Link } from '@inertiajs/vue3';
 import { ArrowRight } from 'lucide-vue-next';
 import { useI18n } from 'vue-i18n';
@@ -69,7 +70,7 @@ const ledgerEntries: LedgerEntry[] = [
                     </p>
                     <div class="flex flex-wrap items-center gap-4">
                         <Button as-child>
-                            <Link :href="route('register')">
+                            <Link :href="register.url()">
                                 {{ $t('welcome.hero.cta_primary') }}
                                 <ArrowRight class="size-4" />
                             </Link>
