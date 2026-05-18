@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Contracts\Repositories\TallyRepositoryInterface;
+use App\Contracts\Repositories\TransactionStatsRepositoryInterface;
 use App\Models\User;
-use App\Repositories\Contracts\TallyRepositoryInterface;
-use App\Repositories\Contracts\TransactionStatsRepositoryInterface;
 use App\Services\HomeCacheService;
 use App\Services\HomeService;
 use Carbon\CarbonImmutable;

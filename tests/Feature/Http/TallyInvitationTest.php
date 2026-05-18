@@ -11,6 +11,7 @@ use App\Models\TallyInvitation;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
 use Laravel\Sanctum\Sanctum;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -34,7 +35,7 @@ it('allows an authenticated invited user to accept an invitation', function () {
     ]);
 
     $this->actingAs($invitee)
-        ->get(route('invitations.accept', $invitation->uuid))
+        ->get(URL::signedRoute('invitations.accept', ['uuid' => $invitation->uuid]))
         ->assertRedirectToRoute('tallies.index');
 
     $invitation->refresh();
@@ -57,7 +58,7 @@ it('stores intended url in session when unauthenticated user visits invitation l
         'expires_at' => now()->addDays(7),
     ]);
 
-    $acceptUrl = route('invitations.accept', $invitation->uuid);
+    $acceptUrl = URL::signedRoute('invitations.accept', ['uuid' => $invitation->uuid]);
 
     $this->get($acceptUrl)
         ->assertRedirectToRoute('login');
@@ -79,7 +80,7 @@ it('includes the tally name in the success message after accepting', function ()
     ]);
 
     $this->actingAs($invitee)
-        ->get(route('invitations.accept', $invitation->uuid))
+        ->get(URL::signedRoute('invitations.accept', ['uuid' => $invitation->uuid]))
         ->assertRedirectToRoute('tallies.index')
         ->assertSessionHas('success', fn ($value) => str_contains($value, 'My Tally'));
 });
@@ -96,7 +97,7 @@ it('redirects unauthenticated user to login when accepting', function () {
         'expires_at' => now()->addDays(7),
     ]);
 
-    $this->get(route('invitations.accept', $invitation->uuid))
+    $this->get(URL::signedRoute('invitations.accept', ['uuid' => $invitation->uuid]))
         ->assertRedirectToRoute('login');
 });
 
@@ -114,7 +115,7 @@ it('rejects accept when authenticated user email does not match invitation', fun
     ]);
 
     $this->actingAs($otherUser)
-        ->get(route('invitations.accept', $invitation->uuid))
+        ->get(URL::signedRoute('invitations.accept', ['uuid' => $invitation->uuid]))
         ->assertRedirectToRoute('tallies.index');
 
     expect($tally->users()->where('user_id', $otherUser->id)->exists())->toBeFalse();
@@ -136,7 +137,7 @@ it('rejects accepting an already accepted invitation', function () {
     ]);
 
     $this->actingAs($invitee)
-        ->get(route('invitations.accept', $invitation->uuid))
+        ->get(URL::signedRoute('invitations.accept', ['uuid' => $invitation->uuid]))
         ->assertRedirectToRoute('tallies.index');
 
     expect($tally->users()->where('user_id', $invitee->id)->exists())->toBeFalse();
@@ -156,7 +157,7 @@ it('rejects accepting an expired invitation', function () {
     ]);
 
     $this->actingAs($invitee)
-        ->get(route('invitations.accept', $invitation->uuid))
+        ->get(URL::signedRoute('invitations.accept', ['uuid' => $invitation->uuid]))
         ->assertRedirectToRoute('tallies.index');
 
     expect($tally->users()->where('user_id', $invitee->id)->exists())->toBeFalse();
@@ -176,7 +177,7 @@ it('allows anyone to decline an invitation', function () {
         'expires_at' => now()->addDays(7),
     ]);
 
-    $this->get(route('invitations.decline', $invitation->uuid))
+    $this->get(URL::signedRoute('invitations.decline', ['uuid' => $invitation->uuid]))
         ->assertRedirectToRoute('home');
 
     $invitation->refresh();
@@ -195,7 +196,7 @@ it('rejects declining an already-responded invitation', function () {
         'expires_at' => now()->addDays(7),
     ]);
 
-    $this->get(route('invitations.decline', $invitation->uuid))
+    $this->get(URL::signedRoute('invitations.decline', ['uuid' => $invitation->uuid]))
         ->assertRedirectToRoute('home')
         ->assertSessionHas('error')
         ->assertSessionMissing('success');
@@ -429,7 +430,7 @@ it('resets percentage to zero when invitee is already attached to the tally', fu
     ]);
 
     $this->actingAs($invitee)
-        ->get(route('invitations.accept', $invitation->uuid))
+        ->get(URL::signedRoute('invitations.accept', ['uuid' => $invitation->uuid]))
         ->assertRedirectToRoute('tallies.index');
 
     $invitation->refresh();

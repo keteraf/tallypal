@@ -1,19 +1,11 @@
 <script setup lang="ts">
 import { DropdownMenuItem, DropdownMenuPortal, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger } from '@/components/ui/dropdown-menu';
+import { useLanguageSwitcher } from '@/composables/useLanguageSwitcher';
 import { Check, Languages } from 'lucide-vue-next';
 import { useI18n } from 'vue-i18n';
 
-const { locale, t } = useI18n();
-
-const languages = [
-    { code: 'en', name: 'English' },
-    { code: 'it', name: 'Italiano' },
-];
-
-const setLocale = (code: string) => {
-    locale.value = code;
-    localStorage.setItem('locale', code);
-};
+const { t } = useI18n();
+const { languages, locale, setLocale } = useLanguageSwitcher();
 </script>
 
 <template>

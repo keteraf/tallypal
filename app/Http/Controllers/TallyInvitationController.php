@@ -29,7 +29,7 @@ class TallyInvitationController extends Controller
         }
 
         if (! Auth::check()) {
-            session()->put('url.intended', $request->url());
+            session()->put('url.intended', $request->fullUrl());
 
             return to_route('login');
         }

@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Repositories\Contracts\TallyRepositoryInterface;
-use App\Repositories\Contracts\TransactionStatsRepositoryInterface;
+use App\Contracts\Repositories\TallyRepositoryInterface;
+use App\Contracts\Repositories\TransactionStatsRepositoryInterface;
 use App\Services\HomeCacheService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;

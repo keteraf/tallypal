@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Repositories\Contracts\TallyRepositoryInterface;
-use App\Repositories\Contracts\TransactionStatsRepositoryInterface;
+use App\Contracts\Repositories\TallyRepositoryInterface;
+use App\Contracts\Repositories\TransactionStatsRepositoryInterface;
 use Carbon\CarbonImmutable;
 use Closure;
 use DateInterval;
