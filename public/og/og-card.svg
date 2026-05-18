@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+<defs>
+  
+  <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+    <path d="M48 0H0V48" fill="none" stroke="#1A1612" stroke-width="1" stroke-opacity="0.05"></path>
+  </pattern>
+  <radialGradient id="fade" cx="50%" cy="40%" r="65%">
+    <stop offset="35%" stop-color="white" stop-opacity="1"></stop>
+    <stop offset="100%" stop-color="white" stop-opacity="0"></stop>
+  </radialGradient>
+  <mask id="gridMask"><rect width="1200" height="630" fill="url(#fade)"></rect></mask>
+</defs>
+
+
+<rect width="1200" height="630" fill="#F6F2EC"></rect>
+<g mask="url(#gridMask)"><rect width="1200" height="630" fill="url(#grid)"></rect></g>
+
+
+<g transform="translate(72, 64)">
+  
+  <g transform="translate(0,0)">
+    <rect width="44" height="44" rx="10" ry="10" fill="#EFE9DF" stroke="#D9D2C6"></rect>
+    <g stroke="#1A1612" stroke-width="3.1" stroke-linecap="round" fill="none">
+      <line x1="13.0" y1="10.3" x2="13.0" y2="33.7"></line>
+      <line x1="19.2" y1="10.3" x2="19.2" y2="33.7"></line>
+      <line x1="25.4" y1="10.3" x2="25.4" y2="33.7"></line>
+      <line x1="31.6" y1="10.3" x2="31.6" y2="33.7"></line>
+    </g>
+    <line x1="8.9" y1="35.1" x2="35.7" y2="8.9" stroke="#C2613B" stroke-width="3.1" stroke-linecap="round"></line>
+  </g>
+  <text x="60" y="32" class="serif" font-size="28" font-weight="500" fill="#1A1612" letter-spacing="-0.01em">tally<tspan font-style="italic" fill="#C2613B">pal</tspan></text>
+  <g transform="translate(195, 14)">
+    <rect width="56" height="22" rx="2" fill="none" stroke="#D9D2C6"></rect>
+    <text x="28" y="15" class="mono" font-size="11" fill="#8A847C" text-anchor="middle">BETA</text>
+  </g>
+</g>
+<g transform="translate(1128, 86)" text-anchor="end">
+  <line x1="-220" y1="-4" x2="-184" y2="-4" stroke="#8A847C"></line>
+  <text x="0" y="0" class="mono" font-size="13" fill="#8A847C">TALLYPAL.IT</text>
+</g>
+
+
+<g transform="translate(72, 220)">
+  <line x1="0" y1="-6" x2="32" y2="-6" stroke="#8A847C"></line>
+  <text x="46" y="0" class="mono" font-size="12" fill="#8A847C">L&#39;AMICO CHE TIENE IL CONTO</text>
+
+  <text x="0" y="92" class="serif" font-size="104" font-weight="400" fill="#1A1612" letter-spacing="-0.035em">
+    Dividi <tspan font-style="italic" fill="#C2613B">le spese</tspan>,
+  </text>
+  <text x="0" y="190" class="serif" font-size="104" font-weight="400" fill="#1A1612" letter-spacing="-0.035em">
+    non l&#39;amicizia.
+  </text>
+
+  <text x="0" y="248" class="serif" font-style="italic" font-size="22" fill="#56504A">
+    Dividi le spese con gli amici e tieni traccia di chi deve cosa.
+  </text>
+</g>
+
+
+<g transform="translate(820, 175)">
+  <rect width="300" height="300" rx="28" ry="28" fill="#EFE9DF" stroke="#D9D2C6"></rect>
+  <text x="22" y="34" class="mono" font-size="11" fill="#8A847C">+ 1</text>
+  <text x="22" y="284" class="mono" font-size="11" fill="#8A847C" letter-spacing="0.22em">FIVE</text>
+  
+  <g transform="translate(45, 45) scale(3.3)">
+    <g stroke="#1A1612" stroke-width="4.5" stroke-linecap="round" fill="none">
+      <line x1="19" y1="15" x2="19" y2="49"></line>
+      <line x1="28" y1="15" x2="28" y2="49"></line>
+      <line x1="37" y1="15" x2="37" y2="49"></line>
+      <line x1="46" y1="15" x2="46" y2="49"></line>
+    </g>
+    <line x1="13" y1="51" x2="52" y2="13" stroke="#C2613B" stroke-width="4.5" stroke-linecap="round"></line>
+  </g>
+</g>
+<text x="970" y="510" class="mono" font-size="11" fill="#8A847C" text-anchor="middle" letter-spacing="0.22em">UNA TACCA ALLA VOLTA</text>
+
+
+<line x1="72" y1="558" x2="1128" y2="558" stroke="#E6DFD2"></line>
+<g transform="translate(72, 590)">
+  <text class="mono" font-size="12" fill="#8A847C">
+    <tspan>TOTALE</tspan>
+    <tspan dx="14" class="serif" font-style="italic" font-size="22" fill="#1A1612" letter-spacing="-0.01em">€ 248,<tspan fill="#C2613B">50</tspan></tspan>
+    <tspan dx="22">·</tspan>
+    <tspan dx="14">3 AMICI</tspan>
+    <tspan dx="22">·</tspan>
+    <tspan dx="14">TUTTI IN PARI</tspan>
+  </text>
+</g>
+<text x="1128" y="601" class="serif" font-style="italic" font-size="22" fill="#1A1612" text-anchor="end" letter-spacing="-0.01em">tallypal.it</text>
+
+</svg>

@@ -50,7 +50,7 @@ class HandleInertiaRequests extends Middleware
             'seo' => [
                 'site_name' => config('app.name'),
                 'default_description' => __('seo.default_description'),
-                'default_og_image' => asset('og/default.png'),
+                'default_og_image' => asset('og/og-card.svg'),
                 'locale' => 'it_IT',
                 'url' => config('app.url'),
             ],

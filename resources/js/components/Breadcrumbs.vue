@@ -2,20 +2,18 @@
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import type { BreadcrumbItem as BreadcrumbItemType } from '@/types';
 import { Link } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
-withDefaults(
-    defineProps<{
-        breadcrumbs?: BreadcrumbItemType[];
-    }>(),
-    {
-        breadcrumbs: () => [],
-    },
-);
+const props = defineProps<{
+    breadcrumbs?: BreadcrumbItemType[];
+}>();
+
+const breadcrumbs = computed(() => props.breadcrumbs ?? []);
 </script>
 
 <template>
     <Breadcrumb>
-        <BreadcrumbList class="gap-2 font-mono text-[11px] tracking-[0.1em] text-muted-foreground uppercase">
+        <BreadcrumbList class="gap-2 font-mono text-[11px] tracking-widest text-muted-foreground uppercase">
             <template v-for="(item, index) in breadcrumbs" :key="index">
                 <BreadcrumbItem>
                     <template v-if="index === breadcrumbs.length - 1">

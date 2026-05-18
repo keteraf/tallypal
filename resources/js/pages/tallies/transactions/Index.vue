@@ -117,22 +117,22 @@ const splitName = (name: string) => {
     <Head :title="`${tally.name} - ${$t('transactions.title')}`" />
 
     <WebLayout :breadcrumbs="breadcrumbs">
-        <div class="mx-auto w-full max-w-[1320px] px-6 py-10 max-[768px]:pb-28 md:px-8">
+        <div class="mx-auto w-full max-w-330 px-6 py-10 max-[768px]:pb-28 md:px-8">
             <div class="mb-9 flex flex-col gap-4 border-b border-rule pb-6 sm:flex-row sm:items-end sm:justify-between">
                 <div class="min-w-0">
                     <div class="eyebrow mb-3">{{ $t('tallies.tally_label') }}</div>
-                    <h1 class="m-0 font-serif text-[clamp(36px,5vw,56px)] leading-none tracking-[-0.02em] break-words">
+                    <h1 class="m-0 font-serif text-[clamp(36px,5vw,56px)] leading-none tracking-[-0.02em] wrap-break-word">
                         <template v-if="splitName(tally.name).lead">{{ splitName(tally.name).lead }} </template>
                         <em class="not-italic-[0]" style="font-style: italic; color: var(--brand)">{{ splitName(tally.name).em }}</em>
                     </h1>
-                    <p v-if="tally.description" class="mt-3 max-w-[52ch] text-[15px] break-words text-muted-foreground">{{ tally.description }}</p>
+                    <p v-if="tally.description" class="mt-3 max-w-[52ch] text-[15px] wrap-break-word text-muted-foreground">{{ tally.description }}</p>
                 </div>
                 <div class="hidden flex-wrap items-center gap-2 min-[769px]:flex">
                     <Button v-if="isOwner" variant="ghost" @click="showShareDialog = true">
                         <Share2 class="size-4" />
                         {{ $t('common.share') }}
                     </Button>
-                    <Button variant="ghost" as-child>
+                    <Button v-if="isOwner" variant="ghost" as-child>
                         <Link :href="tallies.edit.url(tally.uuid)">
                             <Settings class="size-4" />
                             {{ $t('common.edit') }}
