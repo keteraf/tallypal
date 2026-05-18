@@ -29,6 +29,7 @@
         "barryvdh/laravel-debugbar": "^4.0",
         "barryvdh/laravel-ide-helper": "^3.5",
         "fakerphp/faker": "^1.23",
+        "laramint/laravel-brain": "^2.2",
         "larastan/larastan": "^3.0",
         "laravel/boost": "^2.0",
         "laravel/pail": "^1.2.2",

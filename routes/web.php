@@ -23,8 +23,12 @@ Route::get('robots.txt', function () {
     ]);
 })->name('robots');
 
-Route::get('invitations/{uuid}/accept', [TallyInvitationController::class, 'accept'])->name('invitations.accept');
-Route::get('invitations/{uuid}/decline', [TallyInvitationController::class, 'decline'])->name('invitations.decline');
+Route::get('invitations/{uuid}/accept', [TallyInvitationController::class, 'accept'])
+    ->middleware(['signed', 'throttle:invitations'])
+    ->name('invitations.accept');
+Route::get('invitations/{uuid}/decline', [TallyInvitationController::class, 'decline'])
+    ->middleware(['signed', 'throttle:invitations'])
+    ->name('invitations.decline');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('home', HomeController::class)->name('home.dashboard');

@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 use App\Models\User;
 use Illuminate\Auth\Events\Lockout;
+use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 
+// These tests exercise LoginRequest in isolation from route-level throttle middleware.
 test('login request throttles after too many attempts', function () {
+    $this->withoutMiddleware(ThrottleRequests::class);
+
     Event::fake();
 
     $user = User::factory()->create();
@@ -35,6 +39,8 @@ test('login request throttles after too many attempts', function () {
 });
 
 test('login request clears rate limiter on successful authentication', function () {
+    $this->withoutMiddleware(ThrottleRequests::class);
+
     RateLimiter::spy();
 
     $user = User::factory()->create();
