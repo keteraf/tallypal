@@ -48,3 +48,16 @@ function something()
 {
     // ..
 }
+
+/**
+ * A driver-independent database failure whose message carries SQL that must never reach a client.
+ */
+function databaseFailure(): Illuminate\Database\QueryException
+{
+    return new Illuminate\Database\QueryException(
+        'testing',
+        'select * from secret_table',
+        [],
+        new PDOException('SQLSTATE[HY000]: General error: no such table: secret_table'),
+    );
+}

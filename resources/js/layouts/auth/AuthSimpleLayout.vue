@@ -18,7 +18,7 @@ defineProps<{
                         <AppLogo size="md" />
                     </Link>
                     <div class="space-y-2 text-center">
-                        <h1 class="font-serif text-3xl leading-tight tracking-[-0.015em] text-foreground">{{ title }}</h1>
+                        <h1 class="text-3xl leading-tight font-semibold tracking-[-0.015em] text-foreground">{{ title }}</h1>
                         <p v-if="description" class="mx-auto max-w-[34ch] text-sm text-muted-foreground">{{ description }}</p>
                     </div>
                 </div>

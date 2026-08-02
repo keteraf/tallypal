@@ -1,6 +1,13 @@
 <script setup lang="ts">
+import { Badge } from '@/components/ui/badge';
+import { CardHeader } from '@/components/ui/card-header';
+import { categoryGlyph } from '@/components/ui/category-glyph';
+import type { DataTableColumn } from '@/components/ui/data-table';
+import { DataTable, DataTableItem } from '@/components/ui/data-table';
+import { transactionGlyphColor } from '@/lib/category';
 import tallies from '@/routes/tallies';
-import { Link } from '@inertiajs/vue3';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import type { PrimaryTally, RecentTransaction } from '../types';
 import { formatCurrency } from '../utils';
 
@@ -10,51 +17,58 @@ const props = defineProps<{
     decimals: number;
 }>();
 
-const txFallbackUrl = (uuid?: string) => {
-    if (uuid) return tallies.transactions.index.url(uuid);
-    if (props.primaryTally) return tallies.transactions.index.url(props.primaryTally.uuid);
-    return '/tallies';
-};
+const { t } = useI18n();
+
+const columns = computed<DataTableColumn[]>(() => [
+    { key: 'title', label: t('home.recent.columns.transaction') },
+    { key: 'tally_name', label: t('home.recent.columns.tally'), hideBelow: 'xl' },
+    { key: 'transaction_date', label: t('home.recent.columns.date') },
+    { key: 'amount', label: t('home.recent.columns.amount'), align: 'right' },
+]);
+
+const rows = computed(() => props.transactions.map((tx) => ({ ...tx })));
+
+const txHref = (): string => (props.primaryTally ? tallies.transactions.index.url(props.primaryTally.uuid) : '/tallies');
+
+const signedAmount = (tx: RecentTransaction): string =>
+    `${tx.type === 'income' ? '+' : '−'} ${tx.currency_symbol} ${formatCurrency(tx.amount, props.decimals)}`;
 </script>
 
 <template>
-    <section class="overflow-hidden rounded-sm border border-rule">
-        <div class="flex items-baseline justify-between border-b border-rule-2 px-7 py-5">
-            <span class="font-serif text-xl text-foreground italic">{{ $t('home.recent.title') }}</span>
-            <Link
-                v-if="primaryTally"
-                :href="tallies.transactions.index.url(primaryTally.uuid)"
-                class="font-mono text-[11px] tracking-[0.06em] text-muted-foreground uppercase transition-colors hover:text-foreground"
-            >
-                {{ $t('home.recent.view_all') }} →
-            </Link>
-        </div>
-        <div v-if="transactions.length === 0" class="px-7 py-12 text-center text-muted-foreground">
-            {{ $t('home.recent.empty') }}
-        </div>
-        <Link
-            v-for="tx in transactions"
-            :key="tx.uuid"
-            :href="txFallbackUrl()"
-            class="grid grid-cols-[36px_1fr_auto_auto] items-center gap-4 border-b border-rule-2 px-7 py-4 transition-colors last:border-b-0 hover:bg-paper-2"
-        >
-            <span
-                class="inline-flex size-8 items-center justify-center rounded-full border border-rule bg-paper-2 font-mono text-[11px] tracking-[0.04em] text-muted-foreground"
-            >
-                {{ tx.category_code }}
-            </span>
-            <span class="min-w-0">
-                <span class="block truncate text-foreground">{{ tx.title }}</span>
-                <span class="mt-1 block truncate font-mono text-[11px] tracking-[0.04em] text-muted-foreground">
-                    {{ tx.transaction_date }} · {{ tx.category_name ?? tx.type }}
-                </span>
-            </span>
-            <span class="hidden max-w-[120px] truncate font-mono text-[11px] tracking-[0.04em] text-muted-foreground sm:inline">{{
-                tx.tally_name
-            }}</span>
-            <span class="tabular font-mono text-[15px] font-medium" :class="tx.type === 'income' ? 'text-pos' : 'text-foreground'">
-                {{ tx.type === 'income' ? '+' : '−' }} {{ tx.currency_symbol }} {{ formatCurrency(tx.amount, decimals) }}
-            </span>
-        </Link>
+    <section class="rounded-card bg-surface p-4 sm:p-[22px]">
+        <CardHeader
+            :title="t('home.recent.title')"
+            :action-label="primaryTally ? t('home.recent.view_all') : undefined"
+            :action-href="primaryTally ? tallies.transactions.index.url(primaryTally.uuid) : undefined"
+        />
+
+        <p v-if="transactions.length === 0" class="py-10 text-center text-[13px] text-text-3">
+            {{ t('home.recent.empty') }}
+        </p>
+
+        <DataTable v-else :columns="columns" :rows="rows" :row-href="txHref">
+            <template #cell-title="{ row }">
+                <DataTableItem
+                    :title="row.title"
+                    :subtitle="row.category_name ?? row.type"
+                    :color="transactionGlyphColor(row.type, row.category_name ?? row.category_code)"
+                    :glyph="categoryGlyph(row.category_id, row.type)"
+                >
+                    <template #inline>
+                        <Badge :variant="row.is_shared ? 'accent' : 'pill'" class="ml-1.5 whitespace-nowrap">{{ row.tally_name }}</Badge>
+                    </template>
+                </DataTableItem>
+            </template>
+            <template #cell-tally_name="{ row }">
+                <Badge v-if="row.is_shared" variant="accent" class="whitespace-nowrap">{{ row.tally_name }}</Badge>
+                <span v-else class="truncate">{{ row.tally_name }}</span>
+            </template>
+            <template #cell-transaction_date="{ row }">
+                <span class="text-[13px] text-text-3">{{ row.transaction_date }}</span>
+            </template>
+            <template #cell-amount="{ row }">
+                <span :class="['num text-[14.5px] font-semibold', row.type === 'income' ? 'text-pos' : '']">{{ signedAmount(row) }}</span>
+            </template>
+        </DataTable>
     </section>
 </template>

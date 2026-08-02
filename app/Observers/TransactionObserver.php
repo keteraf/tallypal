@@ -29,5 +29,11 @@ final readonly class TransactionObserver
     private function invalidate(Transaction $transaction): void
     {
         $this->homeService->forgetCacheForUser((int) $transaction->party_id);
+
+        $tally = $transaction->tally;
+
+        if ($tally !== null) {
+            $this->homeService->forgetCacheForTallyMembers($tally);
+        }
     }
 }

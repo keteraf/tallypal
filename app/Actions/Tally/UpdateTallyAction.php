@@ -20,7 +20,8 @@ final readonly class UpdateTallyAction
 
             return $tally->refresh();
         } catch (Throwable $e) {
-            abort($e->getCode(), $e->getMessage());
+            report($e);
+            abort(500);
         }
     }
 }

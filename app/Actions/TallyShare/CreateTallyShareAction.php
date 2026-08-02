@@ -41,7 +41,8 @@ class CreateTallyShareAction
 
             return $invitation;
         } catch (Throwable $e) {
-            abort($e->getCode(), $e->getMessage());
+            report($e);
+            abort(500);
         }
     }
 }

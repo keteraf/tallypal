@@ -23,9 +23,8 @@ const props = withDefaults(
 const page = usePage<AppPageProps>();
 const seo = computed(() => page.props.seo);
 
-const resolvedTitle = computed(() =>
-    props.title ? `${props.title} — ${seo.value.site_name}` : seo.value.site_name,
-);
+/** The `<title>` is the bare page title: the Inertia `title` callback (`app.ts`, `ssr.ts`) adds the app name, once (FP-16). */
+const socialTitle = computed(() => (props.title ? `${props.title} — ${seo.value.site_name}` : seo.value.site_name));
 
 const resolvedDescription = computed(() => props.description ?? seo.value.default_description);
 
@@ -35,13 +34,13 @@ const resolvedCanonical = computed(() => props.canonical ?? seo.value.url);
 </script>
 
 <template>
-    <Head :title="resolvedTitle">
+    <Head :title="title">
         <meta head-key="description" name="description" :content="resolvedDescription" />
         <meta head-key="robots" v-if="noindex" name="robots" content="noindex, follow" />
         <link head-key="canonical" rel="canonical" :href="resolvedCanonical" />
 
         <!-- Open Graph -->
-        <meta head-key="og:title" property="og:title" :content="resolvedTitle" />
+        <meta head-key="og:title" property="og:title" :content="socialTitle" />
         <meta head-key="og:description" property="og:description" :content="resolvedDescription" />
         <meta head-key="og:url" property="og:url" :content="resolvedCanonical" />
         <meta head-key="og:image" property="og:image" :content="resolvedImage" />
@@ -51,7 +50,7 @@ const resolvedCanonical = computed(() => props.canonical ?? seo.value.url);
 
         <!-- Twitter / X -->
         <meta head-key="twitter:card" name="twitter:card" content="summary_large_image" />
-        <meta head-key="twitter:title" name="twitter:title" :content="resolvedTitle" />
+        <meta head-key="twitter:title" name="twitter:title" :content="socialTitle" />
         <meta head-key="twitter:description" name="twitter:description" :content="resolvedDescription" />
         <meta head-key="twitter:image" name="twitter:image" :content="resolvedImage" />
     </Head>

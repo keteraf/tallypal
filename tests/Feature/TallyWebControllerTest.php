@@ -86,8 +86,8 @@ it('converts income and expense totals from cents to decimals on index', functio
             ->component('tallies/Index')
             ->has('tallies', 1)
             ->where('tallies.0.name', 'Totals')
-            ->where('tallies.0.income_total', 12.34)
-            ->where('tallies.0.expense_total', 5.67)
+            ->where('tallies.0.totals.0.income', 12.34)
+            ->where('tallies.0.totals.0.expense', 5.67)
         );
 });
 
@@ -128,7 +128,18 @@ it('renders the edit page', function (): void {
         ->assertInertia(fn (AssertableInertia $page): AssertableInertia => $page
             ->component('tallies/Edit')
             ->where('tally.tally_id', $tally->tally_id)
+            ->where('other_members_count', 0)
         );
+});
+
+it('counts the other members of a shared tally on the edit page', function (): void {
+    $owner = User::factory()->create();
+    $tally = App\Models\Tally::factory()->create(['owner_id' => $owner->id]);
+    $tally->users()->attach(User::factory()->count(2)->create()->pluck('id')->all(), ['default_share_percentage' => 50]);
+
+    actingAs($owner)
+        ->get(route('tallies.edit', $tally))
+        ->assertInertia(fn (AssertableInertia $page): AssertableInertia => $page->where('other_members_count', 2));
 });
 
 it('forbids editing tally for non-owner', function (): void {
@@ -159,15 +170,59 @@ it('updates a tally and redirects to transactions index', function (): void {
     ]);
 });
 
+it('accepts the unchanged legacy glyph when updating a tally', function (): void {
+    $user = User::factory()->create();
+    $tally = App\Models\Tally::factory()->create(['owner_id' => $user->id, 'glyph' => '🏠']);
+
+    actingAs($user)
+        ->put(route('tallies.update', $tally), ['name' => 'Renamed', 'glyph' => '🏠'])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('tallies.transactions.index', $tally));
+
+    expect($tally->fresh()->glyph)->toBe('🏠');
+});
+
+it('rejects changing the glyph to one outside the picker set', function (): void {
+    $user = User::factory()->create();
+    $tally = App\Models\Tally::factory()->create(['owner_id' => $user->id, 'glyph' => '🏠']);
+
+    actingAs($user)
+        ->put(route('tallies.update', $tally), ['name' => 'Renamed', 'glyph' => '🚀'])
+        ->assertSessionHasErrors('glyph');
+
+    expect($tally->fresh()->glyph)->toBe('🏠');
+});
+
+it('accepts changing the glyph to one in the picker set', function (): void {
+    $user = User::factory()->create();
+    $tally = App\Models\Tally::factory()->create(['owner_id' => $user->id, 'glyph' => '🏠']);
+
+    actingAs($user)
+        ->put(route('tallies.update', $tally), ['name' => 'Renamed', 'glyph' => '✈'])
+        ->assertSessionHasNoErrors();
+
+    expect($tally->fresh()->glyph)->toBe('✈');
+});
+
 it('deletes a tally and redirects to index', function (): void {
     $user = User::factory()->create();
     $tally = App\Models\Tally::factory()->create(['owner_id' => $user->id]);
 
     actingAs($user)
         ->delete(route('tallies.destroy', $tally))
-        ->assertRedirect(route('tallies.index'));
+        ->assertRedirect(route('tallies.index'))
+        ->assertSessionHas('status', 'tally-deleted');
 
     $this->assertDatabaseMissing('tallies', [
         'tally_id' => $tally->tally_id,
     ]);
+});
+
+it('passes the delete flash to the index page once', function (): void {
+    $user = User::factory()->create();
+
+    actingAs($user)
+        ->withSession(['status' => 'tally-deleted'])
+        ->get(route('tallies.index'))
+        ->assertInertia(fn (AssertableInertia $page): AssertableInertia => $page->where('status', 'tally-deleted'));
 });

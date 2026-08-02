@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import AppHead from '@/components/seo/AppHead.vue';
 import InputError from '@/components/InputError.vue';
+import AppHead from '@/components/seo/AppHead.vue';
 import TextLink from '@/components/TextLink.vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -34,7 +34,7 @@ const submit = () => {
     <AuthBase :title="$t('auth.login.title')" :description="$t('auth.login.description')">
         <AppHead :title="$t('auth.login.head_title')" :noindex="true" />
 
-        <div v-if="status" class="mb-4 text-center text-sm font-medium text-green-600">
+        <div v-if="status" class="mb-4 text-center text-sm font-medium text-pos">
             {{ status }}
         </div>
 
@@ -44,7 +44,9 @@ const submit = () => {
                     <Label for="email">{{ $t('common.email') }}</Label>
                     <Input
                         id="email"
+                        name="email"
                         type="email"
+                        variant="filled"
                         required
                         autofocus
                         :tabindex="1"
@@ -64,7 +66,9 @@ const submit = () => {
                     </div>
                     <Input
                         id="password"
+                        name="password"
                         type="password"
+                        variant="filled"
                         required
                         :tabindex="2"
                         autocomplete="current-password"
@@ -81,7 +85,7 @@ const submit = () => {
                     </Label>
                 </div>
 
-                <Button type="submit" class="mt-4 w-full" :tabindex="4" :disabled="form.processing">
+                <Button type="submit" size="touch" class="mt-4 w-full" :tabindex="4" :disabled="form.processing">
                     <LoaderCircle v-if="form.processing" class="h-4 w-4 animate-spin" />
                     {{ $t('auth.login.login_button') }}
                 </Button>

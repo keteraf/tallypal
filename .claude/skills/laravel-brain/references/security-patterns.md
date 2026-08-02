@@ -191,29 +191,22 @@ $model->related_model_id = $validated['related_model_id'];
 Use these to scan hotspot files for the patterns above without reading every line:
 
 ```bash
-
 # Arbitrary attribute setting
-
 grep -n 'setAttribute\s*(\s*\$request' app/Http/Controllers/**/*.php
 
 # Mass fill from request
-
 grep -n '->fill(\$' app/Http/Controllers/**/*.php
 
 # AJAX-only auth
-
 grep -n 'ajax()' app/Http/Controllers/**/*.php
 
 # getTraceAsString in response
-
 grep -rn 'getTraceAsString' app/
 
 # Raw DB queries in controllers
-
 grep -rn 'DB::table' app/Http/Controllers/
 
 # Unvalidated FK assignment
-
 grep -n "input\('.*_id'\)" app/Http/Controllers/**/*.php
 ```
 
@@ -224,9 +217,7 @@ grep -n "input\('.*_id'\)" app/Http/Controllers/**/*.php
 The brain export lists line numbers from when the graph was last built. If the file has been edited since the last `brain:scan`, those line numbers will be off. Before navigating to a reported line:
 
 ```bash
-
 # Find the actual line of a pattern rather than trusting the export
-
 grep -n 'setAttribute\s*(\$request' app/Http/Controllers/Path/To/Controller.php
 ```
 

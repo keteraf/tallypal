@@ -1,18 +1,22 @@
 <script setup lang="ts">
+import { AmountInput } from '@/components/ui/amount-input';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { Input } from '@/components/ui/input';
+import { ChipGroup, type ChipOption } from '@/components/ui/choice-chip';
+import { FormField } from '@/components/ui/form-field';
+import { filledFieldClass, Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { SegmentedControl } from '@/components/ui/segmented-control';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import WebLayout from '@/layouts/WebLayout.vue';
+import { categoryColorFromId } from '@/lib/category';
 import tallies from '@/routes/tallies';
 import { type BreadcrumbItem } from '@/types';
-import { Form, Head, Link } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 import { DateFormatter, getLocalTimeZone, parseDate } from '@internationalized/date';
 import { CalendarIcon } from 'lucide-vue-next';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 interface Props {
@@ -34,7 +38,7 @@ interface Props {
         description: string | null;
     };
     categories: Array<{ category_id: number; name: string }>;
-    currencies: Array<{ currency_id: number; name: string; code: string }>;
+    currencies: Array<{ currency_id: number; name: string; code: string; symbol: string }>;
     parties: Array<{ id: number; name: string }>;
 }
 
@@ -57,126 +61,102 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 const df = new DateFormatter('en-US', { dateStyle: 'long' });
-
-const dateValue = ref<any>(parseDate(props.transaction.transaction_date));
 const isCalendarOpen = ref(false);
 
-const transactionType = ref<'expense' | 'income'>(props.transaction.type as 'expense' | 'income');
+const form = useForm({
+    title: props.transaction.title,
+    amount: props.transaction.amount.toFixed(2),
+    party_id: props.transaction.party_id.toString(),
+    category_id: props.transaction.category_id.toString(),
+    currency_id: props.transaction.currency_id.toString(),
+    type: props.transaction.type as 'expense' | 'income',
+    transaction_date: props.transaction.transaction_date,
+    description: props.transaction.description ?? '',
+});
 
-const partyLabel = (type: string | undefined) => {
-    return type === 'income' ? t('transactions.fields.received_by') : t('transactions.fields.paid_by');
-};
+const dateValue = computed({
+    get: () => parseDate(form.transaction_date),
+    set: (val) => {
+        if (val) {
+            form.transaction_date = val.toString();
+            isCalendarOpen.value = false;
+        }
+    },
+});
 
 const typeOptions = [
     { value: 'expense' as const, label: t('transactions.fields.expense') },
     { value: 'income' as const, label: t('transactions.fields.income'), accent: 'positive' as const },
 ];
+
+const categoryOptions = computed<ChipOption<string>[]>(() =>
+    props.categories.map((category) => ({
+        value: category.category_id.toString(),
+        label: category.name,
+        color: categoryColorFromId(category.category_id),
+    })),
+);
+
+const selectedCurrency = computed(() => props.currencies.find((currency) => currency.currency_id.toString() === form.currency_id));
+
+const partyLabel = computed(() => (form.type === 'income' ? t('transactions.fields.received_by') : t('transactions.fields.paid_by')));
+
+const submit = () => {
+    form.patch(tallies.transactions.update.url({ tally: props.tally.uuid, transaction: props.transaction.uuid }));
+};
 </script>
 
 <template>
     <Head :title="$t('transactions.edit_title', { name: tally.name })" />
 
     <WebLayout :breadcrumbs="breadcrumbs">
-        <div class="mx-auto w-full max-w-330 px-6 py-10 md:px-8">
-            <h1 class="m-0 mb-7 font-serif text-[clamp(32px,4vw,40px)] leading-[1.05] tracking-[-0.02em]">
-                {{ $t('transactions.edit_lead') }}
-                <em class="not-italic-[0]" style="font-style: italic; color: var(--brand)">{{ transaction.title }}</em>
-            </h1>
+        <div class="mx-auto w-full max-w-2xl px-5 py-6 pb-28 md:px-8 md:py-10">
+            <div class="mb-6 border-b border-line pb-6">
+                <Link :href="tallies.transactions.index.url(tally.uuid)" class="eyebrow mb-2 block transition-colors hover:text-text">
+                    {{ tally.name }}
+                </Link>
+                <h1 class="text-[28px] font-semibold tracking-[-0.03em] text-text md:text-3xl">
+                    {{ $t('transactions.edit_heading', { name: tally.name }) }}
+                </h1>
+            </div>
 
-            <div class="max-w-220 rounded-sm border border-rule bg-background px-9 pt-9 pb-7">
-                <Form
-                    :action="tallies.transactions.update.url({ tally: tally.uuid, transaction: transaction.uuid })"
-                    method="patch"
-                    :defaults="{
-                        title: transaction.title,
-                        amount: transaction.amount.toFixed(2),
-                        party_id: transaction.party_id,
-                        category_id: transaction.category_id,
-                        currency_id: transaction.currency_id,
-                        type: transaction.type,
-                        transaction_date: transaction.transaction_date,
-                        description: transaction.description ?? '',
-                    }"
-                    #default="{ errors, processing }"
-                >
-                    <div class="grid gap-7 md:grid-cols-2 md:gap-x-7 md:gap-y-7">
-                        <div class="flex flex-col gap-2">
-                            <label for="title" class="eyebrow">{{ $t('transactions.fields.title') }}</label>
-                            <Input
-                                id="title"
-                                name="title"
-                                :default-value="transaction.title"
-                                :placeholder="$t('transactions.fields.title_placeholder')"
-                                required
-                                autofocus
-                            />
-                            <div v-if="errors.title" class="text-sm font-medium text-destructive">{{ errors.title }}</div>
-                        </div>
+            <div class="rounded-card border border-line bg-surface p-6 md:p-7">
+                <form class="flex flex-col" @submit.prevent="submit">
+                    <FormField :error="form.errors.amount">
+                        <AmountInput
+                            id="amount"
+                            v-model="form.amount"
+                            :label="t('transactions.fields.amount')"
+                            :hint="t('transactions.fields.amount_hint')"
+                            :currency="selectedCurrency?.symbol"
+                        />
+                    </FormField>
 
-                        <div class="flex flex-col gap-2">
-                            <label for="amount" class="eyebrow">{{ $t('transactions.fields.amount') }}</label>
-                            <Input
-                                id="amount"
-                                name="amount"
-                                type="number"
-                                step="0.01"
-                                :default-value="transaction.amount.toFixed(2)"
-                                :placeholder="$t('transactions.fields.amount_placeholder')"
-                                class="tabular font-mono text-[22px] tracking-[-0.01em]"
-                                required
-                            />
-                            <div v-if="errors.amount" class="text-sm font-medium text-destructive">{{ errors.amount }}</div>
-                        </div>
+                    <FormField :error="form.errors.type">
+                        <SegmentedControl v-model="form.type" variant="mobile" :options="typeOptions" />
+                    </FormField>
 
-                        <div class="flex flex-col gap-2">
-                            <label class="eyebrow">{{ $t('transactions.fields.type') }}</label>
-                            <SegmentedControl v-model="transactionType" :options="typeOptions" name="type" />
-                            <input type="hidden" name="type" :value="transactionType" />
-                            <div v-if="errors.type" class="text-sm font-medium text-destructive">{{ errors.type }}</div>
-                        </div>
+                    <FormField :label="t('transactions.fields.title')" for="title" :error="form.errors.title">
+                        <Input
+                            id="title"
+                            v-model="form.title"
+                            variant="filled"
+                            :placeholder="t('transactions.fields.title_placeholder')"
+                            maxlength="25"
+                            required
+                            autofocus
+                        />
+                    </FormField>
 
-                        <div class="flex flex-col gap-2">
-                            <label for="party_id" class="eyebrow">{{ partyLabel(transactionType) }}</label>
-                            <Select name="party_id" :default-value="transaction.party_id.toString()" required>
-                                <SelectTrigger id="party_id">
-                                    <SelectValue :placeholder="partyLabel(transactionType)" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectGroup>
-                                        <SelectItem v-for="party in parties" :key="party.id" :value="party.id.toString()">
-                                            {{ party.name }}
-                                        </SelectItem>
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
-                            <div v-if="errors.party_id" class="text-sm font-medium text-destructive">{{ errors.party_id }}</div>
-                        </div>
+                    <FormField :label="t('transactions.fields.category')" :error="form.errors.category_id">
+                        <ChipGroup v-model="form.category_id" :options="categoryOptions" />
+                    </FormField>
 
-                        <div class="flex flex-col gap-2">
-                            <label for="category_id" class="eyebrow">{{ $t('transactions.fields.category') }}</label>
-                            <Select name="category_id" :default-value="transaction.category_id.toString()" required>
-                                <SelectTrigger id="category_id">
-                                    <SelectValue :placeholder="$t('transactions.fields.category_placeholder')" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectGroup>
-                                        <SelectItem
-                                            v-for="category in categories"
-                                            :key="category.category_id"
-                                            :value="category.category_id.toString()"
-                                            >{{ category.name }}</SelectItem
-                                        >
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
-                            <div v-if="errors.category_id" class="text-sm font-medium text-destructive">{{ errors.category_id }}</div>
-                        </div>
-
-                        <div class="flex flex-col gap-2">
-                            <label for="currency_id" class="eyebrow">{{ $t('transactions.fields.currency') }}</label>
-                            <Select name="currency_id" :default-value="transaction.currency_id.toString()" required>
-                                <SelectTrigger id="currency_id">
-                                    <SelectValue :placeholder="$t('transactions.fields.currency_placeholder')" />
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <FormField :label="t('transactions.fields.currency')" for="currency_id" :error="form.errors.currency_id">
+                            <Select v-model="form.currency_id">
+                                <SelectTrigger id="currency_id" variant="filled">
+                                    <SelectValue :placeholder="t('transactions.fields.currency_placeholder')" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectGroup>
@@ -184,61 +164,60 @@ const typeOptions = [
                                             v-for="currency in currencies"
                                             :key="currency.currency_id"
                                             :value="currency.currency_id.toString()"
-                                            >{{ currency.code }} · {{ currency.name }}</SelectItem
                                         >
+                                            {{ currency.code }} · {{ currency.name }}
+                                        </SelectItem>
                                     </SelectGroup>
                                 </SelectContent>
                             </Select>
-                            <div v-if="errors.currency_id" class="text-sm font-medium text-destructive">{{ errors.currency_id }}</div>
-                        </div>
+                        </FormField>
 
-                        <div class="flex flex-col gap-2 md:col-span-2">
-                            <label for="transaction_date" class="eyebrow">{{ $t('transactions.fields.date') }}</label>
+                        <FormField :label="t('transactions.fields.date')" :error="form.errors.transaction_date">
                             <Popover v-model:open="isCalendarOpen">
                                 <PopoverTrigger as-child>
-                                    <button
-                                        type="button"
-                                        class="flex items-center gap-3 border-0 border-b border-rule bg-transparent px-0 pt-2.5 pb-2.5 text-left text-foreground transition-colors hover:border-foreground"
-                                    >
-                                        <CalendarIcon class="size-4 text-muted-foreground" />
-                                        <span :class="dateValue ? '' : 'text-muted-foreground'">
-                                            {{
-                                                dateValue
-                                                    ? df.format(dateValue.toDate(getLocalTimeZone()))
-                                                    : $t('transactions.fields.date_placeholder')
-                                            }}
-                                        </span>
+                                    <button type="button" :class="[filledFieldClass, 'flex items-center gap-3 text-start']">
+                                        <CalendarIcon class="size-4 shrink-0 text-text-3" />
+                                        <span class="truncate">{{ df.format(dateValue.toDate(getLocalTimeZone())) }}</span>
                                     </button>
                                 </PopoverTrigger>
-                                <PopoverContent class="w-auto p-0">
-                                    <Calendar v-model="dateValue" initial-focus @update:model-value="isCalendarOpen = false" />
+                                <PopoverContent class="w-auto rounded-card border-line bg-surface p-0">
+                                    <Calendar v-model="dateValue" initial-focus />
                                 </PopoverContent>
                             </Popover>
-                            <input type="hidden" name="transaction_date" :value="dateValue?.toString()" />
-                            <div v-if="errors.transaction_date" class="text-sm font-medium text-destructive">{{ errors.transaction_date }}</div>
-                        </div>
-
-                        <div class="flex flex-col gap-2 md:col-span-2">
-                            <label for="description" class="eyebrow">{{ $t('transactions.fields.description') }}</label>
-                            <Textarea
-                                id="description"
-                                name="description"
-                                :default-value="transaction.description ?? ''"
-                                :placeholder="$t('transactions.fields.description_placeholder')"
-                            />
-                            <div v-if="errors.description" class="text-sm font-medium text-destructive">{{ errors.description }}</div>
-                        </div>
+                        </FormField>
                     </div>
 
-                    <div class="mt-9 flex justify-end gap-3 border-t border-rule-2 pt-6">
-                        <Button variant="ghost" as-child>
+                    <FormField :label="partyLabel" for="party_id" :error="form.errors.party_id">
+                        <Select v-model="form.party_id">
+                            <SelectTrigger id="party_id" variant="filled">
+                                <SelectValue :placeholder="partyLabel" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectGroup>
+                                    <SelectItem v-for="party in parties" :key="party.id" :value="party.id.toString()">{{ party.name }}</SelectItem>
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+                    </FormField>
+
+                    <FormField :label="t('transactions.fields.description')" for="description" :error="form.errors.description">
+                        <Textarea
+                            id="description"
+                            v-model="form.description"
+                            variant="filled"
+                            :placeholder="t('transactions.fields.description_placeholder')"
+                        />
+                    </FormField>
+
+                    <div class="mt-2 flex justify-end gap-3">
+                        <Button type="button" variant="ghost" size="touch" as-child>
                             <Link :href="tallies.transactions.index.url(tally.uuid)">{{ $t('common.cancel') }}</Link>
                         </Button>
-                        <Button type="submit" :disabled="processing">
-                            {{ processing ? $t('common.updating') : $t('transactions.update_button') }} →
+                        <Button type="submit" size="touch" :disabled="form.processing">
+                            {{ form.processing ? $t('common.updating') : $t('transactions.update_button') }}
                         </Button>
                     </div>
-                </Form>
+                </form>
             </div>
         </div>
     </WebLayout>

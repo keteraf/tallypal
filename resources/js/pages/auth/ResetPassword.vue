@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import AppHead from '@/components/seo/AppHead.vue';
 import InputError from '@/components/InputError.vue';
+import AppHead from '@/components/seo/AppHead.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -40,8 +40,8 @@ const submit = () => {
             <div class="grid gap-6">
                 <div class="grid gap-2">
                     <Label for="email">{{ $t('common.email') }}</Label>
-                    <Input id="email" type="email" name="email" autocomplete="email" v-model="form.email" class="mt-1 block w-full" readonly />
-                    <InputError :message="form.errors.email" class="mt-2" />
+                    <Input id="email" type="email" name="email" variant="filled" autocomplete="email" v-model="form.email" readonly />
+                    <InputError :message="form.errors.email" />
                 </div>
 
                 <div class="grid gap-2">
@@ -50,9 +50,9 @@ const submit = () => {
                         id="password"
                         type="password"
                         name="password"
+                        variant="filled"
                         autocomplete="new-password"
                         v-model="form.password"
-                        class="mt-1 block w-full"
                         autofocus
                         :placeholder="$t('common.placeholder.password')"
                     />
@@ -65,15 +65,15 @@ const submit = () => {
                         id="password_confirmation"
                         type="password"
                         name="password_confirmation"
+                        variant="filled"
                         autocomplete="new-password"
                         v-model="form.password_confirmation"
-                        class="mt-1 block w-full"
                         :placeholder="$t('common.placeholder.confirm_password')"
                     />
                     <InputError :message="form.errors.password_confirmation" />
                 </div>
 
-                <Button type="submit" class="mt-4 w-full" :disabled="form.processing">
+                <Button type="submit" size="touch" class="mt-4 w-full" :disabled="form.processing">
                     <LoaderCircle v-if="form.processing" class="h-4 w-4 animate-spin" />
                     {{ $t('auth.reset_password.reset_button') }}
                 </Button>

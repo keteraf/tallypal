@@ -25,6 +25,7 @@
     }
     ```
 
+
 === foundation rules ===
 
 # Laravel Boost Guidelines
@@ -32,72 +33,43 @@
 The Laravel Boost guidelines are specifically curated by Laravel maintainers for this application. These guidelines should be followed closely to ensure the best experience when building Laravel applications.
 
 ## Foundational Context
+This application is a Laravel application running on PHP 8.5. You are an expert with the Laravel ecosystem. Always use the APIs that match the installed major version of each package — do not assume a version.
 
-This application is a Laravel application and its main Laravel ecosystems package & versions are below. You are an expert with them all. Ensure you abide by these specific packages & versions.
+Before relying on a package's API, confirm its installed version:
+- PHP packages: run `composer show --direct` to list direct dependencies with versions, or `composer show <vendor/package>` for a single package.
+- JS packages: check `package.json` for the installed versions.
 
-- php - 8.5
-- inertiajs/inertia-laravel (INERTIA_LARAVEL) - v3
-- laravel/framework (LARAVEL) - v13
-- laravel/nightwatch (NIGHTWATCH) - v1
-- laravel/prompts (PROMPTS) - v0
-- laravel/pulse (PULSE) - v1
-- laravel/sanctum (SANCTUM) - v4
-- laravel/telescope (TELESCOPE) - v5
-- laravel/wayfinder (WAYFINDER) - v0
-- livewire/livewire (LIVEWIRE) - v4
-- larastan/larastan (LARASTAN) - v3
-- laravel/boost (BOOST) - v2
-- laravel/mcp (MCP) - v0
-- laravel/pail (PAIL) - v1
-- laravel/pint (PINT) - v1
-- laravel/sail (SAIL) - v1
-- pestphp/pest (PEST) - v5
-- phpunit/phpunit (PHPUNIT) - v13
-- rector/rector (RECTOR) - v2
-- @inertiajs/vue3 (INERTIA_VUE) - v3
-- tailwindcss (TAILWINDCSS) - v4
-- vue (VUE) - v3
-- @laravel/vite-plugin-wayfinder (WAYFINDER_VITE) - v0
-- eslint (ESLINT) - v9
-- prettier (PRETTIER) - v3
 
 ## Skills Activation
-
 This project has domain-specific skills available in `**/skills/**`. You MUST activate the relevant skill whenever you work in that domain—don't wait until you're stuck.
 
 ## Conventions
-
 - You must follow all existing code conventions used in this application. When creating or editing a file, check sibling files for the correct structure, approach, and naming.
 - Use descriptive names for variables and methods. For example, `isRegisteredForDiscounts`, not `discount()`.
 - Check for existing components to reuse before writing a new one.
 
 ## Verification Scripts
-
 - Do not create verification scripts or tinker when tests cover that functionality and prove they work. Unit and feature tests are more important.
 
 ## Application Structure & Architecture
-
 - Stick to existing directory structure; don't create new base folders without approval.
 - Do not change the application's dependencies without approval.
 
 ## Frontend Bundling
-
 - If the user doesn't see a frontend change reflected in the UI, it could mean they need to run `npm run build`, `npm run dev`, or `composer run dev`. Ask them.
 
 ## Documentation Files
-
 - You must only create documentation files if explicitly requested by the user.
 
 ## Replies
-
 - Be concise in your explanations - focus on what's important rather than explaining obvious details.
+
 
 === boost rules ===
 
 # Laravel Boost
 
 ## Tools
-
 - Laravel Boost is an MCP server with tools designed specifically for this application. Prefer Boost tools over manual alternatives like shell commands or file reads.
 - Use `database-query` to run read-only queries against the database instead of writing raw SQL in tinker.
 - Use `database-schema` to inspect table structure before writing migrations or models.
@@ -105,30 +77,31 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Use `browser-logs` to read browser logs, errors, and exceptions. Only recent logs are useful, ignore old entries.
 
 ## Searching Documentation (IMPORTANT)
-
-- Always use `search-docs` before making code changes. Do not skip this step. It returns version-specific docs based on installed packages automatically.
+- Use `search-docs` before changes that depend on Laravel ecosystem APIs, behavior, configuration, or version-specific syntax. Skip it for copy-only edits and other changes where package documentation is irrelevant. Reuse sufficient results already in context instead of searching again.
 - Pass a `packages` array to scope results when you know which packages are relevant.
 - Use multiple broad, topic-based queries: `['rate limiting', 'routing rate limiting', 'routing']`. Expect the most relevant results first.
 - Do not add package names to queries because package info is already shared. Use `test resource table`, not `filament 4 test resource table`.
-
 ### Search Syntax
-
 1. Use words for auto-stemmed AND logic: `rate limit` matches both "rate" AND "limit".
 2. Use `"quoted phrases"` for exact position matching: `"infinite scroll"` requires adjacent words in order.
 3. Combine words and phrases for mixed queries: `middleware "rate limit"`.
 4. Use multiple queries for OR logic: `queries=["authentication", "middleware"]`.
 
-## Artisan
+## Project Rules
+- This project contains committed, area-grouped rules in `.ai/rules` when that directory exists (settled decisions, non-obvious traps, standing constraints). Framework and package guidelines that only apply to specific paths (testing, frontend, components) also live there, under `.ai/rules/boost` — this is not just recorded decisions, it is load-bearing guidance you have not seen inline. Before you enter plan mode or create/edit any file, you MUST first: open @.ai/rules/index.md (it maps file globs to rule files), read every rule file whose globs cover the path(s) in scope, and run `grep -rin 'keyword' .ai/rules` to catch what a path match alone misses. Do not write code until you have read and are following every matching rule. If `.ai/rules` does not exist, continue without it.
+- Record a rule with `record-rule` only when the user explicitly asks for one. Instructions for the work at hand are not rules, no matter how emphatic: "remove this typo", "use X here" are work to do, not rules to record. Never record a rule on your own initiative, as a byproduct of a change, or to summarize what you just did. When the user does ask, pass a `glob` (e.g. `app/Http/Controllers/**`), a short `title`, and a few-line `note`. Use `record-rule` rather than your native memory or notes tool, because native memory is personal and session-scoped, while only `.ai/rules` is shared with the team and persists in the repo.
 
+
+## Artisan
 - Run Artisan commands directly via the command line (e.g., `php artisan route:list`). Use `php artisan list` to discover available commands and `php artisan [command] --help` to check parameters.
 - Inspect routes with `php artisan route:list`. Filter with: `--method=GET`, `--name=users`, `--path=api`, `--except-vendor`, `--only-vendor`.
 - Read configuration values using dot notation: `php artisan config:show app.name`, `php artisan config:show database.default`. Or read config files directly from the `config/` directory.
 
 ## Tinker
-
 - Execute PHP in app context for debugging and testing code. Do not create models without user approval, prefer tests with factories instead. Prefer existing Artisan commands over custom tinker code.
 - Always use single quotes to prevent shell expansion: `php artisan tinker --execute 'Your::code();'`
   - Double quotes for PHP strings inside: `php artisan tinker --execute 'User::where("active", true)->count();'`
+
 
 === php rules ===
 
@@ -141,18 +114,25 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Prefer PHPDoc blocks over inline comments. Only add inline comments for exceptionally complex logic.
 - Use array shape type definitions in PHPDoc blocks.
 
+
 === deployments rules ===
 
 # Deployment
 
 - Laravel can be deployed using [Laravel Cloud](https://cloud.laravel.com/), which is the fastest way to deploy and scale production Laravel applications.
+- Activate the `deploying-to-cloud` skill whenever deploying to Laravel Cloud, configuring Cloud environments or resources, using the Cloud CLI, or troubleshooting Cloud deployments.
+
 
 === tests rules ===
 
 # Test Enforcement
 
-- Every change must be programmatically tested. Write a new test or update an existing test, then run the affected tests to make sure they pass.
-- Run the minimum number of tests needed to ensure code quality and speed. Use `php artisan test --compact` with a specific filename or filter.
+- Add or update tests for behavior and logic changes when a test provides meaningful regression coverage.
+- Pure copy, styling, and layout-only changes do not require new or updated tests.
+- When test coverage applies, run the affected tests and ensure they pass.
+- Test the changed behavior and its important failure modes, but do not add tests beyond them.
+- Read the `testing-best-practices` skill before writing tests.
+
 
 === inertia-laravel/core rules ===
 
@@ -177,6 +157,7 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - `router.cancel()` replaced by `router.cancelAll()`.
 - The `future` configuration namespace has been removed - all v2 future options are now always enabled.
 
+
 === laravel/core rules ===
 
 # Do Things the Laravel Way
@@ -185,17 +166,21 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - If you're creating a generic PHP class, use `php artisan make:class`.
 - Pass `--no-interaction` to all Artisan commands to ensure they work without user input. You should also pass the correct `--options` to ensure correct behavior.
 
+
 ### Model Creation
 
 - When creating new models, create useful factories and seeders for them too. Ask the user if they need any other things, using `php artisan make:model --help` to check the available options.
+
+
 
 ## APIs & Eloquent Resources
 
 - For APIs, default to using Eloquent API Resources and API versioning unless existing API routes do not, then you should follow existing application convention.
 
-## URL Generation
 
+## URL Generation
 - When generating links to other pages, prefer named routes and the `route()` function.
+
 
 ## Testing
 
@@ -203,15 +188,17 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Faker: Use methods such as `$this->faker->word()` or `fake()->randomDigit()`. Follow existing conventions whether to use `$this->faker` or `fake()`.
 - When creating tests, make use of `php artisan make:test [options] {name}` to create a feature test, and pass `--unit` to create a unit test. Most tests should be feature tests.
 
-## Vite Error
 
+## Vite Error
 - If you receive an "Illuminate\Foundation\ViteException: Unable to locate file in Vite manifest" error, you can run `npm run build` or ask the user to run `npm run dev` or `composer run dev`.
+
 
 === wayfinder/core rules ===
 
 # Laravel Wayfinder
 
 Use Wayfinder to generate TypeScript functions for Laravel routes. Import from `@/actions/` (controllers) or `@/routes/` (named routes).
+
 
 === pint/core rules ===
 
@@ -220,14 +207,23 @@ Use Wayfinder to generate TypeScript functions for Laravel routes. Import from `
 - If you have modified any PHP files, you must run `vendor/bin/pint --dirty --format agent` before finalizing changes to ensure your code matches the project's expected style.
 - Do not run `vendor/bin/pint --test --format agent`, simply run `vendor/bin/pint --format agent` to fix any formatting issues.
 
+
 === pest/core rules ===
 
-## Pest
+# Pest
 
-- This project uses Pest for testing. Create tests: `php artisan make:test --pest {name}`.
-- The `{name}` argument should not include the test suite directory. Use `php artisan make:test --pest SomeFeatureTest` instead of `php artisan make:test --pest Feature/SomeFeatureTest`.
-- Run tests: `php artisan test --compact` or filter: `php artisan test --compact --filter=testName`.
-- Do NOT delete tests without approval.
+- This project uses Pest. Create tests with `php artisan make:test --pest {name}`.
+- Do not include the test suite directory in `{name}`. Use `SomeFeatureTest`, not `Feature/SomeFeatureTest`.
+- Read the `testing-best-practices` skill for guidance on coverage, naming, structure, dependency isolation, and review.
+- Do not delete tests or test files without approval. They are part of the application.
+
+## Running Tests
+
+- Run the narrowest set of tests that covers the change. Pass a file path or `--filter=testName` to `php artisan test --compact`.
+- Rerun a test after each change to it.
+- Run `vendor/bin/pest` to call the test runner directly. It accepts the same file path and `--filter=testName` arguments.
+- After the feature tests pass, ask the user to run the complete suite with `php artisan test --compact`.
+
 
 === inertia-vue/core rules ===
 
@@ -237,3 +233,75 @@ Vue components must have a single root element.
 - IMPORTANT: Activate `inertia-vue-development` when working with Inertia Vue client-side patterns.
 
 </laravel-boost-guidelines>
+
+## Domain rule: currencies (owner decision, O-04)
+
+Tallies hold transactions in several currencies. These rules are mandatory for every total,
+balance, chart and KPI:
+
+- Amounts in different currencies are **never added together and never converted**.
+- **Per-tally figures** list one entry per currency (the O-02 `monthly_totals[]` pattern:
+  `{amount, currency_symbol, currency_code, decimals}`, most-used currency first).
+- **Cross-tally aggregates** (Home balance hero, In/Out, sparkline, By category; Stats chart,
+  KPIs, categories) are computed in the user's **primary currency** only: their default currency
+  (`users.default_currency_id`, B-10) if set, otherwise their most-used currency
+  (`TransactionStatsRepository::primaryCurrency()`). When other currencies have activity in the
+  same range, show **one quiet line** below the figure with each other currency's total in its
+  own symbol ("Other currencies: $ 274.50", `common.other_currencies`), using existing tokens and
+  components. No conversion.
+- Every month or range filter uses **`transaction_date`**, never `created_at`.
+- Home cache keys are versioned (`HomeCacheService::KEY_VERSION`): bump it whenever the shape of
+  a cached value changes, instead of clearing the cache on deploy.
+
+## Design system
+
+The new UI is being migrated from the Claude Design source. The design system is
+documented in three files — read the relevant one before doing any UI work:
+
+- [Design tokens](docs/design/DESIGN_TOKENS.md) — every color, font, size, spacing,
+  radius, shadow, transition as a named CSS custom property, plus the Tailwind **v4**
+  `@theme` mapping (this repo has no `tailwind.config.js`).
+- [Component inventory](docs/design/COMPONENT_INVENTORY.md) — every reusable UI pattern,
+  its states, the existing Vue/shadcn-reka component it replaces or extends (or "new"),
+  and its props/slots.
+- [Migration plan](docs/design/MIGRATION_PLAN.md) — the ordered, session-sized phases.
+
+Rules — these are mandatory for all UI work:
+
+- All UI uses the design tokens and the base components. **No view may hardcode** colors,
+  font sizes, spacing, radii, or shadows — use the tokens (Tailwind utilities generated from
+  `@theme`, e.g. `bg-surface-2`, `text-text-3`, `rounded-card`) or a base component.
+- Before building UI, check `COMPONENT_INVENTORY.md` for an existing/base component to reuse
+  or extend; only create a new component when the inventory says "new".
+- Tailwind is **v4, config-in-CSS** — extend `resources/css/app.css` (`@theme inline` + the
+  `:root`/`.dark` custom properties). Never add a `tailwind.config.js`.
+- The app design source (`Tallypal Mobile.html`) is **mobile-only**, but the decisions are
+  settled: **one system** (the editorial style is removed), default theme **`system`**, **no
+  serif** (Geist + Geist Mono), chrome switches at **`md` (768px)** — bottom tab bar below, left
+  `ui/sidebar` above. Follow the responsive strategy table in `MIGRATION_PLAN.md` (Phase 3) for
+  every pattern's tablet/desktop behavior rather than inventing your own.
+- The **marketing page** has its own source (`Tallypal Site.html`, same palette and fonts):
+  tokens in `DESIGN_TOKENS.md §8`, components in `COMPONENT_INVENTORY.md §H`, build order and the
+  resolved decisions (#M1–#M8) in `MIGRATION_PLAN.md` Batch 4.3. It keeps a standalone header and
+  footer and does **not** use the app shell — no bottom nav, no sidebar. It is a **separate visual
+  context**: its kicker, chrome blur and breakpoint ladder deliberately differ from the app's, so
+  do not "fix" either side to match the other.
+
+## Verification
+
+- Start the dev stack: `composer run dev` (runs the server, queue listener, logs, and Vite
+  together). Base URL: `http://127.0.0.1:8000`.
+- Seed demo data — safe to re-run, it tears down and rebuilds its own records each time:
+  `php artisan db:seed --class=DemoSeeder`.
+- Demo logins:
+  - `demo@tallypal.test` / `password` — populated account. Three tallies (a shared household
+    split 60/40, a solo tally, a shared weekend trip split 50/50 in USD), months of transactions
+    spanning last-12-weeks/this-month/this-year, a real debt settlement, and a pending
+    invitation. Use it to check every screen that has data.
+  - `demo-empty@tallypal.test` / `password` — freshly registered account with no tallies. Use it
+    to check every empty state.
+- Any run that creates, edits or deletes data through the browser re-runs DemoSeeder at the end.
+- **No UI item may be marked verified without a screenshot of it.**
+- A finding is FIXED only after a side-by-side comparison with its .verify/design/ reference.
+- Done means `composer check; echo "exit: $?"` prints `exit: 0`. Run it exactly like that and quote the `exit:` line together with the final summary lines (test count, coverage, mutation score) in your report.
+- Per-class mutation scores (`--class`) are informational only. The gate is the full `composer test:mutate` run.

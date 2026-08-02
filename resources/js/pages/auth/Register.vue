@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import AppHead from '@/components/seo/AppHead.vue';
 import InputError from '@/components/InputError.vue';
+import AppHead from '@/components/seo/AppHead.vue';
 import TextLink from '@/components/TextLink.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,7 +34,9 @@ const submit = () => {
                     <Label for="name">{{ $t('common.name') }}</Label>
                     <Input
                         id="name"
+                        name="name"
                         type="text"
+                        variant="filled"
                         required
                         autofocus
                         :tabindex="1"
@@ -49,7 +51,9 @@ const submit = () => {
                     <Label for="email">{{ $t('common.email') }}</Label>
                     <Input
                         id="email"
+                        name="email"
                         type="email"
+                        variant="filled"
                         required
                         :tabindex="2"
                         autocomplete="email"
@@ -63,7 +67,9 @@ const submit = () => {
                     <Label for="password">{{ $t('common.password') }}</Label>
                     <Input
                         id="password"
+                        name="password"
                         type="password"
+                        variant="filled"
                         required
                         :tabindex="3"
                         autocomplete="new-password"
@@ -77,7 +83,9 @@ const submit = () => {
                     <Label for="password_confirmation">{{ $t('common.confirm_password') }}</Label>
                     <Input
                         id="password_confirmation"
+                        name="password_confirmation"
                         type="password"
+                        variant="filled"
                         required
                         :tabindex="4"
                         autocomplete="new-password"
@@ -87,7 +95,7 @@ const submit = () => {
                     <InputError :message="form.errors.password_confirmation" />
                 </div>
 
-                <Button type="submit" class="mt-2 w-full" tabindex="5" :disabled="form.processing">
+                <Button type="submit" size="touch" class="mt-2 w-full" :tabindex="5" :disabled="form.processing">
                     <LoaderCircle v-if="form.processing" class="h-4 w-4 animate-spin" />
                     {{ $t('auth.register.create_account_button') }}
                 </Button>
@@ -95,7 +103,7 @@ const submit = () => {
 
             <div class="text-center text-sm text-muted-foreground">
                 {{ $t('auth.register.already_have_account') }}
-                <TextLink :href="login.url()" class="underline underline-offset-4" :tabindex="6">{{ $t('auth.register.login') }}</TextLink>
+                <TextLink :href="login.url()" :tabindex="6">{{ $t('auth.register.login') }}</TextLink>
             </div>
         </form>
     </AuthBase>

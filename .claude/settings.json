@@ -1,5 +1,19 @@
 {
-  "worktree": {
-    "bgIsolation": "none"
-  }
+    "worktree": {
+        "bgIsolation": "none"
+    },
+    "permissions": {
+        "allow": [
+            "Bash(git status)",
+            "Bash(git diff:*)",
+            "Bash(cat:*)",
+            "Bash(grep:*)",
+            "Bash(ls:*)",
+            "Bash(sed:*)",
+            "Bash(awk:*)",
+            "Bash(cd:*)",
+            "Bash(python3:*)"
+        ],
+        "deny": ["Read(./.env)", "Read(./.env.*)"]
+    }
 }

@@ -21,7 +21,8 @@ class UpdateTallySharesAction
 
             $tally->users()->sync($syncData);
         } catch (Throwable $e) {
-            abort($e->getCode(), $e->getMessage());
+            report($e);
+            abort(500);
         }
     }
 }

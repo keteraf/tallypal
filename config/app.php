@@ -71,6 +71,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Default Currency
+    |--------------------------------------------------------------------------
+    |
+    | ISO code of the currency a new user starts with and the last rung of the
+    | Add transaction prefill order. Existing users keep their own default
+    | (or none); this is a prefill, never a restriction or a conversion.
+    |
+    */
+
+    'default_currency' => env('APP_DEFAULT_CURRENCY', 'EUR'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------
     |

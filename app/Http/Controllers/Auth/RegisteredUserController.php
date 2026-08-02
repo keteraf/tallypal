@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Actions\TallyShare\AcceptTallyInvitationAction;
 use App\Http\Controllers\Controller;
+use App\Models\Currency;
 use App\Models\TallyInvitation;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
@@ -43,6 +44,7 @@ class RegisteredUserController extends Controller
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
+            'default_currency_id' => Currency::appDefault()?->currency_id,
         ]);
 
         event(new Registered($user));
