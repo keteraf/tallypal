@@ -13,7 +13,7 @@ use Illuminate\Support\Collection;
  *
  * @phpstan-type CurrencyShape array{symbol: string, code: string, decimals: int, currency_id: int}
  * @phpstan-type CurrencyTotalShape array{amount: float, currency_symbol: string, currency_code: string, decimals: int}
- * @phpstan-type ActivityShape array{uuid: string, title: string, type: string, amount: float, transaction_date: string, category_id: int|null, category_name: string|null, category_code: string, tally_uuid: string, tally_name: string, is_shared: bool, currency_symbol: string, currency_code: string, decimals: int}
+ * @phpstan-type ActivityShape array{uuid: string, title: string, type: string, amount: float, transaction_date: string, category_id: int|null, category_name: string|null, category_code: string, category_slug: string|null, category_color: string|null, tally_uuid: string, tally_name: string, is_shared: bool, currency_symbol: string, currency_code: string, decimals: int}
  */
 interface TransactionStatsRepositoryInterface
 {
@@ -48,7 +48,7 @@ interface TransactionStatsRepositoryInterface
      * Return the 7 most recent transactions across the given tallies.
      *
      * @param  Collection<int, int>  $tallyIds
-     * @return array<int, array{uuid: string, title: string, type: string, amount: float, transaction_date: string, category_id: int|null, category_name: string|null, category_code: string, tally_name: string, currency_symbol: string}>
+     * @return array<int, array{uuid: string, title: string, type: string, amount: float, transaction_date: string, category_id: int|null, category_name: string|null, category_code: string, category_slug: string|null, category_color: string|null, tally_name: string, currency_symbol: string}>
      */
     public function recentTransactions(Collection $tallyIds): array;
 

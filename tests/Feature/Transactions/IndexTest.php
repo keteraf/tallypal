@@ -108,7 +108,7 @@ it('pins the transaction item fields and pagination metadata', function () {
         ->withCurrency($currency)
         ->withType(TransactionType::EXPENSE)
         ->create();
-    Transaction::factory()->count(19)->forTally($tally)->create();
+    Transaction::factory()->count(19)->forTally($tally)->withType(TransactionType::EXPENSE)->create();
 
     $this->actingAs($user)->get(route('tallies.transactions.index', $tally))
         ->assertInertia(fn ($page) => $page

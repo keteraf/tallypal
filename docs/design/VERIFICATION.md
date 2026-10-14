@@ -3150,8 +3150,9 @@ wrong).
   for an **uncategorised** income. i18n `categories.<slug>` EN/IT for all 27 (C-D3).
 - **Must-have: the migration backfills** `slug`, `type` and `color` onto the 16 existing category rows (matched by their
   current `name`), so `ReferenceDataSeeder` matches them and never inserts duplicates. Currencies are keyed on their
-  existing `code` column, so they need no backfill; the migration adds a **unique index on `currencies.code`** (the 10
-  codes are distinct) so the upsert key is enforced.
+  existing `code` column, so they need no backfill and no new index (`updateOrCreate` by `code`; a unique index was
+  dropped from the plan because ~66 tests deliberately create a second EUR/USD/GBP/JPY row; production's codes are
+  already distinct).
 - Tests: **migrate a database holding the old 16 category rows (and the 10 currencies), run the seeder twice, assert
   exactly 27 categories and 10 currencies, with the original ids kept** (1–16 unchanged, same `uuid`s); a second run
   changes nothing; a fresh `migrate:fresh` + seeder gives the same 27 / 10; `Category` cast and scope.
@@ -3220,6 +3221,17 @@ fixed tally UUID; no expense category on any income; one income with no category
 | R6 | Sonnet 5.5 | **Adopt in Add transaction** (sheet, dialog, Create page), type switch clears visibly. | CA-03..CA-12 D/M verified with screenshots; `composer check` exit 0 |
 | R7 | Sonnet 5.5 | **Adopt in Edit + rows**: Edit page; Home Recent, Tally detail, Stats All activity glyph/colour by slug. | CA-13..CA-18 D/M verified; `composer check` exit 0 |
 | R8 | Opus 5.5 | **Delta verification**: every CA row both viewports and themes, plus a regression pass over Batches 1, 3, 4, 6 rows touching categories; re-run DemoSeeder after any browser edits. | Verdict + `exit: 0` quoted |
+
+**R1 done (2026-10-14).** Migrations `2026_10_14_211827` (categories `type`/`slug`/`color` + backfill, unknown rows get
+`<name>_<id>`) and `2026_10_14_211828` (`transactions.category_id` nullable, `nullOnDelete`); `CategoryType` enum, `Category`
+cast + `ofType` scope + `CategoryFactory`; `ReferenceDataSeeder` (called by `DatabaseSeeder` and `DemoSeeder`); form data
+sends `{category_id, slug, type, name, color}`; Home recent / Stats activity rows add `category_slug` + `category_color`
+(`KEY_VERSION` v12); glyph map keyed by slug with the 11 income glyphs; `categories.<slug>` EN/IT. `TransactionFactory`
+picks a category of the transaction's own type (none for income unless the seeder ran). Deviations: **no unique index on
+`currencies.code`** (see B-13); **`category_code` kept** in the payloads (removing it means deleting two existing tests:
+needs owner approval). Found on the dev DB: a hand-added 17th category "Housing" (id 17, no transactions) — the
+migration gave it slug `housing_17`; it will show in the local picker until deleted. `exit: 0` (848 tests, 99.8%
+coverage, mutation score 100.00%).
 
 R1 comes before everything; R2–R4 only need R1; R5 needs R1 (slugs, colours, labels) and R3 (frequency shape); R6–R7
 need R5 and R2.

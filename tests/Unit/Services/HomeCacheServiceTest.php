@@ -424,7 +424,7 @@ test('balanceSummary reads the cached value instead of recomputing', function ()
 
 test('cache keys carry the version segment so entries of a previous release are never read', function (): void {
     expect(HomeCacheService::key(7, 'balance:2025-05-15'))->toBe('home:' . HomeCacheService::KEY_VERSION . ':user:7:balance:2025-05-15')
-        ->and(HomeCacheService::KEY_VERSION)->toBe('v11');
+        ->and(HomeCacheService::KEY_VERSION)->toBe('v12');
 });
 
 test('a value cached under the unversioned key of the previous release is ignored', function (): void {

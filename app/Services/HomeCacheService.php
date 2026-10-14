@@ -26,7 +26,7 @@ final readonly class HomeCacheService
      * changes: entries written by the previous release are then never read again (they expire on
      * their own TTL), so a deploy never needs a `cache:clear`.
      */
-    public const string KEY_VERSION = 'v11';
+    public const string KEY_VERSION = 'v12';
 
     public function __construct(
         private TallyRepositoryInterface $tallyRepository,
@@ -129,11 +129,11 @@ final readonly class HomeCacheService
 
     /**
      * @param  Collection<int, int>  $tallyIds
-     * @return array<int, array{uuid: string, title: string, type: string, amount: float, transaction_date: string, category_id: int|null, category_name: string|null, category_code: string, tally_name: string, currency_symbol: string}>
+     * @return array<int, array{uuid: string, title: string, type: string, amount: float, transaction_date: string, category_id: int|null, category_name: string|null, category_code: string, category_slug: string|null, category_color: string|null, tally_name: string, currency_symbol: string}>
      */
     public function recentTransactions(int $userId, Collection $tallyIds): array
     {
-        /** @var array<int, array{uuid: string, title: string, type: string, amount: float, transaction_date: string, category_id: int|null, category_name: string|null, category_code: string, tally_name: string, currency_symbol: string}> */
+        /** @var array<int, array{uuid: string, title: string, type: string, amount: float, transaction_date: string, category_id: int|null, category_name: string|null, category_code: string, category_slug: string|null, category_color: string|null, tally_name: string, currency_symbol: string}> */
         return Cache::remember(
             self::key($userId, 'recent_tx'),
             now()->addMinutes(2), // @pest-mutate-ignore

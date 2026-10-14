@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Enums\CategoryType;
 use App\Enums\TransactionType;
 use App\Models\Category;
 use App\Models\Currency;
@@ -24,7 +25,7 @@ class TransactionFactory extends Factory
             'tally_id' => Tally::factory(),
             'party_id' => User::factory(),
             'currency_id' => Currency::inRandomOrder()->first()->currency_id,
-            'category_id' => Category::inRandomOrder()->first()->category_id,
+            'category_id' => fn (array $attributes): ?int => $this->randomCategoryIdFor($attributes['type']),
             'type' => Arr::random(TransactionType::cases()),
             'title' => $this->faker->sentence(2),
             'description' => $this->faker->paragraph(1),
@@ -82,5 +83,17 @@ class TransactionFactory extends Factory
         return $this->state(fn (array $attributes): array => [
             'transaction_date' => $transactionDate,
         ]);
+    }
+
+    /**
+     * A category of the transaction's own type, or none when that type has no categories seeded
+     * (income categories come from `ReferenceDataSeeder`, not from the migrations).
+     */
+    private function randomCategoryIdFor(TransactionType|string $type): ?int
+    {
+        $categoryType = CategoryType::from($type instanceof TransactionType ? $type->value : $type);
+
+        /** @var int|null */
+        return Category::query()->ofType($categoryType)->inRandomOrder()->value(Category::PRIMARY_KEY);
     }
 }

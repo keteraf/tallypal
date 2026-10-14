@@ -151,7 +151,7 @@ class TransactionController extends Controller
     private function transactionFormData(Tally $tally): array
     {
         return [
-            'categories' => Category::all(['category_id', 'name']),
+            'categories' => Category::query()->orderBy(Category::PRIMARY_KEY)->get([Category::PRIMARY_KEY, 'slug', 'type', 'name', 'color']),
             'currencies' => Currency::all(['currency_id', 'uuid', 'name', 'code', 'symbol']),
             'default_currency_uuid' => $tally->prefillCurrency(auth()->user())?->uuid,
             'parties' => $tally->users()->get()->map(fn (User $u): array => ['id' => $u->id, 'name' => $u->name]),

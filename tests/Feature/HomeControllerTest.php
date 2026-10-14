@@ -318,8 +318,8 @@ function seedMixedCurrencyMonth(): array
     $user = User::factory()->create();
     $euro = Currency::factory()->create(['decimals' => 2, 'symbol' => '€', 'code' => 'EUR']);
     $dollar = Currency::factory()->create(['decimals' => 2, 'symbol' => '$', 'code' => 'USD']);
-    $food = Category::create(['name' => 'Food']);
-    $travel = Category::create(['name' => 'Travel']);
+    $food = Category::factory()->create(['name' => 'Food']);
+    $travel = Category::factory()->create(['name' => 'Travel']);
     $tally = Tally::factory()->create(['owner_id' => $user->id, 'name' => 'Mixed']);
 
     Transaction::factory()->forTally($tally)->forParty($user)->withCurrency($euro)
@@ -373,7 +373,7 @@ test('home By category folds every category beyond the top five into a real Othe
             'type' => 'expense',
             'amount' => $amount,
             'transaction_date' => '2026-10-13',
-            'category_id' => Category::create(['name' => $name])->getKey(),
+            'category_id' => Category::factory()->create(['name' => $name])->getKey(),
         ]);
     }
 

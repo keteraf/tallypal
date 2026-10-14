@@ -26,7 +26,7 @@ beforeEach(function () {
         'decimals' => 2,
         'description' => 'European Euro',
     ]);
-    $this->category = Category::query()->create(['name' => 'Food']);
+    $this->category = Category::factory()->create(['name' => 'Food']);
 });
 
 test('it splits expenses between two members with correct percentages', function () {

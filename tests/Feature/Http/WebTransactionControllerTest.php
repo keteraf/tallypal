@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Http;
 
+use App\Enums\TransactionType;
 use App\Http\Controllers\TransactionController;
 use App\Models\Category;
 use App\Models\Currency;
 use App\Models\Tally;
 use App\Models\Transaction;
 use App\Models\User;
+use Database\Seeders\ReferenceDataSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
 
 covers(TransactionController::class);
@@ -84,7 +86,9 @@ it('updates a transaction via web route', function () {
     $tally = Tally::factory()->create(['owner_id' => $user->id]);
     $tally->users()->attach($user->id, ['default_share_percentage' => 100]);
     $currency = Currency::where('code', 'USD')->first() ?? Currency::factory()->create(['decimals' => 2]);
-    $transaction = Transaction::factory()->forTally($tally)->withCurrency($currency)->create();
+    $this->seed(ReferenceDataSeeder::class);
+    $salary = Category::query()->where('slug', 'salary')->firstOrFail();
+    $transaction = Transaction::factory()->forTally($tally)->withCurrency($currency)->withType(TransactionType::INCOME)->withCategory($salary)->create();
 
     $payload = [
         'title' => 'Updated via Web',
@@ -114,7 +118,7 @@ it('sends the edit form exactly the tally, transaction, options, default currenc
     $tally->users()->attach($owner->id, ['default_share_percentage' => 60]);
     $tally->users()->attach($member->id, ['default_share_percentage' => 40]);
     $currency = Currency::factory()->create(['decimals' => 2, 'symbol' => '€', 'code' => 'EUR']);
-    $category = Category::create(['name' => 'Groceries']);
+    $category = Category::factory()->create(['name' => 'Groceries']);
     $transaction = Transaction::factory()->forTally($tally)->forParty($member)->withCurrency($currency)->create([
         'title' => 'Weekly shop',
         'description' => 'Fruit and veg',
@@ -148,6 +152,24 @@ it('sends the edit form exactly the tally, transaction, options, default currenc
             ->where('categories', fn ($categories): bool => collect($categories)->pluck('name')->contains('Groceries'))
             ->where('currencies', fn ($currencies): bool => collect($currencies)->pluck('uuid')->contains($currency->uuid))
         );
+});
+
+it('sends every category with its slug, type and colour to the transaction form', function () {
+    $owner = User::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
+    $tally->users()->attach($owner->id, ['default_share_percentage' => 100]);
+    $this->seed(ReferenceDataSeeder::class);
+
+    $response = $this->actingAs($owner)->getJson(route('tallies.transactions.form-data', $tally))->assertOk();
+
+    expect($response->json('categories'))->toHaveCount(27)
+        ->and(collect($response->json('categories'))->firstWhere('slug', 'salary'))->toBe([
+            'category_id' => Category::query()->where('slug', 'salary')->value('category_id'),
+            'slug' => 'salary',
+            'type' => 'income',
+            'name' => 'Salary',
+            'color' => 'c3',
+        ]);
 });
 
 it('does not show the edit form of a transaction to someone outside the tally', function () {

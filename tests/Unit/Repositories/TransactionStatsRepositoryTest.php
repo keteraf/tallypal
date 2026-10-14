@@ -164,7 +164,7 @@ test('recentTransactions category_code uses first two letters of category name',
     $tally = Tally::factory()->create(['owner_id' => $user->id]);
     $today = now()->toDateString();
 
-    $category = Category::create(['name' => 'Groceries']);
+    $category = Category::factory()->create(['name' => 'Groceries']);
 
     Transaction::factory()->forTally($tally)->forParty($user)->withCurrency($currency)
         ->create(['type' => 'expense', 'amount' => 5.0, 'title' => 'Item', 'transaction_date' => $today, 'category_id' => $category->getKey()]);
@@ -183,7 +183,7 @@ test('recentTransactions category_code is double-dot for numeric-only category n
     $currency = Currency::factory()->create(['decimals' => 2, 'symbol' => '€']);
     $tally = Tally::factory()->create(['owner_id' => $user->id]);
 
-    $category = Category::create(['name' => '123']);
+    $category = Category::factory()->create(['name' => '123']);
 
     Transaction::factory()->forTally($tally)->forParty($user)->withCurrency($currency)
         ->create(['type' => 'expense', 'amount' => 5.0, 'title' => 'Numeric Cat', 'transaction_date' => now()->toDateString(), 'category_id' => $category->getKey()]);
@@ -193,6 +193,30 @@ test('recentTransactions category_code is double-dot for numeric-only category n
 
     $tx = collect($result)->firstWhere('title', 'Numeric Cat');
     expect($tx['category_code'])->toBe('··');
+});
+
+test('recentTransactions and activity send the category slug and colour, null without a category', function (): void {
+    $user = User::factory()->create();
+    $currency = Currency::factory()->create(['decimals' => 2, 'symbol' => '€']);
+    $tally = Tally::factory()->create(['owner_id' => $user->id]);
+    $today = CarbonImmutable::now();
+    $category = Category::factory()->create(['slug' => 'test_market', 'color' => 'c4']);
+
+    Transaction::factory()->forTally($tally)->forParty($user)->withCurrency($currency)
+        ->create(['type' => 'expense', 'title' => 'Tagged', 'transaction_date' => $today->toDateString(), 'category_id' => $category->getKey()]);
+    Transaction::factory()->forTally($tally)->forParty($user)->withCurrency($currency)
+        ->create(['type' => 'expense', 'title' => 'Untagged', 'transaction_date' => $today->toDateString(), 'category_id' => null]);
+
+    $repo = new TransactionStatsRepository;
+    $recent = collect($repo->recentTransactions(collect([$tally->tally_id])));
+    $activity = collect($repo->activity(collect([$tally->tally_id]), $today->startOfMonth(), $today, 10));
+
+    foreach ([$recent, $activity] as $rows) {
+        expect(collect($rows->firstWhere('title', 'Tagged'))->only(['category_slug', 'category_color'])->all())
+            ->toBe(['category_slug' => 'test_market', 'category_color' => 'c4'])
+            ->and(collect($rows->firstWhere('title', 'Untagged'))->only(['category_slug', 'category_color'])->all())
+            ->toBe(['category_slug' => null, 'category_color' => null]);
+    }
 });
 
 test('weeklyHistory returns exactly 12 weeks with correct label format', function (): void {
@@ -253,8 +277,8 @@ test('categoriesBreakdown returns name, amount, and percentage for each category
     $tally = Tally::factory()->create(['owner_id' => $user->id]);
     $now = CarbonImmutable::now();
 
-    $catA = Category::create(['name' => 'FoodX']);
-    $catB = Category::create(['name' => 'TransportX']);
+    $catA = Category::factory()->create(['name' => 'FoodX']);
+    $catB = Category::factory()->create(['name' => 'TransportX']);
 
     Transaction::factory()->forTally($tally)->forParty($user)->withCurrency($currency)
         ->create(['type' => 'expense', 'amount' => 60.0, 'transaction_date' => $now->toDateString(), 'category_id' => $catA->getKey()]);
@@ -397,7 +421,7 @@ test('categoriesBreakdown returns every category, largest first, with percentage
 
     // Create 8 distinct categories and transactions
     for ($i = 1; $i <= 8; $i++) {
-        $cat = Category::create(['name' => "TestCat{$i}"]);
+        $cat = Category::factory()->create(['name' => "TestCat{$i}"]);
         Transaction::factory()->forTally($tally)->forParty($user)->withCurrency($currency)
             ->create(['type' => 'expense', 'amount' => 10.0, 'transaction_date' => $now->toDateString(), 'category_id' => $cat->getKey()]);
     }
@@ -581,7 +605,7 @@ test('activity keeps each row in its own currency and flags rows of multi-member
     $solo->users()->attach($user->id, ['default_share_percentage' => 100]);
     $shared = Tally::factory()->create(['owner_id' => $user->id, 'name' => 'Shared']);
     $shared->users()->attach(User::factory()->create()->id, ['default_share_percentage' => 50]);
-    $food = Category::create(['name' => 'Food']);
+    $food = Category::factory()->create(['name' => 'Food', 'slug' => 'food', 'color' => 'c4']);
     $soloTx = Transaction::factory()->forTally($solo)->forParty($user)->withCurrency($pound)->withCategory($food)
         ->create(['type' => 'expense', 'amount' => 12.40, 'transaction_date' => '2026-10-02', 'title' => 'Ramen']);
     Transaction::factory()->forTally($shared)->forParty($user)->withCurrency($pound)
@@ -598,6 +622,8 @@ test('activity keeps each row in its own currency and flags rows of multi-member
         'category_id' => $food->getKey(),
         'category_name' => 'Food',
         'category_code' => 'FO',
+        'category_slug' => 'food',
+        'category_color' => 'c4',
         'tally_uuid' => $solo->uuid,
         'tally_name' => 'Solo',
         'is_shared' => false,

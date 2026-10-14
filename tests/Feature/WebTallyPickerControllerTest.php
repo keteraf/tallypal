@@ -58,7 +58,7 @@ it('form-data returns categories, currencies and parties for a member', function
     $tally->users()->attach($user->id, ['default_share_percentage' => 100]);
 
     Currency::factory()->create(['code' => 'EUR', 'symbol' => '€', 'decimals' => 2]);
-    Category::query()->create(['name' => 'Transport']);
+    Category::factory()->create(['name' => 'Transport']);
 
     $response = $this->actingAs($user)->getJson(route('tallies.transactions.form-data', $tally));
 

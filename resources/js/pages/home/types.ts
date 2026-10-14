@@ -84,6 +84,8 @@ export interface RecentTransaction {
     category_id: number | null;
     category_name: string | null;
     category_code: string;
+    category_slug: string | null;
+    category_color: CategoryColor | null;
     tally_name: string;
     is_shared: boolean;
     currency_symbol: string;

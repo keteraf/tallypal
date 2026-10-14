@@ -43,7 +43,7 @@ const signedAmount = (row: StatsActivityItem): string =>
                     :title="row.title"
                     :subtitle="shortDate(row.transaction_date)"
                     :color="transactionGlyphColor(row.type, row.category_name)"
-                    :glyph="categoryGlyph(row.category_id ?? undefined, row.type)"
+                    :glyph="categoryGlyph(row.category_slug, row.type)"
                 >
                     <template #inline>
                         <Badge :variant="row.is_shared ? 'accent' : 'pill'" class="ml-[5px] whitespace-nowrap">{{ row.tally_name }}</Badge>

@@ -28,7 +28,7 @@ interface TransactionItem {
     amount: number;
     type: string;
     transaction_date: string;
-    category: { category_id: number; name: string } | null;
+    category: { category_id: number; slug: string; name: string; color: CategoryColor | null } | null;
     currency: { symbol: string; decimals: number } | null;
     party: { name: string; initials: string; color: CategoryColor } | null;
     [key: string]: unknown;
@@ -347,7 +347,7 @@ const signedAmount = (transaction: TransactionItem): string =>
                                         :title="row.title"
                                         :subtitle="row.category?.name ?? row.type"
                                         :color="transactionGlyphColor(row.type, row.category?.name)"
-                                        :glyph="categoryGlyph(row.category?.category_id, row.type)"
+                                        :glyph="categoryGlyph(row.category?.slug, row.type)"
                                     />
                                 </template>
                                 <template #cell-party="{ row }">

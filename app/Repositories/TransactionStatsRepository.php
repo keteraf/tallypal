@@ -93,7 +93,7 @@ final class TransactionStatsRepository implements TransactionStatsRepositoryInte
 
     /**
      * @param  Collection<int, int>  $tallyIds
-     * @return array<int, array{uuid: string, title: string, type: string, amount: float, transaction_date: string, category_id: int|null, category_name: string|null, category_code: string, tally_name: string, is_shared: bool, currency_symbol: string}>
+     * @return array<int, array{uuid: string, title: string, type: string, amount: float, transaction_date: string, category_id: int|null, category_name: string|null, category_code: string, category_slug: string|null, category_color: string|null, tally_name: string, is_shared: bool, currency_symbol: string}>
      */
     public function recentTransactions(Collection $tallyIds): array
     {
@@ -104,7 +104,7 @@ final class TransactionStatsRepository implements TransactionStatsRepositoryInte
                 $tally->withMembersCount();
             }])
             ->leftJoin('categories', 'transactions.category_id', '=', 'categories.category_id')
-            ->select('transactions.*', 'categories.name as category_name')
+            ->select('transactions.*', 'categories.name as category_name', 'categories.slug as category_slug', 'categories.color as category_color')
             ->orderByDesc('transaction_date')
             ->orderByDesc('created_at')
             ->limit(7)
@@ -125,6 +125,8 @@ final class TransactionStatsRepository implements TransactionStatsRepositoryInte
                     'category_id' => $tx->category_id,
                     'category_name' => $rawCategoryName,
                     'category_code' => $this->categoryCode($rawCategoryName),
+                    'category_slug' => $this->nullableString($tx->getAttribute('category_slug')),
+                    'category_color' => $this->nullableString($tx->getAttribute('category_color')),
                     'tally_name' => $tx->tally === null ? '' : (string) $tx->tally->name,
                     'is_shared' => (int) $usersCount > 1,
                     'currency_symbol' => $currency === null ? '' : (string) $currency->symbol,
@@ -148,7 +150,7 @@ final class TransactionStatsRepository implements TransactionStatsRepositoryInte
                 $tally->withMembersCount();
             }])
             ->leftJoin('categories', 'transactions.category_id', '=', 'categories.category_id')
-            ->select('transactions.*', 'categories.name as category_name')
+            ->select('transactions.*', 'categories.name as category_name', 'categories.slug as category_slug', 'categories.color as category_color')
             ->orderByDesc('transactions.transaction_date')
             ->orderByDesc('transactions.created_at')
             ->limit($limit)
@@ -172,6 +174,8 @@ final class TransactionStatsRepository implements TransactionStatsRepositoryInte
                     'category_id' => $tx->category_id,
                     'category_name' => $rawCategoryName,
                     'category_code' => $this->categoryCode($rawCategoryName),
+                    'category_slug' => $this->nullableString($tx->getAttribute('category_slug')),
+                    'category_color' => $this->nullableString($tx->getAttribute('category_color')),
                     'tally_uuid' => (string) $tally->uuid,
                     'tally_name' => (string) $tally->name,
                     'is_shared' => (int) $usersCount > 1,
@@ -431,6 +435,14 @@ final class TransactionStatsRepository implements TransactionStatsRepositoryInte
             ])
             ->values()
             ->all();
+    }
+
+    /**
+     * A joined column that is null for a transaction with no category.
+     */
+    private function nullableString(mixed $value): ?string
+    {
+        return is_string($value) ? $value : null;
     }
 
     private function categoryCode(?string $name): string

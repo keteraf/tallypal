@@ -1,3 +1,4 @@
+import type { CategoryColor } from '@/lib/category';
 import type { CurrencyTotal, WeekHistory } from '@/pages/home/types';
 
 export type StatsRangeValue = 'week' | 'month' | 'year';
@@ -38,6 +39,8 @@ export interface StatsActivityItem {
     category_id: number | null;
     category_name: string | null;
     category_code: string;
+    category_slug: string | null;
+    category_color: CategoryColor | null;
     tally_uuid: string;
     tally_name: string;
     is_shared: boolean;

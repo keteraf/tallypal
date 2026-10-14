@@ -151,8 +151,8 @@ const colorOptions: ChipOption[] = [
 ];
 
 const glyphMapRows = [
-    ...Object.entries(CATEGORY_GLYPHS).map(([id, glyph]) => ({ key: `id ${id}`, glyph })),
-    { key: 'income', glyph: categoryGlyph(1, 'income') },
+    ...Object.entries(CATEGORY_GLYPHS).map(([slug, glyph]) => ({ key: slug, glyph })),
+    { key: 'income, no category', glyph: categoryGlyph(null, 'income') },
     { key: 'unmapped', glyph: categoryGlyph(null, 'expense') },
 ];
 const glyphByColor: Record<string, string> = { c1: '⌂', c2: '✈', c3: '◐', c4: '◈', c5: '♪', c6: '☕' };

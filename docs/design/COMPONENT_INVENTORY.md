@@ -117,7 +117,7 @@ Legend for **Replaces**:
   with **U+FE0E** (VARIATION SELECTOR-15) appended. Any glyph added later follows the same rule.
   The glyph run verifies this with screenshots at 375×812 and 1440×900.
 - **Income categories (Categories batch):** 11 more glyphs (¤ ✦ ✪ ▲ ◫ ↺ ❖ ⬡ ⊚ ⚄ ⊕), none with an emoji form. The map is
-  re-keyed on the category `slug` if C-D2 is approved; ↓ stays for an **uncategorised** income only. Colour comes from
+  re-keyed on the category `slug` (C-D2, approved 2026-10-14; supersedes the `category_id` key above); ↓ stays for an **uncategorised** income only. Colour comes from
   the category's persisted `color` (DESIGN_TOKENS §7.1). Table: VERIFICATION.md, Categories batch.
 
 ---

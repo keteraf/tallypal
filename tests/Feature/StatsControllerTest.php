@@ -212,8 +212,8 @@ function seedMixedCurrencyStats(): array
     $user = User::factory()->create();
     $euro = Currency::factory()->create(['decimals' => 2, 'symbol' => '€', 'code' => 'EUR']);
     $dollar = Currency::factory()->create(['decimals' => 2, 'symbol' => '$', 'code' => 'USD']);
-    $food = Category::create(['name' => 'Food']);
-    $travel = Category::create(['name' => 'Travel']);
+    $food = Category::factory()->create(['name' => 'Food']);
+    $travel = Category::factory()->create(['name' => 'Travel']);
     $tally = Tally::factory()->create(['owner_id' => $user->id]);
 
     Transaction::factory()->forTally($tally)->forParty($user)->withCurrency($euro)
@@ -299,7 +299,7 @@ function seedCategoryExpenses(User $user, array $amountsByCategory): void
             'type' => 'expense',
             'amount' => $amount,
             'transaction_date' => '2026-10-13',
-            'category_id' => Category::create(['name' => $name])->getKey(),
+            'category_id' => Category::factory()->create(['name' => $name])->getKey(),
         ]);
     }
 }
