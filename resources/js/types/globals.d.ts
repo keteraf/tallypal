@@ -1,3 +1,4 @@
+import { vReveal } from '@/directives/reveal';
 import { AppPageProps } from '@/types/index';
 
 // Extend ImportMeta interface for Vite...
@@ -22,5 +23,9 @@ declare module '@vue/runtime-core' {
         $inertia: typeof Router;
         $page: Page;
         $headManager: ReturnType<typeof createHeadManager>;
+    }
+
+    interface GlobalDirectives {
+        vReveal: typeof vReveal;
     }
 }

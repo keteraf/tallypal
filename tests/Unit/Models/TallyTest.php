@@ -31,6 +31,9 @@ it('has fillable attributes', function () {
         'owner_id',
         'name',
         'description',
+        'color',
+        'glyph',
+        'default_currency_id',
     ]);
     expect($tally->getGuarded())->toContain('income_total', 'expense_total');
 });
@@ -136,4 +139,74 @@ it('creates with factory', function () {
     expect($tally->name)->toBe('Test Tally')
         ->and($tally->description)->toBe('Test Description')
         ->and($tally->owner)->toBeInstanceOf(User::class);
+});
+
+it('counts the owner once when the tally has no pivot rows', function () {
+    $tally = Tally::factory()->create();
+
+    expect($tally->membersCount())->toBe(1);
+});
+
+it('counts the owner once when the owner is also in the pivot', function () {
+    $owner = User::factory()->create();
+    $member = User::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
+    $tally->users()->attach($owner->id, ['default_share_percentage' => 60]);
+    $tally->users()->attach($member->id, ['default_share_percentage' => 40]);
+
+    expect($tally->membersCount())->toBe(2);
+});
+
+it('counts the owner when the owner is missing from the pivot', function () {
+    $tally = Tally::factory()->create();
+    $tally->users()->attach(User::factory()->create()->id, ['default_share_percentage' => 50]);
+    $tally->users()->attach(User::factory()->create()->id, ['default_share_percentage' => 50]);
+
+    expect($tally->membersCount())->toBe(3);
+});
+
+it('exposes the members count as users_count for many tallies at once', function () {
+    $owner = User::factory()->create();
+    $solo = Tally::factory()->create(['owner_id' => $owner->id]);
+    $solo->users()->attach($owner->id, ['default_share_percentage' => 100]);
+    $shared = Tally::factory()->create(['owner_id' => $owner->id]);
+    $shared->users()->attach($owner->id, ['default_share_percentage' => 50]);
+    $shared->users()->attach(User::factory()->create()->id, ['default_share_percentage' => 50]);
+
+    $counts = Tally::query()->withMembersCount()->get()->pluck('users_count', 'tally_id');
+
+    expect((int) $counts[$solo->tally_id])->toBe(1)
+        ->and((int) $counts[$shared->tally_id])->toBe(2);
+});
+
+it('lists its members owner first, then the others by id, the owner once', function () {
+    $later = User::factory()->create();
+    $earlier = User::factory()->create();
+    $owner = User::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
+    $tally->users()->attach($earlier->id, ['default_share_percentage' => 30]);
+    $tally->users()->attach($owner->id, ['default_share_percentage' => 50]);
+    $tally->users()->attach($later->id, ['default_share_percentage' => 20]);
+
+    expect($tally->membersInOrder()->pluck('id')->all())->toBe([$owner->id, $later->id, $earlier->id])
+        ->and($tally->memberShares())->toBe([$owner->id => 50.0, $later->id => 20.0, $earlier->id => 30.0]);
+});
+
+it('gives an owner without a pivot row the remainder of the other shares', function () {
+    $owner = User::factory()->create();
+    $member = User::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
+    $tally->users()->attach($member->id, ['default_share_percentage' => 35]);
+
+    expect($tally->membersInOrder()->pluck('id')->all())->toBe([$owner->id, $member->id])
+        ->and($tally->memberShares())->toBe([$owner->id => 65.0, $member->id => 35.0]);
+});
+
+it('never gives an owner without a pivot row a negative share', function () {
+    $owner = User::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
+    $tally->users()->attach(User::factory()->create()->id, ['default_share_percentage' => 70]);
+    $tally->users()->attach(User::factory()->create()->id, ['default_share_percentage' => 40]);
+
+    expect($tally->memberShares()[$owner->id])->toBe(0.0);
 });

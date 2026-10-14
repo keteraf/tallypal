@@ -5,7 +5,10 @@ declare(strict_types=1);
 use App\Actions\TallyShare\UpdateTallySharesAction;
 use App\Models\Tally;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Exceptions;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 uses(RefreshDatabase::class);
 
@@ -53,4 +56,18 @@ it('detaches users not included in the shares array', function () {
 
     expect($tally->users()->count())->toBe(2);
     expect($tally->users()->where('user_id', $user3->id)->exists())->toBeFalse();
+});
+
+test('a database error is reported and becomes a plain 500', function (): void {
+    Exceptions::fake();
+    $failure = databaseFailure();
+    $tally = Mockery::mock(Tally::class)->makePartial();
+    $tally->shouldReceive('users')->andThrow($failure);
+    expect(fn () => (new UpdateTallySharesAction())->handle($tally, [['user_id' => 1, 'percentage' => 100]]))
+        ->toThrow(function (HttpException $exception): void {
+            expect($exception->getStatusCode())->toBe(500)
+                ->and($exception->getMessage())->not->toContain('secret_table');
+        });
+
+    Exceptions::assertReported(fn (QueryException $exception): bool => $exception === $failure);
 });

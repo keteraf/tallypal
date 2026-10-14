@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Models\Currency;
 use App\Models\Tally;
 use App\Models\TallyInvitation;
 use App\Models\User;
@@ -92,4 +93,44 @@ test('pending invitations are auto-accepted on registration', function () {
 
     expect($invitation->status)->toBe(TallyInvitation::STATUS_ACCEPTED);
     expect($tally->users()->where('user_id', $newUser->id)->exists())->toBeTrue();
+});
+
+test('registration stores the app default currency as the new user default', function () {
+    $this->post('/register', [
+        'name' => 'Test User',
+        'email' => 'currency@example.com',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+    ]);
+
+    $user = User::query()->where('email', 'currency@example.com')->firstOrFail();
+
+    expect($user->defaultCurrency?->code)->toBe('EUR');
+});
+
+test('registration follows the configured app default currency', function () {
+    config(['app.default_currency' => 'USD']);
+
+    $this->post('/register', [
+        'name' => 'Test User',
+        'email' => 'usd@example.com',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+    ]);
+
+    expect(User::query()->where('email', 'usd@example.com')->firstOrFail()->default_currency_id)
+        ->toBe(Currency::query()->where('code', 'USD')->firstOrFail()->currency_id);
+});
+
+test('registration leaves the default currency empty when the configured code is unknown', function () {
+    config(['app.default_currency' => 'ZZZ']);
+
+    $this->post('/register', [
+        'name' => 'Test User',
+        'email' => 'zzz@example.com',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+    ]);
+
+    expect(User::query()->where('email', 'zzz@example.com')->firstOrFail()->default_currency_id)->toBeNull();
 });

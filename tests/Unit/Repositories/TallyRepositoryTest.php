@@ -8,6 +8,7 @@ use App\Models\Transaction;
 use App\Models\User;
 use App\Repositories\TallyRepository;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\DB;
 
 covers(TallyRepository::class);
 
@@ -28,7 +29,7 @@ test('accessibleTalliesWithTotals returns owned and shared tallies', function ()
         ->toHaveCount(2);
 });
 
-test('accessibleTalliesWithTotals computes income and expense totals', function (): void {
+test('accessibleTalliesWithTotals computes income and expense totals per currency', function (): void {
     $user = User::factory()->create();
     $currency = Currency::factory()->create(['decimals' => 2]);
     $tally = Tally::factory()->create(['owner_id' => $user->id]);
@@ -42,8 +43,8 @@ test('accessibleTalliesWithTotals computes income and expense totals', function 
     $result = $repo->accessibleTalliesWithTotals((int) $user->id);
 
     $found = $result->firstWhere('tally_id', $tally->tally_id);
-    expect($found->income_total)->toBe(10.0)
-        ->and($found->expense_total)->toBe(3.5);
+    expect($found['totals'][0]['income'])->toBe(10.0)
+        ->and($found['totals'][0]['expense'])->toBe(3.5);
 });
 
 test('accessibleTalliesWithTotals returns empty collection when user has no tallies', function (): void {
@@ -105,13 +106,13 @@ test('tallySummaries returns correct uuid and name', function (): void {
         ]);
 
     $repo = new TallyRepository;
-    $summaries = $repo->tallySummaries((int) $user->id, collect([$tally->tally_id]), $monthStart);
+    $summaries = $repo->tallySummaries((int) $user->id, collect([$tally->tally_id]), $monthStart, $monthStart->endOfMonth());
 
     expect($summaries)->toHaveCount(1);
     $summary = $summaries->first();
     expect($summary['uuid'])->toBe((string) $tally->uuid)
         ->and($summary['name'])->toBe('My Budget')
-        ->and($summary)->toHaveKeys(['uuid', 'name', 'member_count', 'monthly_total']);
+        ->and($summary)->toHaveKeys(['uuid', 'name', 'member_count', 'monthly_totals']);
 });
 
 test('tallySummaries member_count equals 1 for owner-only tally', function (): void {
@@ -120,7 +121,7 @@ test('tallySummaries member_count equals 1 for owner-only tally', function (): v
     $monthStart = CarbonImmutable::now()->startOfMonth();
 
     $repo = new TallyRepository;
-    $summaries = $repo->tallySummaries((int) $user->id, collect([$tally->tally_id]), $monthStart);
+    $summaries = $repo->tallySummaries((int) $user->id, collect([$tally->tally_id]), $monthStart, $monthStart->endOfMonth());
 
     expect($summaries->first()['member_count'])->toBe(1);
 });
@@ -133,129 +134,152 @@ test('tallySummaries adds 1 to member count when user is owner', function (): vo
     $monthStart = CarbonImmutable::now()->startOfMonth();
 
     $repo = new TallyRepository;
-    $summaries = $repo->tallySummaries((int) $owner->id, collect([$tally->tally_id]), $monthStart);
+    $summaries = $repo->tallySummaries((int) $owner->id, collect([$tally->tally_id]), $monthStart, $monthStart->endOfMonth());
 
     // 1 shared member (in users table) + 1 for owner = 2
     expect($summaries->first()['member_count'])->toBe(2);
 });
 
-test('tallySummaries monthly_total reflects current month expenses', function (): void {
-    $user = User::factory()->create();
-    $currency = Currency::factory()->create(['decimals' => 2]);
-    $tally = Tally::factory()->create(['owner_id' => $user->id]);
+test('tallySummaries counts the owner once when the owner is also in the pivot', function (): void {
+    $owner = User::factory()->create();
+    $member = User::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
+    $tally->users()->attach($owner->id, ['default_share_percentage' => 60]);
+    $tally->users()->attach($member->id, ['default_share_percentage' => 40]);
     $monthStart = CarbonImmutable::now()->startOfMonth();
 
-    Transaction::factory()->forTally($tally)->forParty($user)->withCurrency($currency)
-        ->create(['type' => 'expense', 'amount' => 75.0, 'transaction_date' => now()->toDateString()]);
-
     $repo = new TallyRepository;
-    $summaries = $repo->tallySummaries((int) $user->id, collect([$tally->tally_id]), $monthStart);
+    $summaries = $repo->tallySummaries((int) $owner->id, collect([$tally->tally_id]), $monthStart, $monthStart->endOfMonth());
 
-    expect($summaries->first()['monthly_total'])->toBe(75.0);
+    expect($summaries->first()['member_count'])->toBe(2);
 });
 
-test('sharedTallySummary returns null when no shared tallies exist', function (): void {
+test('tallySummaries counts the owner for a member viewing a shared tally', function (): void {
+    $owner = User::factory()->create();
+    $member = User::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
+    $tally->users()->attach($member->id, ['default_share_percentage' => 50]);
+    $monthStart = CarbonImmutable::now()->startOfMonth();
+
+    $repo = new TallyRepository;
+    $summaries = $repo->tallySummaries((int) $member->id, collect([$tally->tally_id]), $monthStart, $monthStart->endOfMonth());
+
+    expect($summaries->first()['member_count'])->toBe(2);
+});
+
+test('tallySummaries monthly_totals count only expenses dated within the month, in the tally currency', function (): void {
+    $user = User::factory()->create();
+    $currency = Currency::factory()->create(['decimals' => 2, 'symbol' => '$', 'code' => 'USD']);
+    $tally = Tally::factory()->create(['owner_id' => $user->id]);
+    $monthStart = CarbonImmutable::parse('2026-10-01 00:00:00');
+
+    Transaction::factory()->forTally($tally)->forParty($user)->withCurrency($currency)
+        ->create(['type' => 'expense', 'amount' => 75.0, 'transaction_date' => '2026-10-01', 'created_at' => '2026-09-30 23:00:00']);
+    Transaction::factory()->forTally($tally)->forParty($user)->withCurrency($currency)
+        ->create(['type' => 'expense', 'amount' => 40.0, 'transaction_date' => '2026-09-30', 'created_at' => '2026-10-02 10:00:00']);
+    Transaction::factory()->forTally($tally)->forParty($user)->withCurrency($currency)
+        ->create(['type' => 'expense', 'amount' => 25.0, 'transaction_date' => '2026-11-01', 'created_at' => '2026-10-02 10:00:00']);
+    Transaction::factory()->forTally($tally)->forParty($user)->withCurrency($currency)
+        ->create(['type' => 'income', 'amount' => 500.0, 'transaction_date' => '2026-10-05']);
+
+    $repo = new TallyRepository;
+    $summaries = $repo->tallySummaries((int) $user->id, collect([$tally->tally_id]), $monthStart, $monthStart->endOfMonth());
+
+    expect($summaries->first()['monthly_totals'])->toBe([
+        ['amount' => 75.0, 'currency_symbol' => '$', 'currency_code' => 'USD', 'decimals' => 2],
+    ]);
+});
+
+test('tallySummaries monthly_totals is the month expense per currency, ignoring income, by transaction_date', function (): void {
+    $user = User::factory()->create();
+    $euro = Currency::factory()->create(['decimals' => 2, 'symbol' => '€', 'code' => 'EUR']);
+    $dollar = Currency::factory()->create(['decimals' => 2, 'symbol' => '$', 'code' => 'USD']);
+    $tally = Tally::factory()->create(['owner_id' => $user->id]);
+    $monthStart = CarbonImmutable::parse('2026-10-01 00:00:00');
+
+    Transaction::factory()->count(3)->forTally($tally)->forParty($user)->withCurrency($euro)
+        ->create(['type' => 'expense', 'amount' => 40.0, 'transaction_date' => '2026-10-03']);
+    Transaction::factory()->forTally($tally)->forParty($user)->withCurrency($euro)
+        ->create(['type' => 'income', 'amount' => 100.0, 'transaction_date' => '2026-10-04']);
+    Transaction::factory()->forTally($tally)->forParty($user)->withCurrency($euro)
+        ->create(['type' => 'income', 'amount' => 900.0, 'transaction_date' => '2026-09-30', 'created_at' => '2026-10-02 10:00:00']);
+    Transaction::factory()->forTally($tally)->forParty($user)->withCurrency($dollar)
+        ->create(['type' => 'income', 'amount' => 60.0, 'transaction_date' => '2026-10-06']);
+    Transaction::factory()->forTally($tally)->forParty($user)->withCurrency($dollar)
+        ->create(['type' => 'expense', 'amount' => 60.0, 'transaction_date' => '2026-10-07']);
+
+    $repo = new TallyRepository;
+    $summaries = $repo->tallySummaries((int) $user->id, collect([$tally->tally_id]), $monthStart, $monthStart->endOfMonth());
+
+    expect($summaries->first()['monthly_totals'])->toBe([
+        ['amount' => 120.0, 'currency_symbol' => '€', 'currency_code' => 'EUR', 'decimals' => 2],
+        ['amount' => 60.0, 'currency_symbol' => '$', 'currency_code' => 'USD', 'decimals' => 2],
+    ]);
+});
+
+test('tallySummaries monthly_totals lists the most-used currency first', function (): void {
+    $user = User::factory()->create();
+    $euro = Currency::factory()->create(['decimals' => 2, 'symbol' => '€', 'code' => 'EUR']);
+    $dollar = Currency::factory()->create(['decimals' => 2, 'symbol' => '$', 'code' => 'USD']);
+    $tally = Tally::factory()->create(['owner_id' => $user->id]);
+    $monthStart = CarbonImmutable::parse('2026-10-01 00:00:00');
+
+    Transaction::factory()->count(2)->forTally($tally)->forParty($user)->withCurrency($dollar)
+        ->create(['type' => 'expense', 'amount' => 1.0, 'transaction_date' => '2026-09-10']);
+    Transaction::factory()->forTally($tally)->forParty($user)->withCurrency($euro)
+        ->create(['type' => 'expense', 'amount' => 3.0, 'transaction_date' => '2026-10-02']);
+
+    $repo = new TallyRepository;
+    $summaries = $repo->tallySummaries((int) $user->id, collect([$tally->tally_id]), $monthStart, $monthStart->endOfMonth());
+
+    expect($summaries->first()['monthly_totals'])->toBe([
+        ['amount' => 0.0, 'currency_symbol' => '$', 'currency_code' => 'USD', 'decimals' => 2],
+        ['amount' => 3.0, 'currency_symbol' => '€', 'currency_code' => 'EUR', 'decimals' => 2],
+    ]);
+});
+
+test('tallySummaries monthly_totals is empty for a tally without transactions', function (): void {
     $user = User::factory()->create();
     $tally = Tally::factory()->create(['owner_id' => $user->id]);
-    $now = CarbonImmutable::now();
 
     $repo = new TallyRepository;
-    $result = $repo->sharedTallySummary(collect([$tally->tally_id]), $now->startOfMonth(), $now);
+    $summaries = $repo->tallySummaries((int) $user->id, collect([$tally->tally_id]), CarbonImmutable::now()->startOfMonth(), CarbonImmutable::now());
 
-    expect($result)->toBeNull();
+    expect($summaries->first()['monthly_totals'])->toBe([]);
 });
 
-test('sharedTallySummary returns uuid and name', function (): void {
-    $owner = User::factory()->create();
-    $collab = User::factory()->create();
-    $tally = Tally::factory()->create(['owner_id' => $owner->id, 'name' => 'Lisbon trip']);
-    $tally->users()->attach($collab->id, ['default_share_percentage' => 50]);
-    $now = CarbonImmutable::now();
-
-    $repo = new TallyRepository;
-    $result = $repo->sharedTallySummary(collect([$tally->tally_id]), $now->startOfMonth(), $now);
-
-    expect($result)->not->toBeNull()
-        ->and($result['uuid'])->toBe((string) $tally->uuid)
-        ->and($result['name'])->toBe('Lisbon trip');
-});
-
-test('sharedTallySummary returns members and spending data', function (): void {
-    $owner = User::factory()->create();
-    $collab = User::factory()->create();
-    $currency = Currency::factory()->create(['decimals' => 2, 'symbol' => '€']);
-    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
-    $tally->users()->attach($collab->id, ['default_share_percentage' => 50]);
-
-    $now = CarbonImmutable::now();
-
-    Transaction::factory()
-        ->forTally($tally)
-        ->forParty($owner)
-        ->withCurrency($currency)
-        ->create(['type' => 'expense', 'amount' => 100.0, 'transaction_date' => $now->toDateString()]);
-
-    $repo = new TallyRepository;
-    $result = $repo->sharedTallySummary(collect([$tally->tally_id]), $now->startOfMonth(), $now);
-
-    expect($result)->not->toBeNull()
-        ->and($result['total_spent'])->toBe(100.0)
-        ->and($result['members'])->toHaveCount(2);
-
-    $member = collect($result['members'])->firstWhere('name', $owner->name);
-    expect($member['amount'])->toBe(100.0)
-        ->and($member['percentage'])->toBe(100.0);
-
-    // Members must have all required keys
-    expect($result['members'][0])->toHaveKeys(['name', 'initials', 'amount', 'percentage']);
-});
-
-test('sharedTallySummary generates initials from member names', function (): void {
-    $owner = User::factory()->create(['name' => 'John Doe']);
-    $collab = User::factory()->create(['name' => 'Jane Smith']);
-    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
-    $tally->users()->attach($collab->id, ['default_share_percentage' => 50]);
-    $now = CarbonImmutable::now();
-
-    $repo = new TallyRepository;
-    $result = $repo->sharedTallySummary(collect([$tally->tally_id]), $now->startOfMonth(), $now);
-
-    $ownerMember = collect($result['members'])->firstWhere('name', 'John Doe');
-    $collabMember = collect($result['members'])->firstWhere('name', 'Jane Smith');
-
-    expect($ownerMember['initials'])->toBe('JD')
-        ->and($collabMember['initials'])->toBe('JS');
-});
-
-test('sharedTallySummary percentage is zero when total_spent is zero', function (): void {
-    $owner = User::factory()->create(['name' => '123']);
-    $collab = User::factory()->create(['name' => '456']);
-    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
-    $tally->users()->attach($collab->id, ['default_share_percentage' => 50]);
-
-    $now = CarbonImmutable::now();
-
-    // No transactions — total_spent is zero
-    $repo = new TallyRepository;
-    $result = $repo->sharedTallySummary(collect([$tally->tally_id]), $now->startOfMonth(), $now);
-
-    expect($result)->not->toBeNull()
-        ->and($result['total_spent'])->toBe(0.0)
-        ->and($result['members'][0]['percentage'])->toBe(0.0);
-});
-
-test('initials uses double-dot for name with only non-letter characters via shared summary', function (): void {
+test('tallySummaries members_preview falls back to double-dot initials for a blank name', function (): void {
     $owner = User::factory()->create(['name' => '  ']);
-    $collab = User::factory()->create(['name' => 'Regular Name']);
     $tally = Tally::factory()->create(['owner_id' => $owner->id]);
-    $tally->users()->attach($collab->id, ['default_share_percentage' => 50]);
 
-    $now = CarbonImmutable::now();
+    $summaries = (new TallyRepository)->tallySummaries((int) $owner->id, collect([$tally->tally_id]), CarbonImmutable::now()->startOfMonth(), CarbonImmutable::now());
 
-    $repo = new TallyRepository;
-    $result = $repo->sharedTallySummary(collect([$tally->tally_id]), $now->startOfMonth(), $now);
+    expect($summaries->first()['members_preview'][0]['initials'])->toBe('··');
+});
 
-    expect($result)->not->toBeNull();
-    $ownerMember = collect($result['members'])->firstWhere('name', $owner->name);
-    expect($ownerMember['initials'])->toBe('··');
+test('tallySummaries loads members with a constant number of queries', function (): void {
+    $owner = User::factory()->create();
+    $tallies = Tally::factory()->count(4)->create(['owner_id' => $owner->id]);
+    $tallies->each(fn (Tally $tally) => $tally->users()->attach(User::factory()->count(2)->create()->pluck('id')->all(), ['default_share_percentage' => 50]));
+
+    DB::enableQueryLog();
+    (new TallyRepository)->tallySummaries((int) $owner->id, $tallies->pluck('tally_id'), CarbonImmutable::now()->startOfMonth(), CarbonImmutable::now());
+
+    expect(DB::getQueryLog())->toHaveCount(4);
+});
+
+test('filterOptions lists the given tallies by name and flags those with more than one member', function (): void {
+    $owner = User::factory()->create();
+    $zoo = Tally::factory()->create(['owner_id' => $owner->id, 'name' => 'Zoo']);
+    $zoo->users()->attach($owner->id, ['default_share_percentage' => 100]);
+    $home = Tally::factory()->create(['owner_id' => $owner->id, 'name' => 'Home']);
+    $home->users()->attach(User::factory()->create()->id, ['default_share_percentage' => 50]);
+    Tally::factory()->create(['owner_id' => $owner->id, 'name' => 'Attic']);
+
+    $options = (new TallyRepository)->filterOptions(collect([$zoo->tally_id, $home->tally_id]));
+
+    expect($options->all())->toBe([
+        ['tally_id' => $home->tally_id, 'uuid' => $home->uuid, 'name' => 'Home', 'is_shared' => true],
+        ['tally_id' => $zoo->tally_id, 'uuid' => $zoo->uuid, 'name' => 'Zoo', 'is_shared' => false],
+    ]);
 });

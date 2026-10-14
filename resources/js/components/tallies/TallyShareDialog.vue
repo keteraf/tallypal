@@ -1,14 +1,21 @@
 <script setup lang="ts">
 import InputError from '@/components/InputError.vue';
+import ResponsiveModal from '@/components/ResponsiveModal.vue';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
+import { NumberStepper } from '@/components/ui/number-stepper';
+import { SegmentedControl } from '@/components/ui/segmented-control';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SplitBar } from '@/components/ui/split-bar';
+import { SplitLockButton } from '@/components/ui/split-lock-button';
+import { categoryColorFromId } from '@/lib/category';
 import apiTallies from '@/routes/api/tallies';
-import { useForm } from '@inertiajs/vue3';
-import { Loader2, Plus, Share2, Trash2, X } from 'lucide-vue-next';
+import { Loader2, Trash2, X } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
-import { useI18n } from 'vue-i18n';
+import { I18nT, useI18n } from 'vue-i18n';
 
 const { t } = useI18n();
 
@@ -55,7 +62,11 @@ const newCollaboratorEmail = ref('');
 const errors = ref<Record<string, string[]>>({});
 const successMessage = ref('');
 
-const inviteForm = useForm<{ email: string }>({ email: '' });
+type SplitMode = 'equal' | 'custom';
+
+const splitMode = ref<SplitMode>('equal');
+const lockedIds = ref<number[]>([]);
+const splitVersion = ref(0);
 
 const getXsrfToken = (): string => {
     const name = 'XSRF-TOKEN=';
@@ -84,6 +95,7 @@ const fetchCollaborators = async () => {
         if (sharesResponse.ok) {
             const result = await sharesResponse.json();
             collaborators.value = result.data;
+            normalizeSplit();
         }
 
         if (invitationsResponse.ok) {
@@ -190,6 +202,85 @@ const removeCollaborator = async (collaboratorUuid: string) => {
     }
 };
 
+const clampPercentage = (value: number): number => Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
+
+const equalShares = (count: number): number[] => {
+    const base = Math.floor(100 / count);
+    const remainder = 100 - base * count;
+
+    return Array.from({ length: count }, (_, index) => base + (index < remainder ? 1 : 0));
+};
+
+const applyShares = (shares: number[]) => {
+    collaborators.value.forEach((collaborator, index) => {
+        collaborator.percentage = shares[index];
+    });
+    splitVersion.value++;
+};
+
+/** Rounds loaded shares to whole percentages and picks the mode they already describe. */
+const normalizeSplit = () => {
+    lockedIds.value = [];
+
+    const count = collaborators.value.length;
+    if (count === 0) {
+        return;
+    }
+
+    const rounded = collaborators.value.map((c) => clampPercentage(c.percentage));
+    rounded[count - 1] += 100 - rounded.reduce((sum, value) => sum + value, 0);
+
+    const equal = equalShares(count);
+    splitMode.value = rounded.every((value, index) => value === equal[index]) ? 'equal' : 'custom';
+    applyShares(rounded.map((value) => Math.max(0, value)));
+};
+
+const setSplitMode = (mode: SplitMode) => {
+    splitMode.value = mode;
+
+    if (mode === 'equal') {
+        lockedIds.value = [];
+        applyShares(equalShares(collaborators.value.length));
+    }
+};
+
+const toggleLock = (collaboratorId: number, locked: boolean) => {
+    lockedIds.value = locked ? [...lockedIds.value, collaboratorId] : lockedIds.value.filter((id) => id !== collaboratorId);
+};
+
+/** Sets one share and spreads the remainder over the other unlocked rows, keeping the total at 100%. */
+const rebalance = (index: number, requested: number) => {
+    const shares = collaborators.value.map((c) => clampPercentage(c.percentage));
+    const isLocked = collaborators.value.map((c, i) => i !== index && lockedIds.value.includes(c.id));
+    const freeIndexes = shares.map((_, i) => i).filter((i) => i !== index && !isLocked[i]);
+    const lockedSum = shares.reduce((sum, value, i) => sum + (isLocked[i] ? value : 0), 0);
+
+    shares[index] = Math.min(clampPercentage(requested), 100 - lockedSum);
+    const rest = 100 - lockedSum - shares[index];
+
+    if (freeIndexes.length > 0) {
+        const currentSum = freeIndexes.reduce((sum, i) => sum + shares[i], 0);
+        freeIndexes.forEach((i) => {
+            shares[i] = currentSum > 0 ? Math.round((shares[i] / currentSum) * rest) : Math.round(rest / freeIndexes.length);
+        });
+        shares[freeIndexes[freeIndexes.length - 1]] += 100 - shares.reduce((sum, value) => sum + value, 0);
+    }
+
+    applyShares(shares.map((value) => Math.max(0, value)));
+};
+
+const splitSegments = computed(() =>
+    collaborators.value.map((collaborator) => ({
+        value: Number(collaborator.percentage) || 0,
+        color: categoryColorFromId(collaborator.id),
+    })),
+);
+
+const splitModeOptions = computed(() => [
+    { value: 'equal' as SplitMode, label: t('tallies.share.mode_equal') },
+    { value: 'custom' as SplitMode, label: t('tallies.share.mode_custom') },
+]);
+
 const totalPercentage = computed(() => {
     const sum = collaborators.value.reduce((sum, c) => sum + (Number(c.percentage) || 0), 0);
     return Math.round((sum + Number.EPSILON) * 100) / 100;
@@ -249,170 +340,172 @@ watch(
     },
 );
 
-const getInitials = (name: string) => {
-    return name
-        .split(' ')
-        .map((n) => n[0])
-        .join('')
-        .toUpperCase();
-};
+const getInitial = (name: string): string => name.trim().charAt(0).toUpperCase();
 </script>
 
 <template>
-    <Dialog v-model:open="isOpen">
-        <DialogContent class="sm:max-w-[520px]">
-            <DialogHeader>
-                <DialogTitle class="flex items-center gap-3">
-                    <span class="text-brand"><Share2 class="size-[18px]" /></span>
-                    {{ $t('tallies.share.title_lead') }}
-                    <em class="not-italic-[0]" style="font-style: italic; color: var(--brand)">{{ tally?.name }}</em>
-                </DialogTitle>
-                <DialogDescription>{{ $t('tallies.share.description') }}</DialogDescription>
-            </DialogHeader>
+    <ResponsiveModal v-model:open="isOpen" :title="$t('tallies.share.title')" :description="$t('tallies.share.description')">
+        <I18nT keypath="tallies.share.intro" tag="p" class="mb-5 text-[13.5px] leading-normal text-text-3">
+            <template #name>
+                <b class="font-semibold text-text-2">{{ tally?.name }}</b>
+            </template>
+        </I18nT>
 
-            <div class="px-7 py-6">
-                <div class="mb-7 flex flex-col gap-2">
-                    <label for="email" class="eyebrow">{{ $t('tallies.share.invite_collaborator') }}</label>
-                    <div class="grid grid-cols-[1fr_auto] items-end gap-3">
-                        <Input
-                            id="email"
-                            v-model="newCollaboratorEmail"
-                            :placeholder="$t('common.placeholder.email')"
-                            type="email"
-                            :disabled="isInviting"
-                            class="text-sm"
-                            @keyup.enter="addCollaborator"
-                        />
-                        <Button
-                            variant="ghost"
-                            type="button"
-                            :disabled="isInviting || inviteForm.processing || !newCollaboratorEmail"
-                            @click="addCollaborator"
-                        >
-                            <Loader2 v-if="isInviting || inviteForm.processing" class="size-4 animate-spin" />
-                            <Plus v-else class="size-4" />
-                            {{ $t('tallies.share.invite_button') }}
-                        </Button>
-                    </div>
-                    <InputError v-if="errors.email" :message="errors.email[0]" />
-                    <p v-if="successMessage" class="text-sm text-pos">{{ successMessage }}</p>
-                </div>
+        <FormField :label="$t('tallies.share.invite_by_email')" for="email" :error="errors.email?.[0]">
+            <div class="flex gap-2">
+                <Input
+                    id="email"
+                    v-model="newCollaboratorEmail"
+                    variant="filled"
+                    type="email"
+                    :placeholder="$t('common.placeholder.email')"
+                    :disabled="isInviting"
+                    class="min-w-0 flex-1 font-mono text-[12.5px] tracking-[-0.01em]"
+                    @keyup.enter="addCollaborator"
+                />
+                <Button type="button" size="sm" class="h-auto shrink-0" :disabled="isInviting || !newCollaboratorEmail" @click="addCollaborator">
+                    <Loader2 v-if="isInviting" class="size-4 animate-spin" />
+                    {{ $t('tallies.share.send') }}
+                </Button>
+            </div>
+            <p v-if="successMessage" class="mt-1.5 text-[12px] text-pos">{{ successMessage }}</p>
+        </FormField>
 
-                <div v-if="isLoading || pendingInvitations.length > 0" class="mb-7">
-                    <h6 class="eyebrow mb-3">{{ $t('tallies.share.pending_invitations') }}</h6>
-                    <div v-if="isLoading" class="space-y-2">
-                        <div
-                            v-for="i in 2"
-                            :key="i"
-                            class="flex items-center justify-between gap-3 border-t border-rule-2 py-3 last:border-b last:border-rule-2"
-                        >
-                            <Skeleton class="h-4 w-40" />
-                            <Skeleton class="h-7 w-7 rounded-full" />
-                        </div>
+        <FormField :label="$t('tallies.share.members')">
+            <div v-if="isLoading">
+                <div v-for="i in 3" :key="i" class="flex items-center gap-[11px] border-t border-line py-[11px] first:border-t-0">
+                    <Skeleton class="size-[26px] shrink-0 rounded-full" />
+                    <div class="min-w-0 flex-1 space-y-2">
+                        <Skeleton class="h-3 w-24" />
+                        <Skeleton class="h-2 w-16" />
                     </div>
-                    <div v-else>
-                        <div
-                            v-for="invitation in pendingInvitations"
-                            :key="invitation.uuid"
-                            class="flex items-center justify-between gap-3 border-t border-rule-2 py-3 last:border-b last:border-rule-2"
-                        >
-                            <div class="flex min-w-0 items-center gap-3">
-                                <p class="truncate text-sm text-foreground">{{ invitation.email }}</p>
-                                <span
-                                    class="shrink-0 rounded-full border border-rule px-2 py-0.5 font-mono text-[10px] tracking-[0.1em] text-muted-foreground uppercase"
-                                >
-                                    {{ $t('tallies.share.invitation_pending_badge') }}
-                                </span>
-                            </div>
-                            <button
-                                type="button"
-                                class="inline-flex size-7 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-paper-2 hover:text-neg"
-                                :disabled="isCancellingInvitation === invitation.uuid"
-                                :title="$t('tallies.share.cancel_invitation')"
-                                @click="cancelInvitation(invitation.uuid)"
-                            >
-                                <Loader2 v-if="isCancellingInvitation === invitation.uuid" class="size-3.5 animate-spin" />
-                                <X v-else class="size-3.5" />
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div>
-                    <h6 class="eyebrow mb-3">{{ $t('tallies.share.collaborators') }}</h6>
-                    <div v-if="isLoading" class="space-y-3">
-                        <div
-                            v-for="i in 3"
-                            :key="i"
-                            class="flex items-center justify-between gap-3 border-t border-rule-2 py-3.5 last:border-b last:border-rule-2"
-                        >
-                            <div class="flex min-w-0 items-center gap-3">
-                                <Skeleton class="size-9 shrink-0 rounded-full" />
-                                <div class="min-w-0 space-y-2">
-                                    <Skeleton class="h-3 w-24" />
-                                    <Skeleton class="h-2 w-16" />
-                                </div>
-                            </div>
-                            <Skeleton class="h-7 w-20 rounded-sm" />
-                        </div>
-                    </div>
-                    <div v-else-if="collaborators.length === 0" class="border-t border-rule-2 py-4 text-center text-sm text-muted-foreground">
-                        {{ $t('tallies.share.no_collaborators') }}
-                    </div>
-                    <div v-else>
-                        <div
-                            v-for="collaborator in collaborators"
-                            :key="collaborator.id"
-                            class="grid grid-cols-[auto_1fr_auto] items-center gap-3.5 border-t border-rule-2 py-3.5 last:border-b last:border-rule-2"
-                        >
-                            <span
-                                class="inline-flex size-9 items-center justify-center rounded-full border border-brand/20 bg-brand-soft font-mono text-[13px] font-medium text-brand"
-                            >
-                                {{ getInitials(collaborator.name) }}
-                            </span>
-                            <div class="min-w-0">
-                                <p class="truncate font-medium text-foreground">{{ collaborator.name }}</p>
-                                <p class="truncate font-mono text-[12px] tracking-[0.02em] text-muted-foreground">{{ collaborator.email }}</p>
-                            </div>
-                            <div class="flex items-center">
-                                <div class="inline-flex items-center rounded-sm border border-rule px-3 py-1.5">
-                                    <input
-                                        v-model.number="collaborator.percentage"
-                                        type="number"
-                                        step="0.01"
-                                        min="0"
-                                        max="100"
-                                        class="tabular w-12 border-0 bg-transparent text-right font-mono text-sm text-foreground outline-none"
-                                    />
-                                    <span class="font-mono text-[13px] text-muted-foreground">%</span>
-                                </div>
-                                <button
-                                    v-if="collaborator.id !== tally?.owner_id"
-                                    type="button"
-                                    class="ml-1 inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-paper-2 hover:text-neg"
-                                    @click="removeCollaborator(collaborator.uuid)"
-                                >
-                                    <Trash2 class="size-4" />
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <InputError v-if="errors.shares" :message="errors.shares[0]" />
                 </div>
             </div>
-
-            <DialogFooter class="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <span class="font-mono text-[13px] tracking-[0.04em]" :class="isPercentageValid ? 'text-pos' : 'text-neg'">
-                    {{ $t('tallies.share.total', { total: totalPercentage }) }}
-                </span>
-                <div class="flex gap-2">
-                    <Button variant="ghost" type="button" @click="isOpen = false">{{ $t('common.cancel') }}</Button>
-                    <Button :disabled="!isPercentageValid || isSaving || isLoading" type="button" @click="saveShares">
-                        <Loader2 v-if="isSaving" class="size-4 animate-spin" />
-                        {{ $t('tallies.share.save_changes') }}
-                    </Button>
+            <div v-else>
+                <div
+                    v-for="collaborator in collaborators"
+                    :key="collaborator.id"
+                    class="flex items-center gap-[11px] border-t border-line py-[11px] first:border-t-0"
+                >
+                    <Avatar size="sm">
+                        <AvatarFallback :color="categoryColorFromId(collaborator.id)">{{ getInitial(collaborator.name) }}</AvatarFallback>
+                    </Avatar>
+                    <span class="min-w-0 flex-1">
+                        <div class="truncate text-[14px] font-medium">{{ collaborator.name }}</div>
+                        <div class="mt-px truncate text-[11.5px] text-text-3">{{ collaborator.email }}</div>
+                    </span>
+                    <Badge v-if="collaborator.id === tally?.owner_id" variant="pill">{{ $t('tallies.share.owner') }}</Badge>
+                    <button
+                        v-else
+                        type="button"
+                        class="grid size-8 shrink-0 place-items-center rounded-full text-text-3 transition-colors hover:bg-surface-2 hover:text-neg"
+                        :aria-label="$t('tallies.share.remove_member')"
+                        :title="$t('tallies.share.remove_member')"
+                        @click="removeCollaborator(collaborator.uuid)"
+                    >
+                        <Trash2 class="size-4" />
+                    </button>
                 </div>
-            </DialogFooter>
-        </DialogContent>
-    </Dialog>
+                <div
+                    v-for="invitation in pendingInvitations"
+                    :key="invitation.uuid"
+                    class="flex items-center gap-[11px] border-t border-line py-[11px] first:border-t-0"
+                >
+                    <Avatar size="sm">
+                        <AvatarFallback>{{ getInitial(invitation.email) }}</AvatarFallback>
+                    </Avatar>
+                    <span class="min-w-0 flex-1">
+                        <div class="truncate text-[14px] font-medium">{{ invitation.email }}</div>
+                        <div class="mt-px text-[11.5px] text-text-3">{{ $t('tallies.share.invited_not_joined') }}</div>
+                    </span>
+                    <button
+                        type="button"
+                        class="grid size-8 shrink-0 place-items-center rounded-full text-text-3 transition-colors hover:bg-surface-2 hover:text-neg"
+                        :disabled="isCancellingInvitation === invitation.uuid"
+                        :aria-label="$t('tallies.share.cancel_invitation')"
+                        :title="$t('tallies.share.cancel_invitation')"
+                        @click="cancelInvitation(invitation.uuid)"
+                    >
+                        <Loader2 v-if="isCancellingInvitation === invitation.uuid" class="size-3.5 animate-spin" />
+                        <X v-else class="size-4" />
+                    </button>
+                </div>
+            </div>
+            <InputError v-if="errors.general" :message="errors.general[0]" class="mt-1.5" />
+        </FormField>
+
+        <FormField :label="$t('tallies.share.split')">
+            <div class="rounded-sm bg-surface-2 px-3.5 py-3">
+                <div class="mb-3 flex items-center justify-between gap-2.5">
+                    <SegmentedControl
+                        variant="mobile"
+                        size="sm"
+                        :model-value="splitMode"
+                        :options="splitModeOptions"
+                        @update:model-value="setSplitMode"
+                    />
+                    <span class="text-[12px] text-text-3">
+                        {{ $t('tallies.share.total') }}
+                        <span class="font-mono font-semibold" :class="isPercentageValid ? 'text-pos' : 'text-neg'">{{ totalPercentage }}%</span>
+                    </span>
+                </div>
+                <SplitBar :segments="splitSegments" />
+                <div v-if="isLoading" class="space-y-3 py-2">
+                    <Skeleton v-for="i in 2" :key="i" class="h-7 w-full rounded-full" />
+                </div>
+                <template v-else>
+                    <div
+                        v-for="(collaborator, index) in collaborators"
+                        :key="`${collaborator.id}-${splitVersion}`"
+                        class="flex items-center gap-2.5 border-t border-line py-2.5 first:border-t-0"
+                    >
+                        <Avatar size="sm">
+                            <AvatarFallback :color="categoryColorFromId(collaborator.id)">{{ getInitial(collaborator.name) }}</AvatarFallback>
+                        </Avatar>
+                        <span class="min-w-0 flex-1">
+                            <div class="truncate text-[13.5px] font-medium tracking-[-0.01em]">{{ collaborator.name }}</div>
+                            <div class="mt-px text-[11.5px] text-text-3">
+                                {{ collaborator.id === tally?.owner_id ? $t('tallies.share.owner') : collaborator.email }}
+                            </div>
+                        </span>
+                        <NumberStepper
+                            size="sm"
+                            suffix="%"
+                            :step="5"
+                            :label="$t('tallies.share.member_share', { name: collaborator.name })"
+                            :model-value="collaborator.percentage"
+                            :class="splitMode === 'equal' ? 'pointer-events-none opacity-45' : ''"
+                            @update:model-value="rebalance(index, $event)"
+                        />
+                        <SplitLockButton
+                            :label="$t('tallies.share.pin_share')"
+                            :locked="lockedIds.includes(collaborator.id)"
+                            :class="splitMode === 'equal' ? 'invisible' : ''"
+                            @update:locked="toggleLock(collaborator.id, $event)"
+                        />
+                    </div>
+                </template>
+                <p class="mt-2.5 text-[11.5px] leading-[1.45] text-text-3">
+                    {{ splitMode === 'equal' ? $t('tallies.share.hint_equal') : $t('tallies.share.hint_custom') }}
+                </p>
+            </div>
+            <InputError v-if="errors.shares" :message="errors.shares[0]" class="mt-1.5" />
+        </FormField>
+
+        <div class="mt-1.5 flex gap-2.5">
+            <Button
+                type="button"
+                variant="ghost"
+                size="touch"
+                class="hidden flex-1 bg-surface-2 text-text hover:bg-surface-3 md:inline-flex"
+                @click="isOpen = false"
+            >
+                {{ $t('common.cancel') }}
+            </Button>
+            <Button type="button" size="touch" class="flex-1" :disabled="!isPercentageValid || isSaving || isLoading" @click="saveShares">
+                <Loader2 v-if="isSaving" class="size-4 animate-spin" />
+                {{ $t('tallies.share.done') }}
+            </Button>
+        </div>
+    </ResponsiveModal>
 </template>

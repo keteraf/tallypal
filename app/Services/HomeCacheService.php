@@ -4,24 +4,43 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Actions\Transaction\GetBalanceSummaryAction;
 use App\Contracts\Repositories\TallyRepositoryInterface;
 use App\Contracts\Repositories\TransactionStatsRepositoryInterface;
 use Carbon\CarbonImmutable;
-use Closure;
-use DateInterval;
-use DateTimeInterface;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 
 /**
- * @phpstan-type CurrencyShape array{symbol: string, code: string, decimals: int, currency_id: int}
+ * @phpstan-import-type CurrencyShape from TransactionStatsRepositoryInterface
+ * @phpstan-import-type CurrencyTotalShape from TransactionStatsRepositoryInterface
+ * @phpstan-import-type BalanceSummary from GetBalanceSummaryAction
+ *
+ * @phpstan-type BalanceShape array{net: float, income: float, expense: float, currency_symbol: string, currency_code: string, decimals: int, other_currencies: array<int, CurrencyTotalShape>}
  */
 final readonly class HomeCacheService
 {
+    /**
+     * Version segment of every Home cache key. Bump it whenever the shape of a cached value
+     * changes: entries written by the previous release are then never read again (they expire on
+     * their own TTL), so a deploy never needs a `cache:clear`.
+     */
+    public const string KEY_VERSION = 'v11';
+
     public function __construct(
         private TallyRepositoryInterface $tallyRepository,
         private TransactionStatsRepositoryInterface $statsRepository,
+        private GetBalanceSummaryAction $balanceSummaryAction,
     ) {}
+
+    /**
+     * The versioned cache key of one Home value of the given user.
+     */
+    public static function key(int $userId, string $name): string
+    {
+        return 'home:' . self::KEY_VERSION . ":user:{$userId}:{$name}";
+    }
 
     /**
      * @return Collection<int, int>
@@ -30,7 +49,7 @@ final readonly class HomeCacheService
     {
         /** @var array<int, int> $ids */
         $ids = Cache::remember(
-            "home:user:{$userId}:tally_ids",
+            self::key($userId, 'tally_ids'),
             now()->addMinutes(10), // @pest-mutate-ignore
             fn (): array => $this->tallyRepository->accessibleTallyIds($userId)->all(),
         );
@@ -39,59 +58,84 @@ final readonly class HomeCacheService
     }
 
     /**
+     * The user's default currency (B-10) when set, otherwise their most-used currency.
+     *
      * @param  Collection<int, int>  $tallyIds
      * @return CurrencyShape
      */
-    public function primaryCurrency(int $userId, Collection $tallyIds): array
+    public function primaryCurrency(int $userId, Collection $tallyIds, ?int $defaultCurrencyId): array
     {
         /** @var CurrencyShape */
         return Cache::remember(
-            "home:user:{$userId}:primary_currency",
+            self::key($userId, 'primary_currency'),
             now()->addMinutes(30), // @pest-mutate-ignore
-            fn (): array => $this->statsRepository->primaryCurrency($tallyIds),
+            fn (): array => $this->statsRepository->primaryCurrency($tallyIds, $defaultCurrencyId),
         );
     }
 
     /**
      * @param  Collection<int, int>  $tallyIds
-     * @return Collection<int, array{uuid: string, name: string, member_count: int, monthly_total: float}>
+     * @return Collection<int, array{uuid: string, name: string, color: string|null, glyph: string|null, member_count: int, members_preview: array<int, array{initials: string, color: string}>, split_label: string|null, monthly_totals: array<int, array{amount: float, currency_symbol: string, currency_code: string, decimals: int}>}>
      */
-    public function tallySummaries(int $userId, Collection $tallyIds, CarbonImmutable $monthStart, string $monthKey): Collection
+    public function tallySummaries(int $userId, Collection $tallyIds, CarbonImmutable $monthStart, CarbonImmutable $now, string $monthKey): Collection
     {
-        /** @var array<int, array{uuid: string, name: string, member_count: int, monthly_total: float}> $summaries */
+        /** @var array<int, array{uuid: string, name: string, color: string|null, glyph: string|null, member_count: int, members_preview: array<int, array{initials: string, color: string}>, split_label: string|null, monthly_totals: array<int, array{amount: float, currency_symbol: string, currency_code: string, decimals: int}>}> $summaries */
         $summaries = Cache::remember(
-            "home:user:{$userId}:tallies_summary:{$monthKey}",
+            self::key($userId, "tallies_summary:{$monthKey}"),
             now()->addMinutes(5), // @pest-mutate-ignore
-            fn (): array => $this->tallyRepository->tallySummaries($userId, $tallyIds, $monthStart)->all(),
+            fn (): array => $this->tallyRepository->tallySummaries($userId, $tallyIds, $monthStart, $now)->all(),
         );
 
         return collect($summaries);
     }
 
     /**
+     * The month's balance in the primary currency, plus the net of every other currency with
+     * activity in the month (never added to it).
+     *
      * @param  Collection<int, int>  $tallyIds
      * @param  CurrencyShape  $primaryCurrency
-     * @return array{net: float, income: float, expense: float, currency_symbol: string, currency_code: string, decimals: int}
+     * @return BalanceShape
      */
     public function monthlyBalance(int $userId, Collection $tallyIds, CarbonImmutable $monthStart, CarbonImmutable $now, array $primaryCurrency, string $dayKey): array
     {
-        /** @var array{net: float, income: float, expense: float, currency_symbol: string, currency_code: string, decimals: int} */
+        /** @var BalanceShape */
         return Cache::remember(
-            "home:user:{$userId}:balance:{$dayKey}",
+            self::key($userId, "balance:{$dayKey}"),
             now()->addMinutes(5), // @pest-mutate-ignore
-            fn (): array => $this->statsRepository->monthlyBalance($tallyIds, $monthStart, $now, $primaryCurrency),
+            fn (): array => [
+                ...$this->statsRepository->monthlyBalance($tallyIds, $monthStart, $now, $primaryCurrency),
+                'other_currencies' => $this->statsRepository->otherCurrencyNets($tallyIds, $monthStart, $now, $primaryCurrency['currency_id']),
+            ],
+        );
+    }
+
+    /**
+     * The net of the previous period (the same span of days of the previous month) in the primary
+     * currency (B-03), the base of the month-over-month delta. Cached per day: the span grows daily.
+     *
+     * @param  Collection<int, int>  $tallyIds
+     * @param  CurrencyShape  $primaryCurrency
+     */
+    public function previousMonthNet(int $userId, Collection $tallyIds, CarbonImmutable $previousMonthStart, CarbonImmutable $previousMonthEnd, array $primaryCurrency, string $dayKey): float
+    {
+        /** @var float */
+        return Cache::remember(
+            self::key($userId, "previous_net:{$dayKey}"),
+            now()->addMinutes(30), // @pest-mutate-ignore
+            fn (): float => $this->statsRepository->monthlyBalance($tallyIds, $previousMonthStart, $previousMonthEnd, $primaryCurrency)['net'],
         );
     }
 
     /**
      * @param  Collection<int, int>  $tallyIds
-     * @return array<int, array{uuid: string, title: string, type: string, amount: float, transaction_date: string, category_name: string|null, category_code: string, tally_name: string, currency_symbol: string}>
+     * @return array<int, array{uuid: string, title: string, type: string, amount: float, transaction_date: string, category_id: int|null, category_name: string|null, category_code: string, tally_name: string, currency_symbol: string}>
      */
     public function recentTransactions(int $userId, Collection $tallyIds): array
     {
-        /** @var array<int, array{uuid: string, title: string, type: string, amount: float, transaction_date: string, category_name: string|null, category_code: string, tally_name: string, currency_symbol: string}> */
+        /** @var array<int, array{uuid: string, title: string, type: string, amount: float, transaction_date: string, category_id: int|null, category_name: string|null, category_code: string, tally_name: string, currency_symbol: string}> */
         return Cache::remember(
-            "home:user:{$userId}:recent_tx",
+            self::key($userId, 'recent_tx'),
             now()->addMinutes(2), // @pest-mutate-ignore
             fn (): array => $this->statsRepository->recentTransactions($tallyIds),
         );
@@ -101,41 +145,75 @@ final readonly class HomeCacheService
      * @param  Collection<int, int>  $tallyIds
      * @return array<int, array{label: string, amount: float, is_current: bool}>
      */
-    public function weeklyHistory(int $userId, Collection $tallyIds, CarbonImmutable $weekHistoryStart, CarbonImmutable $now, string $dayKey): array
+    public function weeklyHistory(int $userId, Collection $tallyIds, CarbonImmutable $weekHistoryStart, CarbonImmutable $now, int $currencyId, string $dayKey): array
     {
         /** @var array<int, array{label: string, amount: float, is_current: bool}> */
         return Cache::remember(
-            "home:user:{$userId}:weekly_history:{$dayKey}",
+            self::key($userId, "weekly_history:{$dayKey}"),
             now()->addMinutes(10), // @pest-mutate-ignore
-            fn (): array => $this->statsRepository->weeklyHistory($tallyIds, $weekHistoryStart, $now),
+            fn (): array => $this->statsRepository->weeklyHistory($tallyIds, $weekHistoryStart, $now, $currencyId),
         );
     }
 
     /**
      * @param  Collection<int, int>  $tallyIds
-     * @return array<int, array{name: string, amount: float, percentage: float}>
+     * @return array<int, array{name: string, amount: float, percentage: float, bar_fill: float, is_other: bool}>
      */
-    public function categoriesBreakdown(int $userId, Collection $tallyIds, CarbonImmutable $monthStart, CarbonImmutable $now, string $monthKey): array
+    public function categoriesBreakdown(int $userId, Collection $tallyIds, CarbonImmutable $monthStart, CarbonImmutable $now, int $currencyId, string $monthKey): array
     {
-        /** @var array<int, array{name: string, amount: float, percentage: float}> */
+        /** @var array<int, array{name: string, amount: float, percentage: float, bar_fill: float, is_other: bool}> */
         return Cache::remember(
-            "home:user:{$userId}:categories:{$monthKey}",
+            self::key($userId, "categories:{$monthKey}"),
             now()->addMinutes(5), // @pest-mutate-ignore
-            fn (): array => $this->statsRepository->categoriesBreakdown($tallyIds, $monthStart, $now),
+            fn (): array => CategoryBars::build($this->statsRepository->categoriesBreakdown($tallyIds, $monthStart, $now, $currencyId)),
         );
     }
 
     /**
+     * The month's expenses of every currency other than the primary one, shown apart from the
+     * By category card.
+     *
      * @param  Collection<int, int>  $tallyIds
-     * @return array{uuid: string, name: string, total_spent: float, members: array<int, array{name: string, initials: string, amount: float, percentage: float}>}|null
+     * @return array<int, CurrencyTotalShape>
      */
-    public function sharedTally(int $userId, Collection $tallyIds, CarbonImmutable $monthStart, CarbonImmutable $now, string $monthKey): ?array
+    public function otherCurrencyExpenses(int $userId, Collection $tallyIds, CarbonImmutable $monthStart, CarbonImmutable $now, int $primaryCurrencyId, string $monthKey): array
     {
-        /** @var array{uuid: string, name: string, total_spent: float, members: array<int, array{name: string, initials: string, amount: float, percentage: float}>}|null */
-        return $this->rememberNullable(
-            "home:user:{$userId}:shared_tally:{$monthKey}",
+        /** @var array<int, CurrencyTotalShape> */
+        return Cache::remember(
+            self::key($userId, "other_currency_expenses:{$monthKey}"),
             now()->addMinutes(5), // @pest-mutate-ignore
-            fn (): ?array => $this->tallyRepository->sharedTallySummary($tallyIds, $monthStart, $now),
+            fn (): array => $this->statsRepository->otherCurrencyExpenses($tallyIds, $monthStart, $now, $primaryCurrencyId),
+        );
+    }
+
+    /**
+     * The user's open balances in every tally they can view and the debts owed to them (B-04). It
+     * always covers all of the user's tallies (the `balances` key is not scoped), so a caller that
+     * needs fewer filters the result. A transaction or a share change in one of their tallies forgets
+     * it for every member.
+     *
+     * @return BalanceSummary
+     */
+    public function balanceSummary(int $userId): array
+    {
+        /** @var BalanceSummary */
+        return Cache::remember(
+            self::key($userId, 'balances'),
+            now()->addMinutes(10), // @pest-mutate-ignore
+            fn (): array => $this->balanceSummaryAction->handle($userId, $this->tallyIds($userId)),
+        );
+    }
+
+    /**
+     * Token naming the current state of the user's sidebar tallies. `forgetForUser()` drops it, so
+     * the next read issues a new one: the Inertia once prop is keyed by it and the client refetches.
+     */
+    public function sidebarVersion(int $userId): string
+    {
+        /** @var string */
+        return Cache::rememberForever(
+            self::key($userId, 'sidebar_version'),
+            fn (): string => Str::random(12),
         );
     }
 
@@ -145,31 +223,16 @@ final readonly class HomeCacheService
         $monthKey = $now->format('Y-m');
         $dayKey = $now->format('Y-m-d');
 
-        Cache::forget("home:user:{$userId}:tally_ids");
-        Cache::forget("home:user:{$userId}:primary_currency");
-        Cache::forget("home:user:{$userId}:tallies_summary:{$monthKey}");
-        Cache::forget("home:user:{$userId}:balance:{$dayKey}");
-        Cache::forget("home:user:{$userId}:recent_tx");
-        Cache::forget("home:user:{$userId}:weekly_history:{$dayKey}");
-        Cache::forget("home:user:{$userId}:categories:{$monthKey}");
-        Cache::forget("home:user:{$userId}:shared_tally:{$monthKey}");
-    }
-
-    /**
-     * Cache::remember does not cache null values, so we use a sentinel string.
-     *
-     * @param  Closure(): mixed  $callback
-     */
-    private function rememberNullable(string $key, DateTimeInterface|DateInterval|int $ttl, Closure $callback): mixed
-    {
-        $sentinel = '__NULL__';
-
-        $cached = Cache::remember($key, $ttl, function () use ($callback, $sentinel): mixed {
-            $result = $callback();
-
-            return $result ?? $sentinel;
-        });
-
-        return $cached === $sentinel ? null : $cached;
+        Cache::forget(self::key($userId, 'sidebar_version'));
+        Cache::forget(self::key($userId, 'tally_ids'));
+        Cache::forget(self::key($userId, 'primary_currency'));
+        Cache::forget(self::key($userId, "tallies_summary:{$monthKey}"));
+        Cache::forget(self::key($userId, "balance:{$dayKey}"));
+        Cache::forget(self::key($userId, "previous_net:{$dayKey}"));
+        Cache::forget(self::key($userId, 'recent_tx'));
+        Cache::forget(self::key($userId, "weekly_history:{$dayKey}"));
+        Cache::forget(self::key($userId, "categories:{$monthKey}"));
+        Cache::forget(self::key($userId, "other_currency_expenses:{$monthKey}"));
+        Cache::forget(self::key($userId, 'balances'));
     }
 }

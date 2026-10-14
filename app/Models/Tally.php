@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -22,11 +23,16 @@ use Illuminate\Support\Facades\DB;
  * @property string $name
  * @property string $description
  * @property int $owner_id
+ * @property string|null $color
+ * @property string|null $glyph
+ * @property int|null $default_currency_id
  * @property float|null $income_total
  * @property float|null $expense_total
+ * @property-read int|null $users_count
  *
  * @method static Builder<static> scopeForUser(Builder<static> $query, int $userId)
  * @method static Builder<static> scopeWithIncomeAndExpenseTotals(Builder<static> $query)
+ * @method static Builder<static> scopeWithMembersCount(Builder<static> $query)
  */
 class Tally extends Model
 {
@@ -36,6 +42,14 @@ class Tally extends Model
     public const string TABLE_NAME = 'tallies';
 
     public const string KEYS_PREFIX = 'tally';
+
+    /**
+     * The glyph catalogue offered by the tally picker (text presentation, not emoji).
+     * Mirrors `TALLY_GLYPHS` in `resources/js/lib/category.ts`.
+     *
+     * @var list<string>
+     */
+    public const array GLYPHS = ['⌂', '✈', '◐', '◈', '♪', '☕']; // @pest-mutate-ignore
 
     /** @pest-mutate-ignore */
     public const string PRIMARY_KEY = self::KEYS_PREFIX . '_id'; // @pest-mutate-ignore
@@ -49,6 +63,9 @@ class Tally extends Model
         'owner_id', // @pest-mutate-ignore
         'name', // @pest-mutate-ignore
         'description', // @pest-mutate-ignore
+        'color', // @pest-mutate-ignore
+        'glyph', // @pest-mutate-ignore
+        'default_currency_id', // @pest-mutate-ignore
     ];
 
     /** @pest-mutate-ignore */
@@ -95,6 +112,67 @@ class Tally extends Model
         ]);
     }
 
+    /**
+     * The single definition of a tally's members: its distinct users, the owner counted once
+     * whether or not they also have a `tally_user` row. Selected as `users_count`.
+     *
+     * @param  Builder<Tally>  $query
+     */
+    #[Scope]
+    public function withMembersCount(Builder $query): void
+    {
+        $query->addSelect([
+            'users_count' => DB::table(TallyUser::TABLE_NAME)
+                ->selectRaw('1 + COUNT(DISTINCT tally_user.user_id)')
+                ->whereColumn('tally_user.tally_id', 'tallies.tally_id')
+                ->whereColumn('tally_user.user_id', '!=', 'tallies.owner_id'),
+        ]);
+    }
+
+    public function membersCount(): int
+    {
+        $count = self::query()->withMembersCount()->whereKey($this->getKey())->value('users_count');
+
+        return is_numeric($count) ? (int) $count : 1;
+    }
+
+    /**
+     * The members as models, in the `withMembersCount()` definition: the owner first, then the other
+     * members by id, each counted once. Uses the `owner` and `users` relations (loaded when missing).
+     *
+     * @return Collection<int, User>
+     */
+    public function membersInOrder(): Collection
+    {
+        /** @var Collection<int, User> $others */
+        $others = $this->users->where('id', '!=', $this->owner_id)->sortBy('id');
+
+        return collect([$this->owner])->filter()->merge($others)->values();
+    }
+
+    /**
+     * Each member's default share percentage, keyed by user id in `membersInOrder()` order. An owner
+     * without a `tally_user` row takes the remainder of the others' shares (never below 0).
+     *
+     * @return array<int, float>
+     */
+    public function memberShares(): array
+    {
+        $pivoted = [];
+
+        foreach ($this->users as $user) {
+            /** @var TallyUser $pivot */
+            $pivot = $user->pivot;
+            $pivoted[$user->id] = (float) $pivot->default_share_percentage;
+        }
+
+        $others = array_sum(array_filter($pivoted, fn (int $userId): bool => $userId !== $this->owner_id, ARRAY_FILTER_USE_KEY));
+
+        return $this->membersInOrder()
+            ->mapWithKeys(fn (User $member): array => [$member->id => $pivoted[$member->id] ?? max(0.0, 100.0 - $others)])
+            ->all();
+    }
+
     /** @return array<int, string> */
     public function uniqueIds(): array
     {
@@ -112,6 +190,40 @@ class Tally extends Model
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    /**
+     * The currency Add transaction prefills for this tally; a default only, never a restriction.
+     *
+     * @return BelongsTo<Currency, $this>
+     */
+    public function defaultCurrency(): BelongsTo
+    {
+        return $this->belongsTo(Currency::class, 'default_currency_id', Currency::PRIMARY_KEY);
+    }
+
+    /**
+     * The currency Add transaction prefills, in order: this tally's default, this tally's most-used
+     * currency (ties go to the lowest id), the user's default, then the app default (`app.default_currency`). It is only a prefill.
+     */
+    public function prefillCurrency(?User $user): ?Currency
+    {
+        if ($this->default_currency_id !== null) {
+            return $this->defaultCurrency;
+        }
+
+        $mostUsedId = $this->transactions()
+            ->selectRaw('currency_id, COUNT(*) as uses')
+            ->groupBy('currency_id')
+            ->orderByDesc('uses')
+            ->orderBy('currency_id')
+            ->value('currency_id');
+
+        if ($mostUsedId !== null) {
+            return Currency::query()->whereKey($mostUsedId)->first();
+        }
+
+        return $user->defaultCurrency ?? Currency::appDefault();
     }
 
     /**

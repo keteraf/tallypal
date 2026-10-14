@@ -37,7 +37,7 @@ const toggle = () => {
         type="button"
         :aria-label="isDark ? 'Switch to light theme' : 'Switch to dark theme'"
         :class="[
-            'inline-flex size-9 items-center justify-center rounded-full border border-rule text-muted-foreground transition-colors hover:border-foreground hover:text-foreground',
+            'inline-flex size-9 items-center justify-center rounded-full border border-line text-muted-foreground transition-colors hover:border-foreground hover:text-foreground',
             $props.class,
         ]"
         @click="toggle"

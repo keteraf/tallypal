@@ -1,26 +1,15 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import { useI18n } from 'vue-i18n';
 
 import AppearanceTabs from '@/components/AppearanceTabs.vue';
 import HeadingSmall from '@/components/HeadingSmall.vue';
-import { type BreadcrumbItem } from '@/types';
 
 import AppLayout from '@/layouts/AppLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
-
-const { t } = useI18n();
-
-const breadcrumbItems: BreadcrumbItem[] = [
-    {
-        title: t('settings.appearance.title'),
-        href: '/settings/appearance',
-    },
-];
 </script>
 
 <template>
-    <AppLayout :breadcrumbs="breadcrumbItems">
+    <AppLayout>
         <Head :title="$t('settings.appearance.title')" />
 
         <SettingsLayout>

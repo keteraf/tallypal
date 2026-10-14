@@ -13,17 +13,57 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * @phpstan-import-type MonthlyTotalShape from TallyRepositoryInterface
+ * @phpstan-import-type TotalShape from TallyRepositoryInterface
+ */
 final class TallyRepository implements TallyRepositoryInterface
 {
+    private const int MEMBERS_PREVIEW_LIMIT = 3; // @pest-mutate-ignore
+
     /**
-     * @return Collection<int, Tally>
+     * @return Collection<int, array{tally_id: int, uuid: string, name: string, description: string, owner_id: int, color: string|null, glyph: string|null, users_count: int, is_shared: bool, transactions_count: int, last_activity_at: string, members_preview: array<int, array{initials: string, color: string}>, split_label: string|null, totals: array<int, TotalShape>}>
      */
     public function accessibleTalliesWithTotals(int $userId): Collection
     {
-        return Tally::query()
+        $tallies = Tally::query()
             ->forUser($userId)
-            ->withIncomeAndExpenseTotals()
+            ->withMembersCount()
+            ->withCount('transactions')
+            ->withMax('transactions', 'transaction_date')
+            ->with(['owner', 'users'])
             ->get();
+
+        $totals = $this->totalsPerCurrency($tallies->map(fn (Tally $tally): int => (int) $tally->tally_id)->values());
+
+        return $tallies
+            ->map(function (Tally $tally) use ($totals): array {
+                /** @var int|string $usersCount */
+                $usersCount = $tally->getAttribute('users_count');
+                /** @var int|string $transactionsCount */
+                $transactionsCount = $tally->getAttribute('transactions_count');
+                /** @var string|null $lastTransactionDate */
+                $lastTransactionDate = $tally->getAttribute('transactions_max_transaction_date');
+                $lastActivityAt = $lastTransactionDate !== null ? CarbonImmutable::parse($lastTransactionDate) : $tally->updated_at;
+
+                return [
+                    'tally_id' => (int) $tally->tally_id,
+                    'uuid' => (string) $tally->uuid,
+                    'name' => (string) $tally->name,
+                    'description' => $tally->description,
+                    'owner_id' => (int) $tally->owner_id,
+                    'color' => $tally->color,
+                    'glyph' => $tally->glyph,
+                    'users_count' => (int) $usersCount,
+                    'is_shared' => (int) $usersCount > 1,
+                    'transactions_count' => (int) $transactionsCount,
+                    'last_activity_at' => (string) $lastActivityAt?->toIso8601String(),
+                    ...$this->memberPreview($tally),
+                    'totals' => $totals->get($tally->tally_id, []),
+                ];
+            })
+            ->sortByDesc('last_activity_at')
+            ->values();
     }
 
     /**
@@ -40,119 +80,174 @@ final class TallyRepository implements TallyRepositoryInterface
 
     /**
      * @param  Collection<int, int>  $tallyIds
-     * @return Collection<int, array{uuid: string, name: string, member_count: int, monthly_total: float}>
+     * @return Collection<int, array{tally_id: int, uuid: string, name: string, is_shared: bool}>
      */
-    public function tallySummaries(int $userId, Collection $tallyIds, CarbonImmutable $monthStart): Collection
+    public function filterOptions(Collection $tallyIds): Collection
+    {
+        return Tally::query()
+            ->whereKey($tallyIds->all())
+            ->withMembersCount()
+            ->orderBy('name')
+            ->orderBy(Tally::PRIMARY_KEY)
+            ->get()
+            ->map(function (Tally $tally): array {
+                /** @var int|string $usersCount */
+                $usersCount = $tally->getAttribute('users_count');
+
+                return [
+                    'tally_id' => (int) $tally->tally_id,
+                    'uuid' => (string) $tally->uuid,
+                    'name' => (string) $tally->name,
+                    'is_shared' => (int) $usersCount > 1,
+                ];
+            })
+            ->values();
+    }
+
+    /**
+     * @param  Collection<int, int>  $tallyIds
+     * @return Collection<int, array{uuid: string, name: string, color: string|null, glyph: string|null, member_count: int, members_preview: array<int, array{initials: string, color: string}>, split_label: string|null, monthly_totals: array<int, MonthlyTotalShape>}>
+     */
+    public function tallySummaries(int $userId, Collection $tallyIds, CarbonImmutable $monthStart, CarbonImmutable $now): Collection
     {
         $tallies = Tally::query()
             ->whereIn(Tally::PRIMARY_KEY, $tallyIds->all())
-            ->withCount('users')
+            ->withMembersCount()
+            ->with(['owner', 'users'])
             ->addSelect([
                 'last_tx_at' => DB::table(Transaction::TABLE_NAME)
                     ->selectRaw('MAX(created_at)')
                     ->whereColumn('transactions.tally_id', 'tallies.tally_id'),
-                'monthly_total' => DB::table(Transaction::TABLE_NAME)
-                    ->join('currencies', 'transactions.currency_id', '=', 'currencies.currency_id')
-                    ->selectRaw('COALESCE(SUM(' . Transaction::NORMALIZED_AMOUNT_EXPRESSION . '), 0)')
-                    ->whereColumn('transactions.tally_id', 'tallies.tally_id')
-                    ->where('transactions.type', TransactionType::EXPENSE->value)
-                    ->where('transactions.created_at', '>=', $monthStart),
             ])
             ->orderByRaw('COALESCE((SELECT MAX(created_at) FROM transactions WHERE transactions.tally_id = tallies.tally_id), tallies.created_at) DESC')
             ->get();
 
-        return $tallies->map(function (Tally $tally) use ($userId): array {
-            /** @var int|string|null $usersCount */
+        $monthlyTotals = $this->monthlyTotalsPerCurrency($tallyIds, $monthStart, $now);
+
+        return $tallies->map(function (Tally $tally) use ($monthlyTotals): array {
+            /** @var int|string $usersCount */
             $usersCount = $tally->getAttribute('users_count');
-            /** @var float|int|string|null $monthlyTotal */
-            $monthlyTotal = $tally->getAttribute('monthly_total');
 
             return [
                 'uuid' => (string) $tally->uuid,
                 'name' => (string) $tally->name,
-                'member_count' => (int) ($usersCount ?? 0) + ($tally->owner_id === $userId ? 1 : 0),
-                'monthly_total' => (float) ($monthlyTotal ?? 0),
+                'color' => $tally->color,
+                'glyph' => $tally->glyph,
+                'member_count' => (int) $usersCount,
+                ...$this->memberPreview($tally),
+                'monthly_totals' => $monthlyTotals->get($tally->tally_id, []),
             ];
         })->values();
     }
 
     /**
+     * Current-month expense total (`amount`, money spent) of each tally (by `transaction_date`, like
+     * every other Home total), one entry per currency the tally has ever used (most-used first), so a
+     * quiet month still carries the tally's own currency and currencies are never added together.
+     *
      * @param  Collection<int, int>  $tallyIds
-     * @return array{uuid: string, name: string, total_spent: float, members: array<int, array{name: string, initials: string, amount: float, percentage: float}>}|null
+     * @return Collection<int, array<int, MonthlyTotalShape>>
      */
-    public function sharedTallySummary(Collection $tallyIds, CarbonImmutable $monthStart, CarbonImmutable $now): ?array
+    private function monthlyTotalsPerCurrency(Collection $tallyIds, CarbonImmutable $monthStart, CarbonImmutable $now): Collection
     {
-        /** @var Tally|null $sharedTally */
-        $sharedTally = Tally::query()
-            ->whereIn(Tally::PRIMARY_KEY, $tallyIds->all())
-            ->whereHas('users')
-            ->withCount('users')
-            ->orderByDesc('users_count')
-            ->orderByDesc('updated_at')
-            ->with(['users', 'owner'])
-            ->first();
-
-        if ($sharedTally === null) {
-            return null;
-        }
-
-        /** @var Collection<int, float|int|string> $perUser */
-        $perUser = DB::table(Transaction::TABLE_NAME)
+        /** @var Collection<int, object{tally_id: int|string, code: string, symbol: string, decimals: int|string, total: float|int|string}> $rows */
+        $rows = DB::table(Transaction::TABLE_NAME)
             ->join('currencies', 'transactions.currency_id', '=', 'currencies.currency_id')
-            ->selectRaw('transactions.party_id, COALESCE(SUM(' . Transaction::NORMALIZED_AMOUNT_EXPRESSION . '), 0) as total')
-            ->where('transactions.tally_id', $sharedTally->getKey())
-            ->where('transactions.type', TransactionType::EXPENSE->value)
-            ->where('transactions.transaction_date', '>=', $monthStart->toDateString())
-            ->where('transactions.transaction_date', '<=', $now->toDateString())
-            ->groupBy('transactions.party_id')
-            ->pluck('total', 'transactions.party_id');
+            ->select('transactions.tally_id', 'currencies.code', 'currencies.symbol', 'currencies.decimals')
+            ->selectRaw(
+                'COALESCE(SUM(CASE WHEN transactions.type = ? AND transactions.transaction_date >= ? AND transactions.transaction_date <= ? THEN ' . Transaction::NORMALIZED_AMOUNT_EXPRESSION . ' ELSE 0 END), 0) as total',
+                [TransactionType::EXPENSE->value, $monthStart->toDateString(), $now->toDateString()],
+            )
+            ->whereIn('transactions.tally_id', $tallyIds->all())
+            ->groupBy('transactions.tally_id', 'currencies.currency_id', 'currencies.code', 'currencies.symbol', 'currencies.decimals')
+            ->orderByRaw('COUNT(*) DESC')
+            ->orderBy('currencies.code')
+            ->get();
 
-        $rawSpent = $perUser->sum();
-        $totalSpent = is_numeric($rawSpent) ? (float) $rawSpent : 0.0;
+        return $rows
+            ->groupBy(fn (object $row): int => (int) $row->tally_id)
+            ->map(fn (Collection $currencyRows): array => $currencyRows
+                ->map(fn (object $row): array => [
+                    'amount' => (float) $row->total,
+                    'currency_symbol' => $row->symbol,
+                    'currency_code' => $row->code,
+                    'decimals' => (int) $row->decimals,
+                ])
+                ->values()
+                ->all());
+    }
 
-        $owner = $sharedTally->owner;
-        /** @var Collection<int, User> $members */
-        $members = collect([$owner])
-            ->merge($sharedTally->users)
-            ->filter()
-            ->unique('id')
-            ->values();
+    /**
+     * All-time income and expense of each tally, one entry per currency the tally has used (most
+     * used first), never summed or converted across currencies.
+     *
+     * @param  Collection<int, int>  $tallyIds
+     * @return Collection<int, array<int, TotalShape>>
+     */
+    private function totalsPerCurrency(Collection $tallyIds): Collection
+    {
+        /** @var Collection<int, object{tally_id: int|string, code: string, symbol: string, decimals: int|string, income: float|int|string, expense: float|int|string}> $rows */
+        $rows = DB::table(Transaction::TABLE_NAME)
+            ->join('currencies', 'transactions.currency_id', '=', 'currencies.currency_id')
+            ->select('transactions.tally_id', 'currencies.code', 'currencies.symbol', 'currencies.decimals')
+            ->selectRaw(
+                'COALESCE(SUM(CASE WHEN transactions.type = ? THEN ' . Transaction::NORMALIZED_AMOUNT_EXPRESSION . ' ELSE 0 END), 0) as income',
+                [TransactionType::INCOME->value],
+            )
+            ->selectRaw(
+                'COALESCE(SUM(CASE WHEN transactions.type = ? THEN ' . Transaction::NORMALIZED_AMOUNT_EXPRESSION . ' ELSE 0 END), 0) as expense',
+                [TransactionType::EXPENSE->value],
+            )
+            ->whereIn('transactions.tally_id', $tallyIds->all())
+            ->groupBy('transactions.tally_id', 'currencies.currency_id', 'currencies.code', 'currencies.symbol', 'currencies.decimals')
+            ->orderByRaw('COUNT(*) DESC')
+            ->orderBy('currencies.code')
+            ->get();
+
+        return $rows
+            ->groupBy(fn (object $row): int => (int) $row->tally_id)
+            ->map(fn (Collection $currencyRows): array => $currencyRows
+                ->map(fn (object $row): array => [
+                    'income' => (float) $row->income,
+                    'expense' => (float) $row->expense,
+                    'currency_symbol' => $row->symbol,
+                    'currency_code' => $row->code,
+                    'decimals' => (int) $row->decimals,
+                ])
+                ->values()
+                ->all());
+    }
+
+    /**
+     * The avatar stack and split label shown on a tally card (Home rail and Tallies index).
+     * Needs `owner` and `users` loaded.
+     *
+     * @return array{members_preview: array<int, array{initials: string, color: string}>, split_label: string|null}
+     */
+    private function memberPreview(Tally $tally): array
+    {
+        $members = $tally->membersInOrder();
 
         return [
-            'uuid' => $sharedTally->uuid,
-            'name' => $sharedTally->name,
-            'total_spent' => $totalSpent,
-            'members' => $members->map(function (User $member) use ($perUser, $totalSpent): array {
-                $amount = (float) ($perUser[$member->id] ?? 0);
-
-                return [
-                    'name' => $member->name,
-                    'initials' => $this->initials($member->name),
-                    'amount' => $amount,
-                    'percentage' => $totalSpent > 0 ? round(($amount / $totalSpent) * 100, 1) : 0.0,
-                ];
-            })->all(),
+            'members_preview' => $members->take(self::MEMBERS_PREVIEW_LIMIT)
+                ->map(fn (User $member): array => ['initials' => $member->initials(), 'color' => $member->avatarColor()])
+                ->all(),
+            'split_label' => $this->splitLabel($members, $tally->memberShares()),
         ];
     }
 
-    private function initials(string $name): string
+    /**
+     * `"60 / 40"`, or null for a solo tally or an equal split (shares within 0.01 of each other).
+     *
+     * @param  Collection<int, User>  $members
+     * @param  array<int, float>  $shares
+     */
+    private function splitLabel(Collection $members, array $shares): ?string
     {
-        $trimmed = mb_trim($name);
-        $parts = preg_split('/\s+/', mb_strtoupper($trimmed)) ?: [];
-        $initials = '';
-
-        foreach ($parts as $part) {
-            if ($part === '') {
-                continue;
-            }
-
-            $initials .= mb_substr($part, 0, 1);
-
-            if (mb_strlen($initials) === 2) {
-                break;
-            }
+        if ($members->count() < 2 || $shares === [] || round(max($shares) - min($shares), 2) <= 0.01) {
+            return null;
         }
 
-        return $initials === '' ? '··' : $initials;
+        return implode(' / ', array_map(fn (float $share): string => mb_rtrim(mb_rtrim(number_format($share, 2, '.', ''), '0'), '.'), $shares));
     }
 }

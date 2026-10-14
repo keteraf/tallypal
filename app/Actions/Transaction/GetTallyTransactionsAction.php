@@ -24,7 +24,8 @@ final readonly class GetTallyTransactionsAction
                 ->paginate($perPage)
                 ->withQueryString();
         } catch (Throwable $e) {
-            abort($e->getCode(), $e->getMessage());
+            report($e);
+            abort(500);
         }
     }
 }

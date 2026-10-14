@@ -8,8 +8,11 @@ use App\Mail\TallyInvitationNewUser;
 use App\Models\Tally;
 use App\Models\TallyInvitation;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Mail;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 uses(RefreshDatabase::class);
 
@@ -110,4 +113,19 @@ it('returns the invitation with tally and invitedBy relations already loaded', f
 
     expect($invitation->relationLoaded('tally'))->toBeTrue()
         ->and($invitation->relationLoaded('invitedBy'))->toBeTrue();
+});
+
+test('a database error is reported and becomes a plain 500', function (): void {
+    Exceptions::fake();
+    $failure = databaseFailure();
+    $tally = Mockery::mock(Tally::class)->makePartial();
+    $tally->setRelation('owner', User::factory()->make());
+    $tally->shouldReceive('invitations')->andThrow($failure);
+    expect(fn () => (new CreateTallyShareAction())->handle($tally, 'invitee@example.com'))
+        ->toThrow(function (HttpException $exception): void {
+            expect($exception->getStatusCode())->toBe(500)
+                ->and($exception->getMessage())->not->toContain('secret_table');
+        });
+
+    Exceptions::assertReported(fn (QueryException $exception): bool => $exception === $failure);
 });

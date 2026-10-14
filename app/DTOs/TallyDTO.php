@@ -10,10 +10,13 @@ final class TallyDTO
         private int $owner_id,
         private string $name,
         private ?string $description,
+        private ?string $color = null,
+        private ?string $glyph = null,
+        private ?int $default_currency_id = null,
     ) {}
 
     /**
-     * @param  array{owner_id: int|numeric-string, name: string, description?: string|null}  $data
+     * @param  array{owner_id: int|numeric-string, name: string, description?: string|null, color?: string|null, glyph?: string|null, default_currency_id?: int|null}  $data
      */
     public static function fromArray(array $data): self
     {
@@ -21,6 +24,9 @@ final class TallyDTO
             owner_id: (int) $data['owner_id'],
             name: $data['name'],
             description: $data['description'] ?? null,
+            color: $data['color'] ?? null,
+            glyph: $data['glyph'] ?? null,
+            default_currency_id: $data['default_currency_id'] ?? null,
         );
     }
 
@@ -33,6 +39,9 @@ final class TallyDTO
             'owner_id' => $this->owner_id,
             'name' => $this->name,
             'description' => $this->description,
+            'color' => $this->color,
+            'glyph' => $this->glyph,
+            'default_currency_id' => $this->default_currency_id,
         ];
     }
 
@@ -68,6 +77,42 @@ final class TallyDTO
     public function setDescription(?string $description): self
     {
         $this->description = $description;
+
+        return $this;
+    }
+
+    public function getColor(): ?string
+    {
+        return $this->color;
+    }
+
+    public function setColor(?string $color): self
+    {
+        $this->color = $color;
+
+        return $this;
+    }
+
+    public function getGlyph(): ?string
+    {
+        return $this->glyph;
+    }
+
+    public function setGlyph(?string $glyph): self
+    {
+        $this->glyph = $glyph;
+
+        return $this;
+    }
+
+    public function getDefaultCurrencyId(): ?int
+    {
+        return $this->default_currency_id;
+    }
+
+    public function setDefaultCurrencyId(?int $default_currency_id): self
+    {
+        $this->default_currency_id = $default_currency_id;
 
         return $this;
     }

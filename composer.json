@@ -96,14 +96,22 @@
         "test:lint": "pint --test",
         "test:refactor": "rector --dry-run",
         "test:types": "phpstan analyse --memory-limit 512M",
-        "test:unit": "XDEBUG_MODE=coverage pest --colors=always --parallel @additional_args --coverage --min=90",
-        "test:mutate": "XDEBUG_MODE=coverage pest --colors=always --parallel @additional_args --mutate --min=90",
+        "test:base": "XDEBUG_MODE=coverage pest --no-tia --colors=always --parallel @additional_args",
+        "test:fast": "XDEBUG_MODE=coverage pest --tia --colors=always --parallel @additional_args",
+        "test:unit": "@test:base --coverage --min=90",
+        "test:mutate": "@test:base --mutate --min=90",
         "test": [
             "@php artisan config:clear --ansi",
             "@test:lint",
             "@test:refactor",
             "@test:types",
             "@test:unit"
+        ],
+        "check": [
+            "npm run build",
+            "npx vue-tsc --noEmit",
+            "@test",
+            "@test:mutate"
         ]
     },
     "extra": {
