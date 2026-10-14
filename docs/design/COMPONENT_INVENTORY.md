@@ -98,6 +98,7 @@ Legend for **Replaces**:
 - **States:** default, hover, selected (`on`).
 - **Replaces:** **new** `ChoiceChip` / `ChipGroup` (single or multi).
 - **Props/slots:** `v-model`, `options[]` (label, dot color, icon), `multiple?`.
+- **Categories batch:** no longer used for the transaction category; `CategoryPicker` (E7) replaces it there.
 
 ### A11. Tally glyph / tx icon (soft-tinted square)
 - **Source classes:** `.tally .glyph` (34px r11), `.tl .glyph` (44px r15), `.tx .ic` (42px r14);
@@ -115,6 +116,9 @@ Legend for **Replaces**:
   that has an emoji form (`Emoji=Yes` in Unicode `emoji-data.txt`: today ✂ ☕ ♥ ✈) is stored
   with **U+FE0E** (VARIATION SELECTOR-15) appended. Any glyph added later follows the same rule.
   The glyph run verifies this with screenshots at 375×812 and 1440×900.
+- **Income categories (Categories batch):** 11 more glyphs (¤ ✦ ✪ ▲ ◫ ↺ ❖ ⬡ ⊚ ⚄ ⊕), none with an emoji form. The map is
+  re-keyed on the category `slug` if C-D2 is approved; ↓ stays for an **uncategorised** income only. Colour comes from
+  the category's persisted `color` (DESIGN_TOKENS §7.1). Table: VERIFICATION.md, Categories batch.
 
 ---
 
@@ -425,6 +429,33 @@ Legend for **Replaces**:
     `useAppearance().updateAppearance`. It replaces the design's two-state toggle because the
     settled default is `system`.
   - Not the Share role select: member roles are cut (DO-08).
+
+### E7. Category picker  ★ new (`Tallypal Categories.html`, Categories batch)
+- **Source classes:** `.cat-row`, `.cat-grid`, `.ct` (`.g` glyph, `.l` label), `.ct.on`, `.ct.more` (`.open`),
+  `.cat-st` (`.warn`), `.cat-panel`, `.cp-hd`, `.cp-q` (+ `.k` kbd hint), `.cat-empty`; phone `.sheet2`.
+- **Anatomy:** a radio-group **row** of frequent tiles + an "All N" tile (N from data: "All 16" / "All 11"); a **status line** under it; "All" opens the full
+  set as a 4-column **glyph grid** with a **filter** field and a close button — inline panel under the row **≥ md**, a
+  second bottom sheet (80 % height, title "Expense categories" / "Income categories") **< md**.
+- **Values:** DESIGN_TOKENS §7.2. Tile glyph colour = the category's stored `color` (§7.1 rule).
+- **States:** tile default / hover / focus / selected / selected + focus; "All" default / open; status empty
+  ("◌ No category") / cleared (`--neg`, nudge) / none (a pick is shown); grid filtered / no match ("No match for “q”").
+- **Behaviour:**
+  - Row = 5 frequent (≥ md) or 4 (< md) for the current type, padded with the design defaults; the selected category, if
+    not among them, is pinned first (Edit shows the saved one this way).
+  - `type` change: row swaps; an invalid selection is cleared (`modelValue` → `null`) and the status names it until the
+    next pick.
+  - Filter matches EN label, IT label and the slug's aliases (frontend catalogue), case-insensitive; Enter picks the
+    first match. Auto-focused on open **only ≥ md**.
+  - Keyboard: row ← → Home End (roving tabindex), Space/Enter picks; Enter on "All" opens; grid ↑ ↓ (±4) ← →, ↑ from the
+    first row → filter, ↓ from the filter → first tile; Esc closes and returns focus to "All". Picking closes the panel and
+    focuses the picked tile in the row.
+- **Replaces:** **new** `ui/category-picker/CategoryPicker.vue` (+ `CategoryTile.vue`). Replaces `ChipGroup` (A10) for
+  categories in Add transaction (sheet / dialog / Create page) and the Edit page. Reuses `CategoryGlyph` colours, `Input`
+  styles for the filter, `IconButton` for close, `ui/sheet` `side="bottom"` for the phone panel.
+- **Props/slots:** `v-model` (`number | null` category id), `type: 'expense' | 'income'`, `categories:
+  {category_id, slug, type, color}[]`, `frequent: {expense: string[], income: string[]}`; emits `cleared(slug)`.
+  Labels via `t('categories.<slug>')`.
+- **Used by:** Categories batch R6 (Add transaction), R7 (Edit). Checklist CA-01..CA-15.
 
 ---
 

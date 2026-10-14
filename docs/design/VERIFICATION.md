@@ -247,6 +247,7 @@ blocked items across batches 1–7: **Blocked items** below.
 | 5 | You (profile / preferences) | **done** — 9 findings |
 | 6 | Modals: Add transaction, New tally, Share tally | **done** — 14 findings |
 | 7 | Empty / loading / error states + base components (`/dev/design-system`) | **done** — 11 findings (F-103..F-107 at the first pass; F-108..F-113 after the ES-04 / LE-02 harness runs) |
+| Categories | Income categories + category picker (`Tallypal Categories.html`) | **approved** 2026-10-14 — see **Categories batch** at the end |
 
 ---
 
@@ -2993,3 +2994,286 @@ Previous verdict:
 **FP-01 is fixed** (2026-10-14; every per-tally amount is spending, labelled by period), so the data blocker is gone. The checks were green (`exit: 0`), nothing regressed, every recorded decision renders as
 decided, and no cut element survives. FP-02..FP-08 are FIXED too (layout split and stacking, glyph tint, bar scaling, segmented size, outline fill, footer seam, rail width), each compared side by side with its `.verify/design/` reference.
 "Owed to you" now shows the open $ 105.85 balance (F-075 reversed in part). Open for the owner: the Home tally card amount is an unlabelled expense total.
+
+---
+
+## Categories batch — income categories + category picker (approved 2026-10-14)
+
+**Source of truth:** `Tallypal Categories.html` (Claude Design project `019dc420-c153-725e-9f8b-4ee4e47b22df`) for
+the income categories and the picker; `Tallypal Desktop.html` stays the source for everything else. Local copy:
+`.verify/design/categories/tallypal-categories.html`. References (132 PNGs) in `.verify/design/categories/`:
+`{desktop,mobile}-{dark,light}-full.png`, `…-section-s1..s6.png`, `…-tile-states.png`,
+`{desktop,mobile}-frame-NN-<caption>-<theme>[-en|-it].png` (frames 01–10 forms, 11–13 rows) and
+`{desktop,mobile}-interactive-*.png` (grid "no match", phone sheet filtered). The design draws its phone frames at 393 px,
+so at 375 px they are cropped on the right; use the `desktop-frame-05..10` captures for the full phone frame.
+
+Branch: `feature/categories-restyle` (from `dev`, merged back to `dev` for online testing, then `master`).
+
+### What the design text instructs (not only drawn)
+
+- Repayments between members are **never a category** (a separate "Record a payment" flow will own them). The
+  Expense / Income control has **two options**, no Transfer.
+- 11 income categories (table below). Labels are short nouns; Italian phrased like a bank app. Glyphs are plain Unicode
+  text tinted by CSS colour, none shared with the expense set, none with a colour-emoji form.
+- Each category has search **aliases** (EN + IT) that the picker filter matches together with both labels.
+- Picker = direction **A** (frequent row + "All") with **B**'s glyph grid and **C**'s filter inside "All".
+- Row: 5 frequent tiles + "All N" on desktop, 4 + "All N" on the phone. Frequency is **per type, last 90 days**; the
+  defaults apply until a category has been used **twice**. Defaults: Groceries, Dining Out, Transportation, Bills,
+  Subscriptions / Salary, Side work, Refunds & returns, Gifts, Investments. A selected category that is not frequent is
+  **pinned to the first slot** (also the saved category in Edit).
+- Switching Expense ↔ Income swaps the row; an invalid pick is **cleared** and a one-line `--neg` notice names what was
+  dropped (`<b>Groceries</b> is an expense category — cleared.`) until the next pick, with a short nudge animation.
+- Keyboard: the row is a radio group (← → Home End, Space picks); Enter on "All" opens the grid **with the filter
+  focused on desktop**; in the grid ↑ ↓ step a row of four, ← → one tile, ↑ from the first row returns to the filter,
+  Enter in the filter picks the first match, Esc closes and returns focus to "All".
+- Phone: tiles ≥ 65 × 76 px; "All" opens a **second bottom sheet at 80 % height** titled "Expense categories" /
+  "Income categories"; the filter **never takes the keyboard unless tapped**.
+- Category is **optional**: empty shows "◌ No category" where the pick would be; Save stays enabled.
+- Rows: no new anatomy. The icon tile takes the category's glyph and colour token, the sub-line names the category, the
+  amount keeps the existing rule (income `+` in `--pos`). The old generic "↓" salary row becomes "¤ Salary".
+- Notes (out of the design's scope, kept here): Stats "By category" is expenses only (it already is, see audit);
+  "Paid by" reads "Received by" on income (already shipped, `transactions.fields.received_by`).
+
+### Income categories (seed rows, exactly as the design lists them)
+
+| # | slug | EN | IT | Glyph | Colour | Aliases |
+|---|---|---|---|---|---|---|
+| 1 | `salary` | Salary | Stipendio | ¤ U+00A4 | `c3` | paycheck busta paga |
+| 2 | `side_work` | Side work | Lavoro extra | ✦ U+2726 | `c2` | freelance invoice fattura lavoretti |
+| 3 | `bonus` | Bonus | Bonus e premi | ✪ U+272A | `c4` | commission provvigioni premio tredicesima |
+| 4 | `investments` | Investments | Investimenti | ▲ U+25B2 | `c1` | dividends interest crypto dividendi interessi |
+| 5 | `rental_income` | Rental income | Affitti | ◫ U+25EB | `c1` | tenant inquilino canone |
+| 6 | `refunds_returns` | Refunds & returns | Resi e rimborsi | ↺ U+21BA | `c2` | rimborso return reso cashback cancellation storno |
+| 7 | `gifts_received` | Gifts | Regali | ❖ U+2756 | `c6` | regalo present birthday compleanno |
+| 8 | `sold_items` | Sold items | Vendite | ⬡ U+2B21 | `c4` | ebay vinted subito second hand usato |
+| 9 | `pension_benefits` | Pension & benefits | Pensione e sussidi | ⊚ U+229A | `c1` | inps naspi welfare sussidio |
+| 10 | `winnings` | Winnings | Vincite | ⚄ U+2684 | `c5` | lottery lotteria bet scommessa prize premio |
+| 11 | `other_income` | Other income | Altre entrate | ⊕ U+2295 | `c3` | altro misc |
+
+**U+FE0E rule (F-037):** checked against Unicode's `Emoji` property: **none of the 11 has an emoji form**, so none is
+stored with U+FE0E (`asTextGlyph()` still normalises every glyph at render). Expense glyphs that need it stay as they are
+(✂ ☕ ♥ ✈). Slugs are proposed (stable keys); the design's own ids (`side`, `invest`, `gifts_in`, …) are shorthand.
+
+Expense set, from the design (IT labels, colours and aliases are new to the app; glyphs are the D1 map unchanged):
+
+| slug | EN | IT | Glyph | Colour | Aliases |
+|---|---|---|---|---|---|
+| `bills` | Bills | Bollette | ▤ | `c4` | bolletta |
+| `clothing` | Clothing | Abbigliamento | ✂︎ | `c6` | vestiti |
+| `dining_out` | Dining Out | Ristoranti | ☕︎ | `c6` | restaurant bar pizza |
+| `education` | Education | Istruzione | ✎ | `c1` | scuola corso |
+| `entertainment` | Entertainment | Svago | ★ | `c6` | cinema concerto |
+| `gifts_donations` | Gifts & Donations | Regali e donazioni | ♥︎ | `c5` | charity |
+| `groceries` | Groceries | Spesa | ◈ | `c4` | supermercato |
+| `healthcare` | Healthcare | Salute | ✚ | `c3` | farmacia medico pharmacy |
+| `household_supplies` | Household Supplies | Prodotti per la casa | ▦ | `c4` | pulizie cleaning |
+| `insurance` | Insurance | Assicurazioni | ▣ | `c1` | polizza |
+| `personal_care` | Personal Care | Cura personale | ✿ | `c6` | parrucchiere |
+| `rent` | Rent | Affitto | ⌂ | `c1` | canone |
+| `subscriptions` | Subscriptions | Abbonamenti | ♪ | `c2` | netflix spotify |
+| `transportation` | Transportation | Trasporti | ◎ | `c2` | taxi metro benzina fuel |
+| `travel` | Travel | Viaggi | ✈︎ | `c2` | volo hotel flight |
+| `utilities` | Utilities | Utenze | ↯ | `c5` | luce gas acqua |
+
+The design's expense list also has **Housing** (Casa, ⌂, `c1`). It was an error in the design brief (owner, C-D5):
+it is **not** added. The app has 16 expense categories and the "All" tile reads **"All 16"** (the design's "All 17" is
+wrong).
+
+### Audit of the current category model (2026-10-14)
+
+- **Storage.** `categories` (`category_id`, `uuid`, `name`, `description`, `icon` (always null), timestamps). The 16
+  rows are inserted **inside the create migration** (`2025_10_31_102705`), ids 1–16 in alphabetical order; uuids
+  backfilled by `2026_03_29_185413`. **No `type`, no `color`, no slug.** `Category::$fillable` lists `color` but the
+  column does not exist (DESIGN_TOKENS §7 planned it). Names are English strings from the DB, shown untranslated
+  (Italian users see "Groceries").
+- **`category_code`.** A derived two-letter code (`TransactionStatsRepository::categoryCode()`), sent in the Home recent /
+  Stats activity payloads; used only as a colour-hash fallback in `HomeRecentTransactions.vue`. It collides; D1 already
+  bans it as a key.
+- **D1 glyph map.** `ui/category-glyph/categoryGlyphs.ts`, `CATEGORY_GLYPHS` keyed on `category_id` 1–16.
+  `categoryGlyph(id, type)` returns **↓ for every income regardless of category**, ◌ when unmapped.
+- **Colour.** Three different rules today: the form chips colour by id cycle (`categoryColorFromId`), the rows by a hash of
+  the name (`transactionGlyphColor` → `categoryColorFromString`), and income rows are always `--pos` (FP-13). The By
+  category cards colour by rank (FP-12) and are not affected by this batch.
+- **Validated.** `StoreTransactionRequest` and `UpdateTransactionRequest` (shared by the web and the API controllers):
+  `category_id` `required|exists:categories,category_id`, `type` `in:income,expense`. **No check that the category fits
+  the type.** `transactions.category_id` is `NOT NULL` with a FK.
+- **Seeded.** By the create migration only (no seeder). `DemoSeeder` looks categories up by English name and seeds the
+  monthly **Salary as `INCOME` with category `Bills`** (the exact mismatch this batch forbids).
+- **Shown.** Form chips (`ChipGroup` in `AddTransactionForm.vue`, used by `AppOverlays` sheet/dialog and the
+  `transactions/Create` page; and in the `transactions/Edit` **page**); rows in Home Recent
+  (`HomeRecentTransactions.vue`), Tally detail (`tallies/transactions/Index.vue`), Stats All activity
+  (`StatsActivity.vue`); By category on Home (`HomeCategoriesBreakdown.vue`) and Stats (`StatsCategoryBreakdown.vue`).
+  Form data comes from `TransactionController::formData()` → `Category::all(['category_id', 'name'])`.
+- **Breakdowns already spending-only.** Home and Stats both use `TransactionStatsRepository::categoriesBreakdown()`,
+  which filters `transactions.type = expense` (and the primary currency, `transaction_date` range). Covered at the
+  repository level (`categoriesBreakdown only adds up expenses in the given currency` excludes a USD income); **no
+  endpoint test** asserts that an income category never appears in the Home / Stats payloads. B-16 adds it.
+- **Currencies.** Same pattern: the 10 rows are inserted inside `2025_10_31_103005_create_currencies_table`; no seeder.
+  `DatabaseSeeder` only creates a test user. The repo has no deploy script (`deploy/` holds only the SSR unit), so
+  migrate/seed steps live in the deploy configuration outside the repo.
+
+### Owner decisions (C-D) — decided 2026-10-14
+
+| ID | Question | Decision |
+|---|---|---|
+| C-D1 | Category optional ("◌ No category", Save enabled)? | **Yes.** `transactions.category_id` nullable (`nullOnDelete`), requests `nullable`. Uncategorised **spending** appears as an **"Uncategorised" row (◌)** in Home and Stats By category, so the rows still add up to the total (FP-09). |
+| C-D2 | Glyph map key | **`slug`** (amends D1); payloads send `category_slug`. |
+| C-D3 | Labels | **i18n by slug**, EN/IT for all 27; DB `name` stays the English fallback. |
+| C-D4 | Per-category colour | **Yes, scoped:** a category's stored `color` tints its **glyph tile** in rows and in the picker. The By category cards keep **FP-12's rank colours**. Rule: **"the glyph identifies a category everywhere; colour only separates rows within a view."** Income amounts stay `--pos`; an uncategorised income keeps ↓ in `--pos`. |
+| C-D5 | Add "Housing"? | **No.** It was an error in the design brief. "All 16". |
+| C-D6 | Frequency | **Build it** (B-15). |
+| C-D7 | Aliases | **Frontend catalogue** keyed by slug. |
+| C-D8 | Edit is a page | **Keep the Edit page**, with the picker inside it. |
+| C-D9 | Wrong-type category | **Reject (422)**, `validation.category_type_mismatch`. |
+| C-D10 | Reference data on deploy | **Yes.** `deploy/CHECKLIST.md` holds the step, with the restyle deploy steps. |
+| C-D11 | Reset scope | **As listed** in B-17. |
+| C-D12 | Stats By category type toggle | **No toggle** (already expenses only). |
+
+### BACKEND mini-specs
+
+**B-13 — Category type, slug, colour + reference-data seeder** (C-D1..C-D4, C-D10)
+- **Status: PLANNED**
+- Schema (one new migration, no edits to old ones): `categories` + `type` (enum `expense|income`, default `expense`),
+  `slug` (string, unique), `color` (enum `c1`…`c6`, nullable). Backfill `slug`/`color` of the 16 existing rows **by
+  current `name`** (only rows that exist), then make `slug` non-null + unique. `transactions.category_id` → nullable,
+  FK `nullOnDelete` (C-D1). Must run cleanly on a **fresh DB** and on a DB that already has users (and, until the
+  reset, transactions).
+- Enum `App\Enums\CategoryType` (`EXPENSE`, `INCOME`), cast on `Category::$type`; `Category::scopeOfType()`.
+- `Database\Seeders\ReferenceDataSeeder`: **idempotent upsert** — currencies by `code` (the 10 current rows, same
+  values), categories by `slug` (16 expense + 11 income, `name` = EN label, `type`, `color`). Never deletes. Called by
+  `DatabaseSeeder` and by the deploy (C-D10). `DemoSeeder` stops relying on the migration's rows and looks categories
+  up by `slug`. The create migrations keep their inserts (history; fresh DBs still get them, the upsert then matches).
+- Payloads: `formData()` / `edit()` send `categories: {category_id, slug, type, name, color}[]`; Home recent, Stats
+  activity and Tally detail rows send `category_slug` and `category_color` (and stop needing `category_code`).
+  Bump `HomeCacheService::KEY_VERSION` (`v11` → `v12`).
+- Frontend: `categoryGlyphs.ts` keyed on slug (C-D2) + the 11 income glyphs; `categoryGlyph(slug, type)` returns ↓ only
+  for an **uncategorised** income. i18n `categories.<slug>` EN/IT for all 27 (C-D3).
+- **Must-have: the migration backfills** `slug`, `type` and `color` onto the 16 existing category rows (matched by their
+  current `name`), so `ReferenceDataSeeder` matches them and never inserts duplicates. Currencies are keyed on their
+  existing `code` column, so they need no backfill; the migration adds a **unique index on `currencies.code`** (the 10
+  codes are distinct) so the upsert key is enforced.
+- Tests: **migrate a database holding the old 16 category rows (and the 10 currencies), run the seeder twice, assert
+  exactly 27 categories and 10 currencies, with the original ids kept** (1–16 unchanged, same `uuid`s); a second run
+  changes nothing; a fresh `migrate:fresh` + seeder gives the same 27 / 10; `Category` cast and scope.
+
+**B-14 — Category must match the transaction type** (C-D9) — **tests first**
+- **Status: PLANNED**
+- Rule `App\Rules\CategoryMatchesType` (or a closure `Rule::exists(...)->where('type', $type)`), applied to
+  `category_id` in `StoreTransactionRequest` and `UpdateTransactionRequest`: `nullable` (C-D1) + `exists` + same type.
+  Error key `category_id`, message `validation.category_type_mismatch` (EN/IT).
+- Tests (written before the rule): expense + expense category → ok; income + income category → ok; income + expense
+  category → 422 on `category_id`; expense + income category → 422; no category → ok; update that flips `type`
+  without changing the category → 422; same on the API routes (`Api\TransactionController`).
+
+**B-15 — Frequent categories per type** (C-D6)
+- **Status: PLANNED**
+- `TransactionStatsRepository::frequentCategories(int $userId, CategoryType $type, CarbonImmutable $now): list<string>`
+  — slugs used ≥ 2 times by the user's tallies in the last 90 days (`transaction_date`), most used first, ties by most
+  recent. Sent with the form data as `frequent_categories: {expense: string[], income: string[]}`; the picker pads it
+  with the design defaults to 5 (desktop) / 4 (phone).
+- Tests: window edges (day 90 in, day 91 out), the ≥ 2 threshold, per-type split, another user's tallies excluded.
+
+**B-16 — Breakdowns: no income, and an "Uncategorised" row** (audit: already filtered by type; C-D1)
+- **Status: PLANNED**
+- Income: tests only, unless they fail. `HomeControllerTest` and `StatsControllerTest`: a user with an income in an
+  income category (and a large amount) in the range → its category never appears in `categories_breakdown` /
+  `categories`, and the totals equal the expenses only.
+- Uncategorised spending: `categoriesBreakdown()` already groups `NULL` categories (today as the literal
+  `'Uncategorised'`). Rows gain `slug: string|null` and `is_uncategorised: bool`; the label comes from i18n
+  (`categories.uncategorised`, "Uncategorised" / "Senza categoria"), not the SQL literal. It ranks by amount like any
+  category (it folds into Other when outside the top five). Its row shows **◌ in `--text-3` in place of the dot**; the
+  bar keeps the rank colour rule (FP-12). Bump `KEY_VERSION`.
+- Tests (Home and Stats): expenses with no category appear as one Uncategorised row; **the named rows + Uncategorised
+  + Other add up to the period's expense total** (FP-09); an uncategorised **income** never appears.
+
+**B-17 — `tallypal:reset-activity`** (C-D11)
+- **Status: PLANNED**
+- `php artisan tallypal:reset-activity --force`. Without `--force`: prints the row counts it would delete and exits
+  **1** without touching anything (no interactive prompt, so it cannot be confirmed by accident in a pipeline).
+- With `--force`, in one DB transaction: delete `transactions`, `tally_invitations`, `tally_user`, `tallies` (that order;
+  `tally_user` has no cascade). Then `HomeService::forgetCacheForUser()` for every user. Keeps `users`, roles,
+  personal access tokens, `currencies`, `categories`. Prints the deleted counts.
+- Tests: without `--force` nothing is deleted and exit code is 1; with `--force` the four tables are empty, users /
+  currencies / categories counts unchanged, a user's Home cache key is gone.
+- Production runbook: `deploy/CHECKLIST.md` (migrate → `db:seed --class=ReferenceDataSeeder --force` → … →
+  `tallypal:reset-activity --force`).
+
+**DemoSeeder** (part of R4): income transactions with income categories (Salary → `salary` monthly; plus Side work,
+Refunds & returns, Gifts, Investments, Sold items spread over the solo/household tallies and months), keeping every
+fixed tally UUID; no expense category on any income; one income with no category (C-D1) for the ◌/↓ state.
+
+### Components
+
+- **`CategoryPicker`** (new, COMPONENT_INVENTORY **E7**) replaces `ChipGroup` for categories in Add transaction (sheet
+  < md, dialog ≥ md, `transactions/Create` page) and the `transactions/Edit` page. `ChipGroup` stays for its other users.
+- Values: DESIGN_TOKENS **§7.1** (category colours) and **§7.2** (picker values).
+
+### Runs (one session each, in order)
+
+| Run | Model | Scope | Done when |
+|---|---|---|---|
+| R1 | Opus 5.5 | **Data**: B-13 (migration **with the backfill**, enum, `ReferenceDataSeeder`, payloads, `KEY_VERSION`, glyph map by slug + income glyphs, i18n labels). `DemoSeeder` lookups switched to slugs (no new data yet). | The 16-row → 27 / 10 test passes with original ids kept; migrations pass on `migrate:fresh` and on a DB with users; `composer check` exit 0 |
+| R2 | Sonnet 5.5 | **Validation**: B-14, tests first (red, then green). | Tests listed in B-14 pass; `composer check` exit 0 |
+| R3 | Sonnet 5.5 | **Frequency + breakdowns**: B-15 and B-16 (no income; Uncategorised row ◌; rows add up to the total). | Both test sets pass; `composer check` exit 0 |
+| R4 | Sonnet 5.5 | **Reset + demo**: B-17 command; `DemoSeeder` incomes with income categories, fixed UUIDs kept. | Command tests pass; `db:seed --class=DemoSeeder` twice is clean; `composer check` exit 0 |
+| R5 | Opus 5.5 | **Build first: `CategoryPicker`** (E7) with a `/dev/design-system` example of every state (CA-01, CA-02 rows), both themes, 375 / 1440. Not adopted yet. | Screens side by side with `…-tile-states.png` and frames 01–08; `composer check` exit 0 |
+| R6 | Sonnet 5.5 | **Adopt in Add transaction** (sheet, dialog, Create page), type switch clears visibly. | CA-03..CA-12 D/M verified with screenshots; `composer check` exit 0 |
+| R7 | Sonnet 5.5 | **Adopt in Edit + rows**: Edit page; Home Recent, Tally detail, Stats All activity glyph/colour by slug. | CA-13..CA-18 D/M verified; `composer check` exit 0 |
+| R8 | Opus 5.5 | **Delta verification**: every CA row both viewports and themes, plus a regression pass over Batches 1, 3, 4, 6 rows touching categories; re-run DemoSeeder after any browser edits. | Verdict + `exit: 0` quoted |
+
+R1 comes before everything; R2–R4 only need R1; R5 needs R1 (slugs, colours, labels) and R3 (frequency shape); R6–R7
+need R5 and R2.
+
+### Checklist
+
+`D` = desktop 1440×900, `M` = mobile 375×812. Every row is checked in **dark and light**. Refs are relative to
+`.verify/design/categories/` (`desktop-` prefix unless noted; `-<theme>[-en]` suffix omitted). Where the design draws a
+state at one size only, the other viewport is compared against the same state's anatomy in the drawn frame plus the
+responsive rule (inline panel ≥ md, second sheet < md).
+
+| ID | Vp | Item | Design ref | State | Result |
+|---|---|---|---|---|---|
+| CA-01 | D | Glyph map row in `/dev/design-system`: 16 expense + 11 income + ↓ + ◌, each tinted by its `--cN`, none a colour emoji | `section-s1` (table, strip) | default | [ ] |
+| CA-01 | M | same | `mobile-*-section-s1` | default | [ ] |
+| CA-02 | D | Tile states: default, hover, focus, selected, selected + focus, "All N", "All N" open | `tile-states` | all | [ ] |
+| CA-02 | M | same, tile ≥ 65 × 76 | `mobile-*-tile-states` | all | [ ] |
+| CA-03 | D | Add · Expense · Groceries selected, 5 frequent + All | `frame-01-dark-expense-selected` | selected | [ ] |
+| CA-03 | M | Add · Expense · selected, 4 frequent + All | `frame-05-dark-expense-selected` | selected | [ ] |
+| CA-04 | D | Add · switched to Income · pick cleared, `--neg` notice, nudge | `frame-02-dark-switched-to-income-cleared` | cleared | [ ] |
+| CA-04 | M | same | `frame-06-light-switched-to-income-cleared` | cleared | [ ] |
+| CA-05 | D | Add · Income · Salary selected, amount `+` in `--pos` | `frame-03-light-income-selected` | selected | [ ] |
+| CA-05 | M | same | `frame-03…` anatomy + `frame-06` row | selected | [ ] |
+| CA-06 | D | Add · Expense · "All" open inline: filter (focused, `esc` hint), close, 4-col grid, keyboard focus ring in grid | `frame-04-light-expense-all-open-keyboard-focus-in-grid` | open + focus | [ ] |
+| CA-06 | M | Add · Expense · "All" second sheet (80 %), filter **not** focused | `frame-07-dark-income-all-sheet-open` anatomy | open | [ ] |
+| CA-07 | D | Add · Income · "All" open inline (11 tiles) | `frame-04…` anatomy, income list | open | [ ] |
+| CA-07 | M | Add · Income · "All" sheet, title "Income categories" | `frame-07-dark-income-all-sheet-open` | open | [ ] |
+| CA-08 | D | Add · empty: "◌ No category", Save enabled | `frame-08-light-income-empty` anatomy | empty | [ ] |
+| CA-08 | M | same | `frame-08-light-income-empty` | empty | [ ] |
+| CA-09 | D | Filter with no match: "No match for “zzz”" | `interactive-desktop-grid-no-match` | no match | [ ] |
+| CA-09 | M | same, in the second sheet | `mobile-interactive-desktop-grid-no-match` + `frame-07` | no match | [ ] |
+| CA-10 | D | Filter matches EN, IT and aliases ("re", "stipendio", "ebay") | `interactive-desktop-grid-no-match` anatomy | filtered | [ ] |
+| CA-10 | M | same | `interactive-phone-all-sheet-filtered` | filtered | [ ] |
+| CA-11 | D | Keyboard: row ← → Home End Space; Enter on All opens with filter focused; grid ↑ ↓ ← →, ↑ from top → filter; Enter picks first match; Esc closes → focus on All | `section-s3` rules | interaction | [ ] |
+| CA-11 | M | Touch: tap All → sheet, filter only focuses when tapped; tap tile picks and closes | `section-s3` rules | interaction | [ ] |
+| CA-12 | D | Italian labels: hyphenation, 2-line clamp, cleared copy "… è una categoria di uscita: rimossa." | `frame-01…-it`, `frame-02…-it`, `frame-04…-it` | it | [ ] |
+| CA-12 | M | same | `frame-05…-it`, `frame-06…-it`, `frame-07…-it` | it | [ ] |
+| CA-13 | D | Edit · Income · saved non-frequent "Sold items" pinned first | `frame-09-desktop-dark-income-sold-items-not-frequent-pinned-first` | pinned | [ ] |
+| CA-13 | M | same | `frame-09…` anatomy | pinned | [ ] |
+| CA-14 | D | Edit · Expense · Travel | `frame-10-phone-light-expense-travel` anatomy | selected | [ ] |
+| CA-14 | M | same | `frame-10-phone-light-expense-travel` | selected | [ ] |
+| CA-15 | D | Edit · type flip clears + notice, Save stays enabled, 422 never reached | `section-s4` | cleared | [ ] |
+| CA-15 | M | same | `section-s4` | cleared | [ ] |
+| CA-16 | D | Home Recent: income rows with income glyph/colour, sub = category, `+` `--pos`; Salary "¤ Salary" | `frame-11-home-recent` | data | [ ] |
+| CA-16 | M | same, stacked rows | `frame-11-home-recent` anatomy | data | [ ] |
+| CA-17 | D | Tally detail rows (Refunds & returns ↺, Sold items ⬡) | `frame-12-tally-detail-lisbon-trip-transactions` | data | [ ] |
+| CA-17 | M | same, stacked | `frame-12…` anatomy | data | [ ] |
+| CA-18 | D | Stats All activity rows (Bonus ✪, Gifts ❖, Investments ▲, Salary ¤) | `frame-13-stats-all-activity` | data | [ ] |
+| CA-18 | M | same, stacked | `frame-13…` anatomy | data | [ ] |
+| CA-19 | D | Home + Stats By category: no income category, ever (B-16) | Batch 1/4 refs (`../desktop/home-1.png`, `../desktop/stats-0.png`) | data | [ ] |
+| CA-19 | M | same | `../mobile/home-2.png`, Stats mobile ref | data | [ ] |
+| CA-20 | D | Frequent row: `demo-empty` (defaults) vs `demo` (learned order, ≥ 2 uses / 90 days) | `section-s3` text | data | [ ] |
+| CA-20 | M | same, 4 tiles | `section-s3` text | data | [ ] |
+| CA-21 | D | Uncategorised income row: ↓ in `--pos`, sub = "Income" | — (app rule, FP-13) | data | [ ] |
+| CA-21 | M | same | — | data | [ ] |
+| CA-22 | D | Home + Stats By category: "Uncategorised" row with ◌ (`--text-3`), rows add up to the total | Batch 1/4 refs (`../desktop/home-1.png`, `../desktop/stats-0.png`) | data | [ ] |
+| CA-22 | M | same | `../mobile/home-2.png` | data | [ ] |
