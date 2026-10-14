@@ -18,7 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $tally_id
  * @property int $party_id
  * @property int $currency_id
- * @property int $category_id
+ * @property int|null $category_id
  * @property TransactionType $type
  * @property string $title
  * @property string $description

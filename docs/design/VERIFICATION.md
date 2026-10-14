@@ -3158,7 +3158,8 @@ wrong).
   changes nothing; a fresh `migrate:fresh` + seeder gives the same 27 / 10; `Category` cast and scope.
 
 **B-14 — Category must match the transaction type** (C-D9) — **tests first**
-- **Status: PLANNED**
+- **Status: DONE (R2)** — `App\Rules\CategoryMatchesType`; `category_id` is `nullable` + `exists` + same type in both requests
+  (web and API); `TransactionDTO` takes a null category. Tests: `tests/Feature/Http/TransactionCategoryValidationTest.php`.
 - Rule `App\Rules\CategoryMatchesType` (or a closure `Rule::exists(...)->where('type', $type)`), applied to
   `category_id` in `StoreTransactionRequest` and `UpdateTransactionRequest`: `nullable` (C-D1) + `exists` + same type.
   Error key `category_id`, message `validation.category_type_mismatch` (EN/IT).
@@ -3232,6 +3233,14 @@ picks a category of the transaction's own type (none for income unless the seede
 needs owner approval). Found on the dev DB: a hand-added 17th category "Housing" (id 17, no transactions) — the
 migration gave it slug `housing_17`; it will show in the local picker until deleted. `exit: 0` (848 tests, 99.8%
 coverage, mutation score 100.00%).
+
+**Follow-ups (recorded in R2, not done yet).**
+- **R4 — delete unused non-reference categories.** Add a migration that deletes the categories that are not in the
+  `ReferenceDataSeeder` set (matched by `slug`) and have no transactions; this removes the hand-added "Housing"
+  (`housing_17`) in every environment. Test: a non-reference category that **is** in use is kept (and an unused one is deleted,
+  a reference one is never deleted).
+- **After this branch — unique `currencies.code`.** First fix the test fixtures that create duplicate currency codes
+  (see B-13: ~66 tests create a second EUR/USD/GBP/JPY row), then add a unique index on `currencies.code`.
 
 R1 comes before everything; R2–R4 only need R1; R5 needs R1 (slugs, colours, labels) and R3 (frequency shape); R6–R7
 need R5 and R2.

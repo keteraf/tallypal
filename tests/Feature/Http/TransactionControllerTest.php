@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Enums\CategoryType;
 use App\Enums\TransactionType;
 use App\Http\Controllers\Api\TransactionController;
 use App\Models\Category;
@@ -9,6 +10,7 @@ use App\Models\Currency;
 use App\Models\Tally;
 use App\Models\Transaction;
 use App\Models\User;
+use Database\Seeders\ReferenceDataSeeder;
 use Illuminate\Support\Carbon;
 use Laravel\Sanctum\Sanctum;
 
@@ -265,6 +267,7 @@ it('forbids showing a transaction the user does not own or participate in', func
 });
 
 it('updates a transaction', function (): void {
+    $this->seed(ReferenceDataSeeder::class);
     $me = User::factory()->create();
     Sanctum::actingAs($me);
 
@@ -273,7 +276,7 @@ it('updates a transaction', function (): void {
     $party = User::factory()->create();
     $tally->users()->attach($party->id, ['default_share_percentage' => 50]);
     $currency = Currency::query()->firstOrFail();
-    $category = Category::query()->firstOrFail();
+    $category = Category::query()->ofType(CategoryType::INCOME)->firstOrFail();
 
     $payload = [
         'party_id' => $party->id,

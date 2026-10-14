@@ -8,6 +8,7 @@ use App\Models\Currency;
 use App\Models\Tally;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Rules\CategoryMatchesType;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -94,7 +95,10 @@ it('has validation rules', function () {
     $rules = $request->rules();
 
     expect($rules['party_id'])->toBeArray()
-        ->and($rules['category_id'])->toBe('required|exists:categories,category_id')
+        ->and($rules['category_id'])->toHaveCount(3)
+        ->and($rules['category_id'][0])->toBe('nullable')
+        ->and($rules['category_id'][1])->toBe('exists:categories,category_id')
+        ->and($rules['category_id'][2])->toBeInstanceOf(CategoryMatchesType::class)
         ->and($rules['currency_id'])->toBe('required|exists:currencies,currency_id')
         ->and($rules['type'])->toBe('required|in:income,expense')
         ->and($rules['title'])->toBe('required|string|max:25')

@@ -102,7 +102,7 @@ class TransactionController extends Controller
      */
     public function store(StoreTransactionRequest $request, Tally $tally, StoreTransactionAction $action): RedirectResponse
     {
-        /** @var array{party_id: int|numeric-string, currency_id: int|numeric-string, category_id: int|numeric-string, type: string, title: string, description?: string|null, amount: float|numeric-string, transaction_date: string} $data */
+        /** @var array{party_id: int|numeric-string, currency_id: int|numeric-string, category_id?: int|numeric-string|null, type: string, title: string, description?: string|null, amount: float|numeric-string, transaction_date: string} $data */
         $data = $request->validated();
         $transactionDTO = TransactionDTO::fromArray($data);
         $action->handle($transactionDTO, $tally);
@@ -135,7 +135,7 @@ class TransactionController extends Controller
     ): RedirectResponse {
         $this->authorize('update', $transaction);
 
-        /** @var array{party_id: int|numeric-string, currency_id: int|numeric-string, category_id: int|numeric-string, type: string, title: string, description?: string|null, amount: float|numeric-string, transaction_date: string} $data */
+        /** @var array{party_id: int|numeric-string, currency_id: int|numeric-string, category_id?: int|numeric-string|null, type: string, title: string, description?: string|null, amount: float|numeric-string, transaction_date: string} $data */
         $data = $request->validated();
         $transactionDTO = TransactionDTO::fromArray($data);
         $action->handle($transaction, $transactionDTO);

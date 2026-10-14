@@ -6,6 +6,7 @@ namespace App\Http\Requests\Transactions;
 
 use App\Models\Tally;
 use App\Models\Transaction;
+use App\Rules\CategoryMatchesType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -31,7 +32,7 @@ class StoreTransactionRequest extends FormRequest
 
         return [
             'party_id' => ['required', Rule::exists('tally_user', 'user_id')->where('tally_id', $tallyId)],
-            'category_id' => 'required|exists:categories,category_id',
+            'category_id' => ['nullable', 'exists:categories,category_id', new CategoryMatchesType()],
             'currency_id' => 'required|exists:currencies,currency_id',
             'type' => 'required|in:income,expense',
             'title' => 'required|string|max:25',
