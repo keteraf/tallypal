@@ -71,7 +71,6 @@ The scan surface count is a single number. Before reading any source, fetch the 
 
 ```bash
 VIEWER_URL="https://[project].test"   # replace with actual URL from step 1
-
 curl -sk "${VIEWER_URL}/_laravel-brain/api/context?format=json" \
   | python3 -c "
 import sys, json
@@ -198,7 +197,6 @@ Read the **Call Chain** section at the top of `/tmp/brain-node.md`. It shows the
 Present findings using this structure. Only include entries you have verified by reading source — do not copy the full hotspot table.
 
 ```
-
 ## Codebase Analysis
 
 Security surface: [N] issues flagged by scanner.

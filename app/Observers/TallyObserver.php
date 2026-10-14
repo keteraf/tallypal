@@ -29,5 +29,6 @@ final readonly class TallyObserver
     private function invalidate(Tally $tally): void
     {
         $this->homeService->forgetCacheForUser((int) $tally->owner_id);
+        $this->homeService->forgetCacheForTallyMembers($tally);
     }
 }

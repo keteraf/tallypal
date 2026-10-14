@@ -43,6 +43,14 @@ class Currency extends Model
         'description', // @pest-mutate-ignore
     ];
 
+    /**
+     * The app-wide default currency (`app.default_currency`), or null when the configured code is not a stored currency.
+     */
+    public static function appDefault(): ?self
+    {
+        return self::query()->where('code', config('app.default_currency'))->first();
+    }
+
     /** @return array<int, string> */
     public function uniqueIds(): array
     {

@@ -1,116 +1,102 @@
 <script setup lang="ts">
+import { Button } from '@/components/ui/button';
+import { CheckList } from '@/components/ui/check-list';
+import { ChipGroup } from '@/components/ui/choice-chip';
+import { Dot } from '@/components/ui/dot';
+import { FeatureBento, FeatureTile } from '@/components/ui/feature-bento';
+import { MarketingSection, MarketingSectionHead } from '@/components/ui/marketing-section';
+import { SettleBanner } from '@/components/ui/settle-banner';
+import { SplitMemberRow } from '@/components/ui/split-member-row';
+import { VisAxis, VisGroupedBar, VisXYContainer } from '@unovis/vue';
 import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();
 
-interface Feature {
-    num: string;
-    titleLead: string;
-    titleEm: string;
-    titleTail?: string;
-    description: string;
-    glossLead?: string;
-    glossTail?: string;
-    glossBars?: number[];
-}
+const spendingTrend = [38, 52, 44, 66, 58, 78, 94, 62, 50, 70, 46, 34].map((amount, index) => ({ index, amount }));
+const trendXAccessor = (d: { index: number }) => d.index;
+const trendYAccessor = (d: { amount: number }) => d.amount;
+const trendColorAccessor = (d: { index: number }) => (d.index === 6 ? 'var(--accent)' : 'var(--surface-3)');
+const quarterLabels: Record<number, string> = { 0: 'JAN', 3: 'APR', 6: 'JUL', 9: 'OCT' };
+const formatQuarterTick = (value: number) => quarterLabels[value] ?? '';
 
-const features = (): Feature[] => [
-    {
-        num: '001',
-        titleLead: t('welcome.features.items.0.title_lead'),
-        titleEm: t('welcome.features.items.0.title_em'),
-        titleTail: t('welcome.features.items.0.title_tail'),
-        description: t('welcome.features.items.0.description'),
-        glossLead: 'personal · household · trip · freelance',
-    },
-    {
-        num: '002',
-        titleLead: t('welcome.features.items.1.title_lead'),
-        titleEm: t('welcome.features.items.1.title_em'),
-        description: t('welcome.features.items.1.description'),
-        glossBars: [80, 50, 65, 90, 30, 60],
-        glossTail: '60 / 40 lock',
-    },
-    {
-        num: '003',
-        titleLead: t('welcome.features.items.2.title_lead'),
-        titleEm: t('welcome.features.items.2.title_em'),
-        description: t('welcome.features.items.2.description'),
-        glossLead: '→ Marta pays Luca · €68.20',
-    },
-    {
-        num: '004',
-        titleLead: t('welcome.features.items.3.title_lead'),
-        titleEm: t('welcome.features.items.3.title_em'),
-        description: t('welcome.features.items.3.description'),
-        glossLead: 'netflix · spotify · gym · salary · 1st mo.',
-    },
-    {
-        num: '005',
-        titleLead: t('welcome.features.items.4.title_lead'),
-        titleEm: t('welcome.features.items.4.title_em'),
-        description: t('welcome.features.items.4.description'),
-        glossLead: '↓ scan · ↻ confirm · ✓ saved',
-    },
-    {
-        num: '006',
-        titleLead: t('welcome.features.items.5.title_lead'),
-        titleEm: t('welcome.features.items.5.title_em'),
-        description: t('welcome.features.items.5.description'),
-        glossLead: '.csv · .pdf · e2e · sepa',
-    },
+const categories = () => [
+    { label: t('welcome.features.tiles.ledgers.categories.housing'), color: 'c1' as const, amount: '€ 540' },
+    { label: t('welcome.features.tiles.ledgers.categories.groceries'), color: 'c4' as const, amount: '€ 312' },
+    { label: t('welcome.features.tiles.ledgers.categories.eating_out'), color: 'c6' as const, amount: '€ 186' },
+];
+
+const currencies = [
+    { value: 'EUR', label: 'EUR €' },
+    { value: 'USD', label: 'USD $' },
+    { value: 'GBP', label: 'GBP £' },
+    { value: 'CHF', label: 'CHF' },
+    { value: 'CAD', label: 'CAD $' },
+];
+
+const privacyItems = () => [
+    { label: t('welcome.features.tiles.privacy.items.members_only') },
+    { label: t('welcome.features.tiles.privacy.items.self_delete') },
 ];
 </script>
 
 <template>
-    <section id="features" class="border-b border-rule-2">
-        <div class="mx-auto w-full max-w-[1320px] px-6 py-20 md:px-8 md:py-24">
-            <div class="mb-16 grid gap-10 md:grid-cols-[1fr_1.2fr] md:items-end md:gap-16">
-                <div>
-                    <div class="eyebrow">{{ $t('welcome.features.eyebrow') }}</div>
-                    <h2 class="m-0 mt-4 font-serif text-[clamp(40px,5vw,68px)] leading-none tracking-[-0.02em] text-balance">
-                        {{ $t('welcome.features.title_lead') }}
-                        <em class="not-italic-[0]" style="font-style: italic; color: var(--brand)">{{ $t('welcome.features.title_em') }}</em>
-                    </h2>
-                </div>
-                <p class="m-0 max-w-[460px] text-[17px] text-muted-foreground">{{ $t('welcome.features.lede') }}</p>
-            </div>
+    <MarketingSection id="features" rule>
+        <MarketingSectionHead :kicker="t('welcome.features.kicker')" :heading="t('welcome.features.title')" :lede="t('welcome.features.lede')" />
 
-            <div class="grid grid-cols-2 border-t border-rule lg:grid-cols-3">
-                <article
-                    v-for="(feature, index) in features()"
-                    :key="feature.num"
-                    class="border-r border-b border-rule-2 px-2 py-8 lg:px-7"
-                    :class="{
-                        'border-r-0': (index + 1) % 2 === 0,
-                        'lg:border-r': (index + 1) % 3 !== 0,
-                        'lg:border-r-0': (index + 1) % 3 === 0,
-                    }"
-                >
-                    <span class="font-mono text-[11px] tracking-[0.1em] text-muted-foreground">{{ feature.num }}</span>
-                    <h3 class="mt-5 mb-2.5 font-serif text-[26px] leading-[1.15] tracking-[-0.01em]">
-                        {{ feature.titleLead }}
-                        <em class="not-italic-[0]" style="font-style: italic; color: var(--brand)">{{ feature.titleEm }}</em>
-                        <template v-if="feature.titleTail">{{ feature.titleTail }}</template>
-                    </h3>
-                    <p class="m-0 max-w-[32ch] text-[14.5px] text-muted-foreground">{{ feature.description }}</p>
-                    <div
-                        class="relative mt-5 flex h-16 items-center overflow-hidden rounded-sm border border-rule-2 bg-paper-2 px-3.5 font-mono text-[11px] tracking-[0.04em] text-muted-foreground"
-                    >
-                        <span v-if="feature.glossLead" class="mr-auto truncate">{{ feature.glossLead }}</span>
-                        <div v-if="feature.glossBars" class="flex h-7 items-end gap-1">
-                            <span
-                                v-for="(h, i) in feature.glossBars"
-                                :key="i"
-                                class="w-1.5 rounded-sm"
-                                :class="i === 0 || i === 3 ? 'bg-brand opacity-90' : 'bg-muted-foreground/30'"
-                                :style="{ height: `${h}%` }"
-                            />
+        <FeatureBento v-reveal>
+            <FeatureTile :title="t('welcome.features.tiles.splits.title')" glyph="%" color="c1">
+                {{ t('welcome.features.tiles.splits.description') }}
+                <template #demo>
+                    <SplitMemberRow name="Marta" initials="M" :amount="324" :percentage="60" color="c1" />
+                    <SplitMemberRow name="Luca" initials="L" :amount="216" :percentage="40" color="c2" />
+                    <SettleBanner direction="owes-you" name="Luca" :amount="76.3">
+                        <Button size="sm">{{ t('welcome.features.tiles.splits.cta') }}</Button>
+                    </SettleBanner>
+                </template>
+            </FeatureTile>
+
+            <FeatureTile :title="t('welcome.features.tiles.ledgers.title')" glyph="◐" color="c3">
+                {{ t('welcome.features.tiles.ledgers.description') }}
+                <template #demo>
+                    <VisXYContainer :data="spendingTrend" :height="92" :margin="{ left: 0, right: 0, top: 0, bottom: 20 }" :y-domain="[0, undefined]">
+                        <VisGroupedBar :x="trendXAccessor" :y="trendYAccessor" :color="trendColorAccessor" :rounded-corners="2" :bar-padding="0.25" />
+                        <VisAxis
+                            type="x"
+                            :x="trendXAccessor"
+                            :tick-format="formatQuarterTick"
+                            :tick-line="false"
+                            :domain-line="false"
+                            :grid-line="false"
+                            :num-ticks="4"
+                        />
+                    </VisXYContainer>
+                    <div class="mt-3 flex flex-col">
+                        <div
+                            v-for="category in categories()"
+                            :key="category.label"
+                            class="flex items-center gap-2.5 border-t border-line py-2 text-[13px] first:border-t-0 first:pt-0"
+                        >
+                            <Dot :color="category.color" />
+                            <span class="flex-1">{{ category.label }}</span>
+                            <span class="num text-[12.5px] font-semibold">{{ category.amount }}</span>
                         </div>
-                        <span v-if="feature.glossTail" class="ml-auto truncate">{{ feature.glossTail }}</span>
                     </div>
-                </article>
-            </div>
-        </div>
-    </section>
+                </template>
+            </FeatureTile>
+
+            <FeatureTile :title="t('welcome.features.tiles.currency.title')" glyph="⇄" color="c2">
+                {{ t('welcome.features.tiles.currency.description') }}
+                <template #demo>
+                    <ChipGroup model-value="EUR" :options="currencies" />
+                </template>
+            </FeatureTile>
+
+            <FeatureTile :title="t('welcome.features.tiles.privacy.title')" glyph="◇" color="c4">
+                {{ t('welcome.features.tiles.privacy.description') }}
+                <template #demo>
+                    <CheckList :items="privacyItems()" tone="pos" />
+                </template>
+            </FeatureTile>
+        </FeatureBento>
+    </MarketingSection>
 </template>

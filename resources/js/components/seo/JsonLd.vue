@@ -43,7 +43,7 @@ const schemaJson = computed(() => JSON.stringify(schema.value));
 
 <template>
     <Head>
-        <!-- eslint-disable-next-line vue/no-v-html -->
+        <!-- eslint-disable-next-line vue/no-v-html, vue/no-v-text-v-html-on-component -->
         <component :is="'script'" type="application/ld+json" v-html="schemaJson" />
     </Head>
 </template>

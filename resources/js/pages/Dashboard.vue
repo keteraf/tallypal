@@ -80,128 +80,57 @@ const stats = computed(() => [
         helper: t('dashboard.awaiting_response'),
     },
 ]);
+
+const charts = computed(() => [
+    { label: t('dashboard.users_over_time'), data: usersChartData.value, color: 'var(--c1)', type: 'bar' as const },
+    { label: t('dashboard.tallies_over_time'), data: talliesChartData.value, color: 'var(--c2)', type: 'bar' as const },
+    { label: t('dashboard.transactions_over_time'), data: transactionsChartData.value, color: 'var(--c3)', type: 'line' as const },
+]);
 </script>
 
 <template>
     <Head :title="$t('common.dashboard')" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="flex flex-col gap-9 p-6 md:p-8">
-            <div class="border-b border-rule pb-6">
-                <div class="eyebrow mb-3">{{ $t('dashboard.crumb') }}</div>
-                <h1 class="m-0 font-serif text-[clamp(36px,5vw,56px)] leading-none tracking-[-0.02em]">
-                    {{ $t('dashboard.title_lead') }}
-                    <em class="not-italic-[0]" style="font-style: italic; color: var(--brand)">{{ $t('dashboard.title_em') }}</em>
+        <div class="mx-auto w-full max-w-330 px-5 py-6 md:px-8 md:py-8">
+            <div class="mb-6 border-b border-line pb-6">
+                <div class="mb-1.5 text-[13px] text-text-3">{{ $t('dashboard.crumb') }}</div>
+                <h1 class="text-[28px] font-semibold tracking-[-0.03em] text-text md:text-3xl">
+                    {{ $t('dashboard.title_lead') }} {{ $t('dashboard.title_em') }}
                 </h1>
             </div>
 
-            <div class="grid grid-cols-1 overflow-hidden rounded-sm border border-rule sm:grid-cols-2 lg:grid-cols-4">
-                <div
-                    v-for="(stat, idx) in stats"
-                    :key="stat.label"
-                    class="border-b border-rule-2 px-7 py-6"
-                    :class="{
-                        'lg:border-r': (idx + 1) % 4 !== 0,
-                        'sm:border-r sm:max-lg:border-r-0': (idx + 1) % 2 !== 0,
-                        'lg:border-b-0': idx >= stats.length - 4,
-                        'sm:max-lg:border-b-0': idx >= stats.length - 2,
-                    }"
-                >
-                    <div class="mb-3.5 flex items-center gap-2">
-                        <component :is="stat.icon" class="size-4 text-muted-foreground" />
-                        <span class="eyebrow">{{ stat.label }}</span>
+            <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+                <div v-for="stat in stats" :key="stat.label" class="rounded-card bg-surface px-4 py-[15px]">
+                    <div class="flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.06em] text-text-3 uppercase">
+                        <component :is="stat.icon" class="size-3.5" />
+                        {{ stat.label }}
                     </div>
-                    <div class="font-serif text-[40px] leading-none tracking-[-0.02em]">{{ stat.value }}</div>
-                    <div class="mt-3 font-mono text-[12px] text-muted-foreground">{{ stat.helper }}</div>
+                    <div class="num mt-[9px] text-[22px] font-semibold text-text">{{ stat.value }}</div>
+                    <div class="mt-1 text-[12px] text-text-3">{{ stat.helper }}</div>
                 </div>
             </div>
 
-            <div class="grid gap-6 lg:grid-cols-3">
-                <section class="overflow-hidden rounded-sm border border-rule">
-                    <div class="flex items-baseline justify-between border-b border-rule-2 px-6 py-4">
-                        <span class="font-serif text-lg text-foreground italic">{{ $t('dashboard.users_over_time') }}</span>
-                        <span class="font-mono text-[10px] tracking-[0.08em] text-muted-foreground uppercase">{{
-                            $t('dashboard.last_30_days')
-                        }}</span>
+            <div class="mt-9 grid gap-4 lg:grid-cols-3">
+                <section v-for="chart in charts" :key="chart.label" class="rounded-card bg-surface px-4 py-4">
+                    <div class="mb-1 flex items-baseline justify-between">
+                        <span class="text-[14px] font-medium text-text">{{ chart.label }}</span>
+                        <span class="font-mono text-[10px] tracking-[0.04em] text-text-3 uppercase">{{ $t('dashboard.last_30_days') }}</span>
                     </div>
-                    <div class="px-4 py-4">
-                        <VisXYContainer
-                            :data="usersChartData"
-                            :height="208"
-                            :margin="{ left: 40, right: 8, top: 8, bottom: 24 }"
-                            :y-domain="[0, undefined]"
-                        >
-                            <VisGroupedBar :x="xAccessor" :y="yAccessor" color="var(--brand)" :rounded-corners="2" />
-                            <VisAxis
-                                type="x"
-                                :x="xAccessor"
-                                :tick-line="false"
-                                :domain-line="false"
-                                :grid-line="false"
-                                :num-ticks="5"
-                                :tick-format="formatXTick"
-                            />
-                            <VisAxis type="y" :num-ticks="3" :tick-line="false" :domain-line="false" />
-                        </VisXYContainer>
-                    </div>
-                </section>
-
-                <section class="overflow-hidden rounded-sm border border-rule">
-                    <div class="flex items-baseline justify-between border-b border-rule-2 px-6 py-4">
-                        <span class="font-serif text-lg text-foreground italic">{{ $t('dashboard.tallies_over_time') }}</span>
-                        <span class="font-mono text-[10px] tracking-[0.08em] text-muted-foreground uppercase">{{
-                            $t('dashboard.last_30_days')
-                        }}</span>
-                    </div>
-                    <div class="px-4 py-4">
-                        <VisXYContainer
-                            :data="talliesChartData"
-                            :height="208"
-                            :margin="{ left: 40, right: 8, top: 8, bottom: 24 }"
-                            :y-domain="[0, undefined]"
-                        >
-                            <VisGroupedBar :x="xAccessor" :y="yAccessor" color="var(--ink-2)" :rounded-corners="2" />
-                            <VisAxis
-                                type="x"
-                                :x="xAccessor"
-                                :tick-line="false"
-                                :domain-line="false"
-                                :grid-line="false"
-                                :num-ticks="5"
-                                :tick-format="formatXTick"
-                            />
-                            <VisAxis type="y" :num-ticks="3" :tick-line="false" :domain-line="false" />
-                        </VisXYContainer>
-                    </div>
-                </section>
-
-                <section class="overflow-hidden rounded-sm border border-rule">
-                    <div class="flex items-baseline justify-between border-b border-rule-2 px-6 py-4">
-                        <span class="font-serif text-lg text-foreground italic">{{ $t('dashboard.transactions_over_time') }}</span>
-                        <span class="font-mono text-[10px] tracking-[0.08em] text-muted-foreground uppercase">{{
-                            $t('dashboard.last_30_days')
-                        }}</span>
-                    </div>
-                    <div class="px-4 py-4">
-                        <VisXYContainer
-                            :data="transactionsChartData"
-                            :height="208"
-                            :margin="{ left: 40, right: 8, top: 8, bottom: 24 }"
-                            :y-domain="[0, undefined]"
-                        >
-                            <VisLine :x="xAccessor" :y="yAccessor" color="var(--brand)" :curve-type="CurveType.Natural" />
-                            <VisAxis
-                                type="x"
-                                :x="xAccessor"
-                                :tick-line="false"
-                                :domain-line="false"
-                                :grid-line="false"
-                                :num-ticks="5"
-                                :tick-format="formatXTick"
-                            />
-                            <VisAxis type="y" :num-ticks="3" :tick-line="false" :domain-line="false" />
-                        </VisXYContainer>
-                    </div>
+                    <VisXYContainer :data="chart.data" :height="208" :margin="{ left: 40, right: 8, top: 8, bottom: 24 }" :y-domain="[0, undefined]">
+                        <VisGroupedBar v-if="chart.type === 'bar'" :x="xAccessor" :y="yAccessor" :color="chart.color" :rounded-corners="2" />
+                        <VisLine v-else :x="xAccessor" :y="yAccessor" :color="chart.color" :curve-type="CurveType.Natural" />
+                        <VisAxis
+                            type="x"
+                            :x="xAccessor"
+                            :tick-line="false"
+                            :domain-line="false"
+                            :grid-line="false"
+                            :num-ticks="5"
+                            :tick-format="formatXTick"
+                        />
+                        <VisAxis type="y" :num-ticks="3" :tick-line="false" :domain-line="false" />
+                    </VisXYContainer>
                 </section>
             </div>
         </div>

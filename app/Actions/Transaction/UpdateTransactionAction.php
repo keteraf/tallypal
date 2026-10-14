@@ -20,7 +20,8 @@ final readonly class UpdateTransactionAction
 
             return $transaction->refresh();
         } catch (Throwable $e) {
-            abort($e->getCode(), $e->getMessage());
+            report($e);
+            abort(500);
         }
     }
 }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import AppHead from '@/components/seo/AppHead.vue';
 import InputError from '@/components/InputError.vue';
+import AppHead from '@/components/seo/AppHead.vue';
 import TextLink from '@/components/TextLink.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,7 +28,7 @@ const submit = () => {
     <AuthLayout :title="$t('auth.forgot_password.title')" :description="$t('auth.forgot_password.description')">
         <AppHead :title="$t('auth.forgot_password.head_title')" :noindex="true" />
 
-        <div v-if="status" class="mb-4 text-center text-sm font-medium text-green-600">
+        <div v-if="status" class="mb-4 text-center text-sm font-medium text-pos">
             {{ status }}
         </div>
 
@@ -40,7 +40,8 @@ const submit = () => {
                         id="email"
                         type="email"
                         name="email"
-                        autocomplete="off"
+                        variant="filled"
+                        autocomplete="email"
                         v-model="form.email"
                         autofocus
                         :placeholder="$t('common.placeholder.email')"
@@ -49,7 +50,7 @@ const submit = () => {
                 </div>
 
                 <div class="my-6 flex items-center justify-start">
-                    <Button class="w-full" :disabled="form.processing">
+                    <Button size="touch" class="w-full" :disabled="form.processing">
                         <LoaderCircle v-if="form.processing" class="h-4 w-4 animate-spin" />
                         {{ $t('auth.forgot_password.email_button') }}
                     </Button>

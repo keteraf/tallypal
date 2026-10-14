@@ -23,12 +23,12 @@ const submit = () => {
     <AuthLayout :title="$t('auth.verify_email.title')" :description="$t('auth.verify_email.description')">
         <AppHead :title="$t('auth.verify_email.head_title')" :noindex="true" />
 
-        <div v-if="status === 'verification-link-sent'" class="mb-4 text-center text-sm font-medium text-green-600">
+        <div v-if="status === 'verification-link-sent'" class="mb-4 text-center text-sm font-medium text-pos">
             {{ $t('auth.verify_email.verification_link_sent') }}
         </div>
 
         <form @submit.prevent="submit" class="space-y-6 text-center">
-            <Button :disabled="form.processing" variant="secondary">
+            <Button :disabled="form.processing" variant="secondary" size="touch">
                 <LoaderCircle v-if="form.processing" class="h-4 w-4 animate-spin" />
                 {{ $t('auth.verify_email.resend_button') }}
             </Button>

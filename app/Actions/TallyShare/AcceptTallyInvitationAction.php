@@ -6,6 +6,7 @@ namespace App\Actions\TallyShare;
 
 use App\Models\TallyInvitation;
 use App\Models\User;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Throwable;
 
 class AcceptTallyInvitationAction
@@ -27,8 +28,11 @@ class AcceptTallyInvitationAction
             }
 
             $invitation->update(['status' => TallyInvitation::STATUS_ACCEPTED]);
+        } catch (ModelNotFoundException) {
+            abort(404);
         } catch (Throwable $e) {
-            abort($e->getCode(), $e->getMessage());
+            report($e);
+            abort(500);
         }
     }
 }

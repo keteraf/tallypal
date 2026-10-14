@@ -1,32 +1,60 @@
 <script setup lang="ts">
-import type { CategoryBreakdown } from '../types';
-import { dotClass, formatCurrency } from '../utils';
+import { CardHeader } from '@/components/ui/card-header';
+import { Dot } from '@/components/ui/dot';
+import { MiniBar } from '@/components/ui/mini-bar';
+import { breakdownRowColors } from '@/lib/category';
+import { stats } from '@/routes';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+import type { CategoryBreakdown, CurrencyTotal } from '../types';
+import { formatCurrency, formatCurrencyTotals } from '../utils';
 
-defineProps<{
+const props = defineProps<{
     categories: CategoryBreakdown[];
     currentMonthLabel: string;
     currencySymbol: string;
     decimals: number;
+    /** This month's expenses in other currencies, listed apart and never added in (O-04). */
+    otherCurrencies: CurrencyTotal[];
 }>();
+
+const { t } = useI18n();
+
+const rows = computed(() => {
+    const colors = breakdownRowColors(props.categories);
+
+    return props.categories.map((cat, index) => ({
+        ...cat,
+        name: cat.is_other ? t('home.categories.other') : cat.name,
+        colors: colors[index],
+    }));
+});
 </script>
 
 <template>
-    <section v-if="categories.length > 0" class="overflow-hidden rounded-sm border border-rule">
-        <div class="flex items-baseline justify-between border-b border-rule-2 px-7 py-5">
-            <span class="font-serif text-xl text-foreground italic">{{ $t('home.categories.title') }}</span>
-            <span class="font-mono text-[11px] tracking-[0.06em] text-muted-foreground uppercase">{{ currentMonthLabel }}</span>
-        </div>
-        <div class="py-2">
-            <div
-                v-for="(cat, idx) in categories"
-                :key="cat.name"
-                class="grid grid-cols-[18px_1fr_auto_auto] items-center gap-3.5 border-b border-rule-2 px-7 py-3 last:border-b-0"
-            >
-                <span class="size-2 rounded-full" :class="dotClass(idx)" />
-                <span class="truncate text-[14.5px] text-foreground">{{ cat.name }}</span>
-                <span class="font-mono text-[11px] tracking-[0.06em] text-muted-foreground">{{ cat.percentage }}%</span>
-                <span class="tabular font-mono text-[14px] text-foreground">{{ currencySymbol }} {{ formatCurrency(cat.amount, decimals) }}</span>
+    <section v-if="categories.length > 0" class="rounded-card bg-surface p-4 sm:p-[22px]">
+        <CardHeader :title="t('home.categories.title')" :action-label="t('home.categories.details')" :action-href="stats.url()">
+            <template #meta>
+                <span class="text-[12px] font-medium text-text-3">{{ currentMonthLabel }}</span>
+            </template>
+        </CardHeader>
+
+        <div>
+            <div v-for="cat in rows" :key="cat.name" class="flex items-center gap-3 border-t border-line py-3 first:border-t-0">
+                <Dot :color="cat.colors.dot" />
+                <span class="min-w-0 flex-1">
+                    <span class="block truncate text-[14px] text-text">{{ cat.name }}</span>
+                    <MiniBar class="mt-[7px]" :value="cat.bar_fill" :color="cat.colors.bar" />
+                </span>
+                <span class="shrink-0 text-right">
+                    <span class="num block text-[14px] font-medium text-text">{{ currencySymbol }} {{ formatCurrency(cat.amount, decimals) }}</span>
+                    <span class="num mt-1 block text-[11px] text-text-3">{{ cat.percentage }}%</span>
+                </span>
             </div>
         </div>
+
+        <p v-if="otherCurrencies.length > 0" class="num border-t border-line pt-3 text-[12px] text-text-3">
+            {{ t('common.other_currencies', { amounts: formatCurrencyTotals(otherCurrencies) }) }}
+        </p>
     </section>
 </template>

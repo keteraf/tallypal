@@ -1,29 +1,62 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ChipGroup, type ChipOption } from '@/components/ui/choice-chip';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
+import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import WebLayout from '@/layouts/WebLayout.vue';
+import { CATEGORY_COLORS, TALLY_GLYPHS } from '@/lib/category';
 import tallies from '@/routes/tallies';
-import { type BreadcrumbItem } from '@/types';
+import { type BreadcrumbItem, type CurrencyOption } from '@/types';
 import { Form, Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { Trash2 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{
+    other_members_count: number;
+    currencies: CurrencyOption[];
     tally: {
         tally_id: number;
         uuid: string;
         name: string;
         description: string;
         owner_id: number;
+        color: string | null;
+        glyph: string | null;
+        default_currency_uuid: string | null;
     };
 }>();
 
 const page = usePage();
 const { t } = useI18n();
 const isOwner = computed(() => page.props.auth.user.id === props.tally.owner_id);
+
+const selectedColor = ref<string>(props.tally.color ?? '');
+const selectedGlyph = ref<string>(props.tally.glyph ?? '');
+const NO_CURRENCY = 'none';
+const selectedCurrency = ref<string>(props.tally.default_currency_uuid ?? NO_CURRENCY);
+
+const colorOptions: ChipOption<string>[] = CATEGORY_COLORS.map((c) => ({
+    value: c,
+    color: c,
+}));
+
+const glyphOptions: ChipOption<string>[] = TALLY_GLYPHS.map((g) => ({
+    value: g,
+    glyph: g,
+}));
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -41,14 +74,9 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 const deleteForm = useForm({});
-const showDeleteDialog = ref(false);
 
 const deleteTally = () => {
-    deleteForm.delete(tallies.destroy.url(props.tally.uuid), {
-        onSuccess: () => {
-            showDeleteDialog.value = false;
-        },
-    });
+    deleteForm.delete(tallies.destroy.url(props.tally.uuid));
 };
 </script>
 
@@ -56,24 +84,91 @@ const deleteTally = () => {
     <Head :title="$t('tallies.edit_title', { name: tally.name })" />
 
     <WebLayout :breadcrumbs="breadcrumbs">
-        <div class="mx-auto w-full max-w-[1320px] px-6 py-10 max-[768px]:pb-28 md:px-8">
-            <div class="mb-4 flex items-center gap-2 font-mono text-[11px] tracking-[0.1em] text-muted-foreground uppercase">
-                <Link :href="tallies.index.url()" class="transition-colors hover:text-foreground">{{ $t('tallies.title') }}</Link>
-                <span class="opacity-60">›</span>
-                <Link :href="tallies.transactions.index.url(tally.uuid)" class="transition-colors hover:text-foreground">{{ tally.name }}</Link>
-                <span class="opacity-60">›</span>
-                <span class="text-foreground">{{ $t('common.edit') }}</span>
+        <div class="mx-auto w-full max-w-2xl px-5 py-6 pb-28 md:px-8 md:py-10">
+            <div class="mb-6 border-b border-line pb-6">
+                <Link :href="tallies.transactions.index.url(tally.uuid)" class="eyebrow mb-2 block transition-colors hover:text-text">
+                    {{ tally.name }}
+                </Link>
+                <h1 class="text-[28px] font-semibold tracking-[-0.03em] text-text md:text-3xl">{{ $t('tallies.edit_heading') }}</h1>
             </div>
 
-            <div class="mb-8 flex flex-col gap-3 border-b border-rule pb-6 sm:flex-row sm:items-end sm:justify-between">
-                <h1 class="m-0 font-serif text-[clamp(36px,5vw,48px)] leading-[1.05] tracking-[-0.02em]">
-                    {{ $t('tallies.edit_lead') }}
-                    <em class="not-italic-[0]" style="font-style: italic; color: var(--brand)">{{ tally.name }}</em>
-                </h1>
+            <div class="rounded-card border border-line bg-surface p-6 md:p-7">
+                <Form
+                    :action="tallies.update.url(tally.uuid)"
+                    method="put"
+                    :defaults="{
+                        name: tally.name,
+                        description: tally.description,
+                        color: tally.color ?? '',
+                        glyph: tally.glyph ?? '',
+                    }"
+                    #default="{ errors, processing }"
+                >
+                    <FormField :label="$t('tallies.name_label')" for="name" :error="errors.name">
+                        <Input
+                            id="name"
+                            name="name"
+                            variant="filled"
+                            :default-value="tally.name"
+                            maxlength="50"
+                            :placeholder="$t('tallies.name_placeholder')"
+                            required
+                            autofocus
+                        />
+                    </FormField>
 
-                <Dialog v-if="isOwner" v-model:open="showDeleteDialog">
+                    <FormField :label="$t('tallies.description_label')" for="description" :error="errors.description">
+                        <Textarea
+                            id="description"
+                            name="description"
+                            variant="filled"
+                            :default-value="tally.description"
+                            :placeholder="$t('tallies.description_placeholder')"
+                        />
+                    </FormField>
+
+                    <FormField :label="$t('tallies.color_icon_label')">
+                        <ChipGroup v-model="selectedColor" :options="colorOptions" />
+                        <ChipGroup v-model="selectedGlyph" :options="glyphOptions" class="mt-2" />
+                        <input type="hidden" name="color" :value="selectedColor" />
+                        <input type="hidden" name="glyph" :value="selectedGlyph" />
+                    </FormField>
+
+                    <FormField :label="$t('tallies.default_currency_label')" for="default_currency_uuid" :error="errors.default_currency_uuid">
+                        <Select v-model="selectedCurrency">
+                            <SelectTrigger id="default_currency_uuid" variant="filled">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem :value="NO_CURRENCY">{{ $t('settings.you.default_currency_none') }}</SelectItem>
+                                <SelectItem v-for="currency in currencies" :key="currency.uuid" :value="currency.uuid">
+                                    {{ currency.code }} {{ currency.symbol }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <input type="hidden" name="default_currency_uuid" :value="selectedCurrency === NO_CURRENCY ? '' : selectedCurrency" />
+                        <p class="mt-1.5 text-[12px] text-text-3">{{ $t('tallies.default_currency_hint') }}</p>
+                    </FormField>
+
+                    <div class="mt-2 flex justify-end gap-3">
+                        <Button type="button" variant="ghost" size="touch" as-child>
+                            <Link :href="tallies.transactions.index.url(tally.uuid)">{{ $t('common.cancel') }}</Link>
+                        </Button>
+                        <Button type="submit" size="touch" :disabled="processing">
+                            {{ processing ? $t('common.updating') : $t('common.update') }}
+                        </Button>
+                    </div>
+                </Form>
+            </div>
+
+            <div v-if="isOwner" class="mt-6 space-y-4 rounded-sm border border-neg/30 bg-neg/[0.05] px-5 py-4">
+                <div class="space-y-1 text-neg">
+                    <p class="font-mono text-xs tracking-[0.12em] uppercase">{{ $t('common.warning') }}</p>
+                    <p class="text-sm">{{ $t('tallies.delete_confirm_description', { name: tally.name }) }}</p>
+                </div>
+                <Dialog>
                     <DialogTrigger as-child>
-                        <Button variant="ghost" class="hidden border-neg/40 text-neg hover:border-neg min-[769px]:inline-flex">
+                        <Button variant="destructive">
                             <Trash2 class="size-4" />
                             {{ $t('tallies.delete_tally') }}
                         </Button>
@@ -82,10 +177,14 @@ const deleteTally = () => {
                         <DialogHeader>
                             <DialogTitle>{{ $t('tallies.delete_confirm_title') }}</DialogTitle>
                             <DialogDescription>{{ $t('tallies.delete_confirm_description', { name: tally.name }) }}</DialogDescription>
+                            <p v-if="other_members_count > 0" class="text-sm font-medium text-neg">
+                                {{ $t('tallies.delete_shared_notice', { name: tally.name, count: other_members_count }, other_members_count) }}
+                            </p>
                         </DialogHeader>
-                        <div class="px-7 py-5"></div>
                         <DialogFooter>
-                            <Button variant="ghost" @click="showDeleteDialog = false">{{ $t('common.cancel') }}</Button>
+                            <DialogClose as-child>
+                                <Button variant="ghost" type="button">{{ $t('common.cancel') }}</Button>
+                            </DialogClose>
                             <Button variant="destructive" :disabled="deleteForm.processing" @click="deleteTally">
                                 {{ deleteForm.processing ? $t('common.deleting') : $t('tallies.delete_tally') }}
                             </Button>
@@ -93,79 +192,6 @@ const deleteTally = () => {
                     </DialogContent>
                 </Dialog>
             </div>
-
-            <div class="max-w-[880px] rounded-sm border border-rule bg-background px-9 pt-9 pb-7">
-                <Form
-                    :action="tallies.update.url(tally.uuid)"
-                    method="put"
-                    :defaults="{
-                        name: tally.name,
-                        description: tally.description,
-                    }"
-                    #default="{ errors, processing }"
-                >
-                    <div class="grid gap-7">
-                        <div class="flex flex-col gap-2">
-                            <label for="name" class="eyebrow">{{ $t('tallies.name_label') }}</label>
-                            <Input
-                                id="name"
-                                name="name"
-                                :default-value="tally.name"
-                                :placeholder="$t('tallies.name_placeholder')"
-                                required
-                                autofocus
-                            />
-                            <div v-if="errors.name" class="text-sm font-medium text-destructive">{{ errors.name }}</div>
-                        </div>
-
-                        <div class="flex flex-col gap-2">
-                            <label for="description" class="eyebrow">{{ $t('tallies.description_label') }}</label>
-                            <Textarea
-                                id="description"
-                                name="description"
-                                :default-value="tally.description"
-                                :placeholder="$t('tallies.description_placeholder')"
-                            />
-                            <div v-if="errors.description" class="text-sm font-medium text-destructive">{{ errors.description }}</div>
-                        </div>
-                    </div>
-
-                    <div class="mt-9 flex justify-end gap-3 border-t border-rule-2 pt-6">
-                        <Button variant="ghost" as-child>
-                            <Link :href="tallies.transactions.index.url(tally.uuid)">{{ $t('common.cancel') }}</Link>
-                        </Button>
-                        <Button type="submit" :disabled="processing"> {{ processing ? $t('common.updating') : $t('common.update') }} → </Button>
-                    </div>
-                </Form>
-            </div>
-        </div>
-
-        <div
-            v-if="isOwner"
-            class="fixed inset-x-0 bottom-0 z-40 border-t border-rule bg-background/95 p-3 backdrop-blur min-[769px]:hidden"
-            style="padding-bottom: calc(env(safe-area-inset-bottom) + 0.75rem)"
-        >
-            <Dialog v-model:open="showDeleteDialog">
-                <DialogTrigger as-child>
-                    <Button variant="destructive" class="w-full">
-                        <Trash2 class="size-4" />
-                        {{ $t('tallies.delete_tally') }}
-                    </Button>
-                </DialogTrigger>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>{{ $t('tallies.delete_confirm_title') }}</DialogTitle>
-                        <DialogDescription>{{ $t('tallies.delete_confirm_description', { name: tally.name }) }}</DialogDescription>
-                    </DialogHeader>
-                    <div class="px-7 py-5"></div>
-                    <DialogFooter>
-                        <Button variant="ghost" @click="showDeleteDialog = false">{{ $t('common.cancel') }}</Button>
-                        <Button variant="destructive" :disabled="deleteForm.processing" @click="deleteTally">
-                            {{ deleteForm.processing ? $t('common.deleting') : $t('tallies.delete_tally') }}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
         </div>
     </WebLayout>
 </template>

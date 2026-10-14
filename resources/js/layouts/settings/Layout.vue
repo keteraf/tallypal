@@ -27,13 +27,10 @@ const currentPath = computed(() => page.url.split('?')[0]);
 </script>
 
 <template>
-    <div class="mx-auto w-full max-w-[1320px] px-6 py-10 md:px-8">
-        <div class="mb-9 border-b border-rule pb-6">
-            <div class="eyebrow mb-3">{{ $t('settings.crumb') }}</div>
-            <h1 class="m-0 font-serif text-[clamp(36px,5vw,56px)] leading-none tracking-[-0.02em]">
-                {{ $t('settings.title_lead') }}
-                <em class="not-italic-[0]" style="font-style: italic; color: var(--brand)">{{ $t('settings.title_em') }}</em>
-            </h1>
+    <div class="mx-auto w-full max-w-330 px-5 py-6 pb-28 md:px-8 md:py-8">
+        <div class="mb-[18px] md:mb-[26px]">
+            <h1 class="text-[24px] font-semibold tracking-[-0.03em] text-text sm:text-[26px]">{{ $t('settings.title') }}</h1>
+            <p class="mt-[3px] text-[13px] text-text-3">{{ $t('settings.subtitle') }}</p>
         </div>
 
         <div class="grid gap-10 lg:grid-cols-[200px_1fr] lg:gap-14">
@@ -44,17 +41,17 @@ const currentPath = computed(() => page.url.split('?')[0]);
                         v-for="item in sidebarNavItems"
                         :key="item.href"
                         :href="item.href"
-                        class="flex items-center justify-between border-b border-rule-2 py-2.5 text-sm transition-colors"
-                        :class="currentPath === item.href ? 'font-medium text-foreground' : 'text-muted-foreground hover:text-foreground'"
+                        class="flex items-center justify-between border-b border-line py-2.5 text-sm transition-colors"
+                        :class="currentPath === item.href ? 'font-medium text-text' : 'text-text-3 hover:text-text'"
                     >
                         <span>{{ item.title }}</span>
-                        <span v-if="currentPath === item.href" class="font-mono text-[10px] tracking-[0.06em] text-brand">●</span>
+                        <span v-if="currentPath === item.href" class="font-mono text-xs text-accent">●</span>
                     </Link>
                 </nav>
             </aside>
 
             <div class="min-w-0">
-                <section class="max-w-[680px] space-y-12">
+                <section class="max-w-2xl space-y-12">
                     <slot />
                 </section>
             </div>

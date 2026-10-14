@@ -3,6 +3,7 @@ import createServer from '@inertiajs/vue3/server';
 import { renderToString } from '@vue/server-renderer';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createSSRApp, DefineComponent, h } from 'vue';
+import { vReveal } from './directives/reveal';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -11,10 +12,12 @@ createServer(
         createInertiaApp({
             page,
             render: renderToString,
-            title: (title) => `${title} - ${appName}`,
+            title: (title) => (title ? `${title} — ${appName}` : appName),
             resolve: resolvePage,
             setup: ({ App, props, plugin }) =>
-                createSSRApp({ render: () => h(App, props) }).use(plugin),
+                createSSRApp({ render: () => h(App, props) })
+                    .use(plugin)
+                    .directive('reveal', vReveal),
         }),
     { cluster: true },
 );

@@ -4,31 +4,21 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
-import { useI18n } from 'vue-i18n';
 
 import HeadingSmall from '@/components/HeadingSmall.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import * as password from '@/routes/password';
-import { type BreadcrumbItem } from '@/types';
 
 const passwordInput = ref<HTMLInputElement | null>(null);
 const currentPasswordInput = ref<HTMLInputElement | null>(null);
-const { t } = useI18n();
 
 const form = useForm({
     current_password: '',
     password: '',
     password_confirmation: '',
 });
-
-const breadcrumbItems: BreadcrumbItem[] = [
-    {
-        title: t('settings.password.title'),
-        href: '/settings/password',
-    },
-];
 
 const updatePassword = () => {
     form.put(password.update.url(), {
@@ -54,7 +44,7 @@ const updatePassword = () => {
 </script>
 
 <template>
-    <AppLayout :breadcrumbs="breadcrumbItems">
+    <AppLayout>
         <Head :title="$t('settings.password.title')" />
 
         <SettingsLayout>
@@ -66,9 +56,11 @@ const updatePassword = () => {
                         <Label for="current_password">{{ $t('settings.password.current_password') }}</Label>
                         <Input
                             id="current_password"
+                            name="current_password"
                             ref="currentPasswordInput"
                             v-model="form.current_password"
                             type="password"
+                            variant="filled"
                             class="mt-1 block w-full"
                             autocomplete="current-password"
                             :placeholder="$t('common.placeholder.current_password')"
@@ -80,9 +72,11 @@ const updatePassword = () => {
                         <Label for="password">{{ $t('settings.password.new_password') }}</Label>
                         <Input
                             id="password"
+                            name="password"
                             ref="passwordInput"
                             v-model="form.password"
                             type="password"
+                            variant="filled"
                             class="mt-1 block w-full"
                             autocomplete="new-password"
                             :placeholder="$t('common.placeholder.new_password')"
@@ -94,8 +88,10 @@ const updatePassword = () => {
                         <Label for="password_confirmation">{{ $t('common.confirm_password') }}</Label>
                         <Input
                             id="password_confirmation"
+                            name="password_confirmation"
                             v-model="form.password_confirmation"
                             type="password"
+                            variant="filled"
                             class="mt-1 block w-full"
                             autocomplete="new-password"
                             :placeholder="$t('common.placeholder.confirm_password')"
@@ -112,7 +108,7 @@ const updatePassword = () => {
                             leave-active-class="transition ease-in-out"
                             leave-to-class="opacity-0"
                         >
-                            <p v-show="form.recentlySuccessful" class="text-sm text-neutral-600">{{ $t('common.saved') }}</p>
+                            <p v-show="form.recentlySuccessful" class="text-sm text-text-3">{{ $t('common.saved') }}</p>
                         </Transition>
                     </div>
                 </form>

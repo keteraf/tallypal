@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
-import { useI18n } from 'vue-i18n';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 
+import { logout } from '@/routes';
 import * as profile from '@/routes/profile';
 import * as verification from '@/routes/verification';
 
@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
-import { type BreadcrumbItem, type User } from '@/types';
+import { type User } from '@/types';
 
 interface Props {
     mustVerifyEmail: boolean;
@@ -23,7 +23,6 @@ interface Props {
 defineProps<Props>();
 
 const page = usePage();
-const { t } = useI18n();
 const user = page.props.auth.user as User;
 
 const form = useForm({
@@ -31,12 +30,9 @@ const form = useForm({
     email: user.email,
 });
 
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: t('settings.profile.title'),
-        href: '/settings/profile',
-    },
-];
+const handleLogout = () => {
+    router.flushAll();
+};
 
 const submit = () => {
     form.patch(profile.update.url(), {
@@ -46,7 +42,7 @@ const submit = () => {
 </script>
 
 <template>
-    <AppLayout :breadcrumbs="breadcrumbs">
+    <AppLayout>
         <Head :title="$t('settings.profile.title')" />
 
         <SettingsLayout>
@@ -58,6 +54,7 @@ const submit = () => {
                         <Label for="name">{{ $t('common.name') }}</Label>
                         <Input
                             id="name"
+                            variant="filled"
                             class="mt-1 block w-full"
                             v-model="form.name"
                             required
@@ -72,6 +69,7 @@ const submit = () => {
                         <Input
                             id="email"
                             type="email"
+                            variant="filled"
                             class="mt-1 block w-full"
                             v-model="form.email"
                             required
@@ -88,13 +86,13 @@ const submit = () => {
                                 :href="verification.send.url()"
                                 method="post"
                                 as="button"
-                                class="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
+                                class="text-text underline decoration-line underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current!"
                             >
                                 {{ $t('settings.profile.resend_verification') }}
                             </Link>
                         </p>
 
-                        <div v-if="status === 'verification-link-sent'" class="mt-2 text-sm font-medium text-green-600">
+                        <div v-if="status === 'verification-link-sent'" class="mt-2 text-sm font-medium text-pos">
                             {{ $t('settings.profile.verification_sent') }}
                         </div>
                     </div>
@@ -108,10 +106,17 @@ const submit = () => {
                             leave-active-class="transition ease-in-out"
                             leave-to-class="opacity-0"
                         >
-                            <p v-show="form.recentlySuccessful" class="text-sm text-neutral-600">{{ $t('common.saved') }}</p>
+                            <p v-show="form.recentlySuccessful" class="text-sm text-text-3">{{ $t('common.saved') }}</p>
                         </Transition>
                     </div>
                 </form>
+            </div>
+
+            <div class="space-y-6">
+                <HeadingSmall :title="$t('settings.profile.sign_out_heading')" :description="$t('settings.profile.sign_out_description')" />
+                <Button variant="outline" as-child class="text-neg">
+                    <Link method="post" :href="logout.url()" as="button" @click="handleLogout">{{ $t('settings.profile.sign_out') }}</Link>
+                </Button>
             </div>
 
             <DeleteUser />

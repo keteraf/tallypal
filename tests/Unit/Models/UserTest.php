@@ -27,6 +27,7 @@ it('has fillable attributes', function () {
         'email',
         'password',
         'email_verified_at',
+        'default_currency_id',
     ]);
 });
 
@@ -83,4 +84,23 @@ it('has correct casts', function () {
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ]);
+});
+
+it('derives up to two uppercase initials from the name', function (string $name, string $initials) {
+    expect(User::factory()->make(['name' => $name])->initials())->toBe($initials);
+})->with([
+    'two words' => ['marco rossi', 'MR'],
+    'three words' => ['Anna Maria Bianchi', 'AM'],
+    'single word' => ['Luca', 'L'],
+    'extra spaces' => ['  sara   neri ', 'SN'],
+    'blank' => ['   ', '··'],
+]);
+
+it('maps a user to a stable avatar colour token', function () {
+    $user = User::factory()->create();
+
+    expect($user->avatarColor())->toBeIn(['c1', 'c2', 'c3', 'c4', 'c5', 'c6'])
+        ->and($user->avatarColor())->toBe($user->avatarColor())
+        ->and(User::factory()->make(['id' => 1])->avatarColor())->toBe('c2')
+        ->and(User::factory()->make(['id' => 6])->avatarColor())->toBe('c1');
 });
