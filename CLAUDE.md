@@ -294,10 +294,12 @@ Rules — these are mandatory for all UI work:
 - Seed demo data — safe to re-run, it tears down and rebuilds its own records each time:
   `php artisan db:seed --class=DemoSeeder`.
 - Demo logins:
-  - `demo@tallypal.test` / `password` — populated account. Three tallies (a shared household
-    split 60/40, a solo tally, a shared weekend trip split 50/50 in USD), months of transactions
-    spanning last-12-weeks/this-month/this-year, a real debt settlement, and a pending
-    invitation. Use it to check every screen that has data.
+  - `demo@tallypal.test` / `password` — populated account. Six tallies (a shared household
+    split 60/40, a solo tally, a shared weekend trip split 50/50 in USD, an empty tally, a
+    mixed EUR/USD city break, and a three-member ski cabin where one member is even and one
+    still owes), months of transactions spanning last-12-weeks/this-month/this-year, and a
+    pending invitation. There is no settlement record: repayments can't be recorded yet (they
+    will get a dedicated flow). Use it to check every screen that has data.
   - `demo-empty@tallypal.test` / `password` — freshly registered account with no tallies. Use it
     to check every empty state.
 - Any run that creates, edits or deletes data through the browser re-runs DemoSeeder at the end.
