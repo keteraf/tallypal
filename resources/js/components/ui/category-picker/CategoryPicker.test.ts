@@ -140,4 +140,25 @@ describe('CategoryPicker', () => {
         expect(document.activeElement).not.toBe(filter);
         expect(document.body.textContent).toContain('Expense categories');
     });
+
+    it('dismiss() closes the open panel first, then the cleared notice, then reports nothing left', async () => {
+        const picker = mountPicker({ modelValue: idOf('groceries'), 'onUpdate:modelValue': (value: number | null) => picker.setProps({ modelValue: value }) });
+        const dismiss = (): boolean => (picker.vm as unknown as { dismiss: () => boolean }).dismiss();
+
+        expect(dismiss()).toBe(false);
+
+        await picker.setProps({ type: 'income' });
+        await picker.find('[data-picker-all]').trigger('click');
+        await nextTick();
+
+        expect(dismiss()).toBe(true);
+        await nextTick();
+        expect(picker.find('input').exists()).toBe(false);
+        expect(picker.find('[role="status"]').text()).toContain('cleared');
+
+        expect(dismiss()).toBe(true);
+        await nextTick();
+        expect(picker.find('[role="status"]').text()).toContain('No category');
+        expect(dismiss()).toBe(false);
+    });
 });

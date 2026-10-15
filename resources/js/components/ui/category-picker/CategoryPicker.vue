@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Button } from "@/components/ui/button"
 import { asTextGlyph, categoryGlyph, FALLBACK_GLYPH } from "@/components/ui/category-glyph"
+import { useFormFieldAria } from "@/components/ui/form-field/context"
 import { Input } from "@/components/ui/input"
 import { BottomSheet } from "@/components/ui/sheet"
 import { categoryColorFromId } from "@/lib/category"
@@ -52,6 +53,7 @@ const open = defineModel<boolean>("open", { default: false })
 const query = defineModel<string>("query", { default: "" })
 
 const { t } = useI18n()
+const { ariaInvalid, ariaDescribedby } = useFormFieldAria()
 const [DefineBody, ReuseBody] = createReusableTemplate()
 
 const isDesktop = useMediaQuery("(min-width: 768px)")
@@ -160,6 +162,28 @@ function pick(category: PickerCategory): void {
     closePanel(category.category_id)
   }
 }
+
+/**
+ * Closes the topmost thing the picker is showing — the open panel, else the "cleared" notice — and says
+ * whether it did, so a surrounding form can leave Esc for its dialog when there was nothing to close.
+ */
+function dismiss(): boolean {
+  if (open.value) {
+    closePanel(null)
+
+    return true
+  }
+
+  if (clearedSlug.value !== null) {
+    clearedSlug.value = null
+
+    return true
+  }
+
+  return false
+}
+
+defineExpose({ dismiss })
 
 function toggleAll(): void {
   returnFocusTo.value = null
@@ -272,7 +296,7 @@ function onFilterKeydown(event: KeyboardEvent): void {
       </div>
     </DefineBody>
 
-    <div ref="rowRef" role="radiogroup" :aria-label="t('transactions.fields.category')" :class="['grid gap-1.5', usesSheet ? 'grid-cols-5' : 'grid-cols-6']" @keydown="onRowKeydown">
+    <div ref="rowRef" role="radiogroup" :aria-label="t('transactions.fields.category')" :aria-invalid="ariaInvalid" :aria-describedby="ariaDescribedby" :class="['grid gap-1.5 aria-invalid:rounded-[var(--radius)] aria-invalid:outline-1 aria-invalid:outline-offset-4 aria-invalid:outline-neg aria-invalid:outline-solid', usesSheet ? 'grid-cols-5' : 'grid-cols-6']" @keydown="onRowKeydown">
       <CategoryTile
         v-for="(category, index) in row"
         :key="category.category_id"

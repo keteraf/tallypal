@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AddTransactionForm from '@/components/tallies/AddTransactionForm.vue';
+import type { FrequentCategories, PickerCategory } from '@/components/ui/category-picker';
 import WebLayout from '@/layouts/WebLayout.vue';
 import tallies from '@/routes/tallies';
 import { type BreadcrumbItem } from '@/types';
@@ -12,7 +13,8 @@ interface Props {
         uuid: string;
         name: string;
     };
-    categories: Array<{ category_id: number; name: string }>;
+    categories: Array<PickerCategory & { name: string }>;
+    frequent_categories: FrequentCategories;
     currencies: Array<{ currency_id: number; uuid: string; name: string; code: string; symbol: string }>;
     default_currency_uuid: string | null;
     parties: Array<{ id: number; name: string }>;
@@ -43,6 +45,7 @@ const breadcrumbs: BreadcrumbItem[] = [
                 <AddTransactionForm
                     :tally-uuid="tally.uuid"
                     :categories="categories"
+                    :frequent-categories="frequent_categories"
                     :currencies="currencies"
                     :parties="parties"
                     :default-currency-uuid="default_currency_uuid"

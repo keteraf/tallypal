@@ -364,7 +364,7 @@ Legend for **Replaces**:
 ### E2. Amount entry (big)
 - **Source classes:** `.amt-in` — centered 46px amount (`.cur` + value + `.z` faded) + hint.
 - **Replaces:** **new** `AmountInput` (tap-to-edit big numeric).
-- **Props:** `v-model`, `currency`, `decimals`.
+- **Props:** `v-model`, `currency`, `decimals`; `tone="positive"` (R6, CA-05) puts a `+` before the currency and the figure in `--pos` (Income).
 
 ### E3. Member/split editor
 - **Source classes:** `.mem-row` (avatar + name/email + `.stp`) + `.tot` (`.bad` when ≠ 100) +
@@ -457,7 +457,9 @@ Legend for **Replaces**:
   Labels via `t('categories.<slug>')`. **Built (R5):** also `v-model:open`, `v-model:query` (optional) and
   `layout: 'auto' | 'inline' | 'sheet'` (`auto` follows md; the others pin a shape for `/dev/design-system`). `CategoryTile`
   takes `preview: 'hover' | 'focus'` for static state swatches only. Rules in `ui/category-picker/pickerLogic.ts`.
-- **Used by:** Categories batch R6 (Add transaction), R7 (Edit). Checklist CA-01..CA-15.
+- **Used by:** Add transaction (R6, done: dialog, phone sheet and Create page), Edit (R7). Checklist CA-01..CA-15.
+  **Adopted (R6):** exposes `dismiss(): boolean` (closes the open panel, else the cleared notice) so a form can leave Esc for its dialog;
+  inside a `FormField` the row takes `aria-invalid` / `aria-describedby` and a `--neg` outline (E1 error state).
 
 ---
 

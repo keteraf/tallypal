@@ -3269,6 +3269,28 @@ filter not focused, Esc closes only it). Notes: the scrim is the app's `--color-
 radius 14px is `var(--radius)` because the app's `rounded-sm` resolves to 12px; the phone sheet keeps the design's second close
 button beside the filter. Not adopted anywhere yet (R6/R7). Screens: `{desktop,mobile}/r5-picker-*`.
 
+**ACCEPTED differences (owner, 2026-10-15)** — recorded so R8 does not re-flag them:
+- **Phone tile width 62 px at 375** (CA-02 M gap): a 5-column row inside the 20 px sheet gutter. The design draws the phone at 393 px,
+  where the same row is 65 px; the tiles keep the design's 76 px height and ≥ 62 px at 360.
+- **Scrim:** the picker's sheets and the dialog use the app's `--scrim` (`--color-scrim`, .55 + blur), not the design's .45.
+- **Second close button in the phone sheet** (beside the filter, as drawn): it closes the same category sheet as the sheet's own
+  header close, so both keep the accessible name "Close" (`common.close`). A button that did something else would need its own name.
+
+**R6 done (2026-10-15).** `CategoryPicker` replaces the chip wrap in `AddTransactionForm` (so the desktop dialog, the phone sheet and the
+`transactions/Create` page); `AppOverlays` / `Create.vue` pass `frequent_categories`. `form.category_id` is `number | null` and Save no
+longer needs a category (C-D1). The type comes from the Expense / Income control; a type switch clears an invalid pick and shows the
+`--neg` notice. A 422 on `category_id` shows in the E1 error state: the picker row takes `aria-invalid` + `aria-describedby` from
+`FormField` (new `for="category_id"`), a 1 px `--neg` outline stands in for the control border, and the message is the 12 px
+`InputError`. `AmountInput` gains `tone="positive"` (a `+` before the currency, figure in `--pos`) for CA-05; the form passes it on Income.
+Keyboard containment: `CategoryPicker` exposes `dismiss()` (panel first, then the notice) and the form's `@keydown.esc` calls it, so
+Esc closes one layer at a time; Enter in the filter or on a tile never submits. Focus after a pick returns to the picked tile in the row
+(E7); Esc returns it to "All". The row is one tab stop, straight after Title: the selected tile, else "All".
+**Browser tests are now Pest browser tests** (`pestphp/pest-plugin-browser`, Playwright underneath): `tests/Browser/AddTransactionFormTest.php`,
+29 cases (frequent-tile expense and Italian "stipendio" income at 1440 / 375 / 360 × dark / light with a no-truncation check, type-switch
+notice, server-422 state, Enter containment, two-step Esc for the panel and for the notice, tab order and focus return, each at dialog and
+sheet). Outside the PHPUnit suites (so outside coverage and mutation), run by the new `composer test:browser`, the last step of
+`composer check`; it always uses the built assets (`npm run build` runs first). Screens: `{desktop,mobile}/r6-*`.
+
 **Follow-up (record only): `transactions.created_by`.** Frequent categories count on `transactions.party_id` (the payer, or the
 receiver of an income), because no column records who created a row. Add `created_by` and switch `frequentCategories()` to it.
 
@@ -3290,27 +3312,27 @@ responsive rule (inline panel ≥ md, second sheet < md).
 | CA-01 | D | Glyph map row in `/dev/design-system`: 16 expense + 11 income + ↓ + ◌, each tinted by its `--cN`, none a colour emoji | `section-s1` (table, strip) | default | [x] PASS (R5, dark + light): tinted by the §7.1 colour (was an index cycle), ↓ `--pos`, ◌ `--text-3`; `desktop/r5-picker-glyph-map-{dark,light}-1440.png` |
 | CA-01 | M | same | `mobile-*-section-s1` | default | [x] PASS (R5): `mobile/r5-picker-glyph-map-{dark,light}-375.png` |
 | CA-02 | D | Tile states: default, hover, focus, selected, selected + focus, "All N", "All N" open | `tile-states` | all | [x] PASS (R5, dark + light): measured 76 min-height, r14, `9px 4px 8px`, 30/r10/14px square, 10.5/500/−.015em label, 1.5px inset accent ring, 2px accent outline offset 2; `desktop/r5-picker-tile-states-{dark,light}-1440.png` |
-| CA-02 | M | same, tile ≥ 65 × 76 | `mobile-*-tile-states` | all | [x] PASS with a gap (R5): states identical; at 375 a 5-column row inside the 20px sheet gutter is **62 px** wide (design drawn at 393 → 65); `mobile/r5-picker-tile-states-{dark,light}-375.png` |
-| CA-03 | D | Add · Expense · Groceries selected, 5 frequent + All | `frame-01-dark-expense-selected` | selected | [ ] |
-| CA-03 | M | Add · Expense · selected, 4 frequent + All | `frame-05-dark-expense-selected` | selected | [ ] |
-| CA-04 | D | Add · switched to Income · pick cleared, `--neg` notice, nudge | `frame-02-dark-switched-to-income-cleared` | cleared | [ ] |
-| CA-04 | M | same | `frame-06-light-switched-to-income-cleared` | cleared | [ ] |
-| CA-05 | D | Add · Income · Salary selected, amount `+` in `--pos` | `frame-03-light-income-selected` | selected | [ ] |
-| CA-05 | M | same | `frame-03…` anatomy + `frame-06` row | selected | [ ] |
-| CA-06 | D | Add · Expense · "All" open inline: filter (focused, `esc` hint), close, 4-col grid, keyboard focus ring in grid | `frame-04-light-expense-all-open-keyboard-focus-in-grid` | open + focus | [ ] |
-| CA-06 | M | Add · Expense · "All" second sheet (80 %), filter **not** focused | `frame-07-dark-income-all-sheet-open` anatomy | open | [ ] |
-| CA-07 | D | Add · Income · "All" open inline (11 tiles) | `frame-04…` anatomy, income list | open | [ ] |
-| CA-07 | M | Add · Income · "All" sheet, title "Income categories" | `frame-07-dark-income-all-sheet-open` | open | [ ] |
-| CA-08 | D | Add · empty: "◌ No category", Save enabled | `frame-08-light-income-empty` anatomy | empty | [ ] |
-| CA-08 | M | same | `frame-08-light-income-empty` | empty | [ ] |
-| CA-09 | D | Filter with no match: "No match for “zzz”" | `interactive-desktop-grid-no-match` | no match | [ ] |
-| CA-09 | M | same, in the second sheet | `mobile-interactive-desktop-grid-no-match` + `frame-07` | no match | [ ] |
-| CA-10 | D | Filter matches EN, IT and aliases ("re", "stipendio", "ebay") | `interactive-desktop-grid-no-match` anatomy | filtered | [ ] |
-| CA-10 | M | same | `interactive-phone-all-sheet-filtered` | filtered | [ ] |
-| CA-11 | D | Keyboard: row ← → Home End Space; Enter on All opens with filter focused; grid ↑ ↓ ← →, ↑ from top → filter; Enter picks first match; Esc closes → focus on All | `section-s3` rules | interaction | [ ] |
-| CA-11 | M | Touch: tap All → sheet, filter only focuses when tapped; tap tile picks and closes | `section-s3` rules | interaction | [ ] |
-| CA-12 | D | Italian labels: hyphenation, 2-line clamp, cleared copy "… è una categoria di uscita: rimossa." | `frame-01…-it`, `frame-02…-it`, `frame-04…-it` | it | [ ] |
-| CA-12 | M | same | `frame-05…-it`, `frame-06…-it`, `frame-07…-it` | it | [ ] |
+| CA-02 | M | same, tile ≥ 65 × 76 | `mobile-*-tile-states` | all | [x] PASS, gap ACCEPTED (R5; owner 2026-10-15): states identical; at 375 a 5-column row inside the 20px sheet gutter is **62 px** wide (design drawn at 393 → 65); `mobile/r5-picker-tile-states-{dark,light}-375.png` |
+| CA-03 | D | Add · Expense · Groceries selected, 5 frequent + All | `frame-01-dark-expense-selected` | selected | [x] PASS (R6, dark + light): row of 5 + All 16, Groceries selected (accent ring), amount/title/tally/date unchanged; `desktop/r6-add-expense-selected-1440-{dark,light}.png` vs `desktop-frame-01-dark-expense-selected-{dark,light}-en` |
+| CA-03 | M | Add · Expense · selected, 4 frequent + All | `frame-05-dark-expense-selected` | selected | [x] PASS (R6, 375 + 360, dark + light): 4 + All 16, sheet scrolls, submit sticky; `mobile/r6-add-expense-selected-{375,360}-{dark,light}.png` vs `desktop-frame-05-dark-expense-selected-{dark,light}-en` |
+| CA-04 | D | Add · switched to Income · pick cleared, `--neg` notice, nudge | `frame-02-dark-switched-to-income-cleared` | cleared | [x] PASS (R6): Groceries cleared on Expense → Income, `--neg` notice under the row; `desktop/r6-add-switched-cleared-it-1440-{dark,light}.png` vs `desktop-frame-02-dark-switched-to-income-cleared-{dark,light}-it` |
+| CA-04 | M | same | `frame-06-light-switched-to-income-cleared` | cleared | [x] PASS (R6, 375 + 360): `mobile/r6-add-switched-cleared-it-{375,360}-{dark,light}.png` vs `desktop-frame-06-light-switched-to-income-cleared-{dark,light}-it` |
+| CA-05 | D | Add · Income · Salary selected, amount `+` in `--pos` | `frame-03-light-income-selected` | selected | [x] PASS (R6): Salary selected via "stipendio", `+` and figure in `--pos` (`AmountInput tone`); `desktop/r6-add-income-selected-it-1440-{dark,light}.png` vs `desktop-frame-03-light-income-selected-{dark,light}-it` |
+| CA-05 | M | same | `frame-03…` anatomy + `frame-06` row | selected | [x] PASS (R6, 375 + 360): `mobile/r6-add-income-selected-it-{375,360}-{dark,light}.png` vs `desktop-frame-03…` anatomy |
+| CA-06 | D | Add · Expense · "All" open inline: filter (focused, `esc` hint), close, 4-col grid, keyboard focus ring in grid | `frame-04-light-expense-all-open-keyboard-focus-in-grid` | open + focus | [x] PASS (R6): All open inline, filter focused with `esc` hint, close, 4-column grid inside the dialog scroll; `desktop/r6-add-all-open-expense-1440-{dark,light}.png` vs `desktop-frame-04-light-expense-all-open-keyboard-focus-in-grid-{dark,light}-en` |
+| CA-06 | M | Add · Expense · "All" second sheet (80 %), filter **not** focused | `frame-07-dark-income-all-sheet-open` anatomy | open | [x] PASS (R6): second sheet, filter not focused; `mobile/r6-add-all-open-expense-375-{dark,light}.png` vs `desktop-frame-07` anatomy |
+| CA-07 | D | Add · Income · "All" open inline (11 tiles) | `frame-04…` anatomy, income list | open | [x] PASS (R6): 11 income tiles inline; `desktop/r6-add-all-open-income-1440-{dark,light}.png` vs `desktop-frame-04` anatomy |
+| CA-07 | M | Add · Income · "All" sheet, title "Income categories" | `frame-07-dark-income-all-sheet-open` | open | [x] PASS (R6): title "Income categories"; `mobile/r6-add-all-open-income-375-{dark,light}.png` vs `desktop-frame-07-dark-income-all-sheet-open-{dark,light}-en` |
+| CA-08 | D | Add · empty: "◌ No category", Save enabled | `frame-08-light-income-empty` anatomy | empty | [x] PASS (R6): "◌ No category", Save enabled with amount + title only; `desktop/r6-add-empty-1440-{dark,light}.png` vs `desktop-frame-08-light-income-empty` anatomy |
+| CA-08 | M | same | `frame-08-light-income-empty` | empty | [x] PASS (R6): `mobile/r6-add-empty-375-{dark,light}.png` vs `desktop-frame-08-light-income-empty-{dark,light}-en` |
+| CA-09 | D | Filter with no match: "No match for “zzz”" | `interactive-desktop-grid-no-match` | no match | [x] PASS (R6): "No match for “zzz”"; `desktop/r6-add-all-no-match-1440-{dark,light}.png` vs `desktop-interactive-desktop-grid-no-match-{dark,light}` |
+| CA-09 | M | same, in the second sheet | `mobile-interactive-desktop-grid-no-match` + `frame-07` | no match | [x] PASS (R6): in the second sheet; `mobile/r6-add-all-no-match-375-{dark,light}.png` vs `mobile-interactive-desktop-grid-no-match-{dark,light}` + `desktop-frame-07` |
+| CA-10 | D | Filter matches EN, IT and aliases ("re", "stipendio", "ebay") | `interactive-desktop-grid-no-match` anatomy | filtered | [x] PASS (R6): "stipendio" (IT label) finds Salary; EN/alias matching is unit-tested (`pickerLogic.test.ts`); `desktop/r6-add-all-search-stipendio-it-1440-{dark,light}.png` |
+| CA-10 | M | same | `interactive-phone-all-sheet-filtered` | filtered | [x] PASS (R6, 375 + 360): `mobile/r6-add-all-search-stipendio-it-{375,360}-{dark,light}.png` vs `desktop-interactive-phone-all-sheet-filtered-{dark,light}` |
+| CA-11 | D | Keyboard: row ← → Home End Space; Enter on All opens with filter focused; grid ↑ ↓ ← →, ↑ from top → filter; Enter picks first match; Esc closes → focus on All | `section-s3` rules | interaction | [x] PASS (R6): Pest browser tests for Enter (filter and tile: no submit), Esc (panel, then dialog), tab order and focus return; arrows / grid / Home End were run in R5; filter focused on open, `desktop/r6-add-all-open-expense-1440-*.png` |
+| CA-11 | M | Touch: tap All → sheet, filter only focuses when tapped; tap tile picks and closes | `section-s3` rules | interaction | [x] PASS (R6): All opens the sheet with the filter unfocused (`filter focused on open: false` at 375), a tile pick closes it; Pest browser tests at 375 for Enter / Esc / tab order |
+| CA-12 | D | Italian labels: hyphenation, 2-line clamp, cleared copy "… è una categoria di uscita: rimossa." | `frame-01…-it`, `frame-02…-it`, `frame-04…-it` | it | [x] PASS (R6): no Italian label truncated in the row or the grid (measured `scrollHeight`/`scrollWidth`, 1440); cleared copy "Spesa è una categoria di uscita: rimossa."; `desktop/r6-add-switched-cleared-it-1440-*.png` vs `desktop-frame-02…-it` |
+| CA-12 | M | same | `frame-05…-it`, `frame-06…-it`, `frame-07…-it` | it | [x] PASS (R6): same check at 375 and 360, none truncated ("Resi e rimborsi" wraps to two lines); `mobile/r6-add-switched-cleared-it-{375,360}-*.png` vs `desktop-frame-06…-it`, `desktop-frame-07…-it` |
 | CA-13 | D | Edit · Income · saved non-frequent "Sold items" pinned first | `frame-09-desktop-dark-income-sold-items-not-frequent-pinned-first` | pinned | [ ] |
 | CA-13 | M | same | `frame-09…` anatomy | pinned | [ ] |
 | CA-14 | D | Edit · Expense · Travel | `frame-10-phone-light-expense-travel` anatomy | selected | [ ] |
