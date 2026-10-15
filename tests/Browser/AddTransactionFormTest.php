@@ -111,16 +111,6 @@ function titleValue(mixed $page): string
     return (string) $page->script("document.querySelector('#title')?.value ?? ''");
 }
 
-/** True when a label wraps past its two lines or is cut off by the tile. */
-function truncatedLabels(mixed $page): array
-{
-    return (array) $page->script(<<<'JS'
-        [...document.querySelectorAll('[data-picker-tile] span')]
-            .filter((label) => label.scrollHeight > label.clientHeight + 1 || label.scrollWidth > label.clientWidth + 1)
-            .map((label) => label.textContent)
-    JS);
-}
-
 it('adds an expense with a frequent tile', function (int $width, int $height, string $theme) {
     $page = openAddTransaction($theme, $width, $height);
 
@@ -140,6 +130,24 @@ it('adds an expense with a frequent tile', function (int $width, int $height, st
     expect($transaction->category_id)->toBe(categoryId('groceries'))
         ->and($transaction->type)->toBe(TransactionType::EXPENSE);
 })->with('viewports')->with('themes');
+
+it('keeps the phone "All" sheet at one height while the filter removes matches', function () {
+    $page = openAddTransaction('dark', 375, 812);
+    $sheetHeight = fn (): int => (int) $page->script("document.querySelector('[role=\"dialog\"]:has(input[aria-controls$=\"-grid\"])').getBoundingClientRect().height");
+
+    $page->click('[data-picker-all]');
+    waitUntil($page, "document.querySelector('" . PICKER_FILTER . "') !== null");
+    $unfiltered = $sheetHeight();
+
+    foreach (['tra', 'trasp', 'zzz'] as $query) {
+        $page->type(PICKER_FILTER, $query);
+        waitUntil($page, "document.querySelector('" . PICKER_FILTER . "').value === '{$query}'");
+
+        expect($sheetHeight())->toBe($unfiltered);
+    }
+
+    $page->assertSee('No match')->assertNoJavaScriptErrors();
+});
 
 it('adds an income found by searching "stipendio" in Italian', function (int $width, int $height, string $theme) {
     $page = openAddTransaction($theme, $width, $height, 'it');

@@ -10,10 +10,11 @@ use App\Models\Currency;
 use App\Models\Tally;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Rules\CategoryMatchesType;
 use Database\Seeders\ReferenceDataSeeder;
 use Laravel\Sanctum\Sanctum;
 
-covers(StoreTransactionRequest::class, UpdateTransactionRequest::class);
+covers(StoreTransactionRequest::class, UpdateTransactionRequest::class, CategoryMatchesType::class);
 
 const ACCEPTED = [200, 201, 302];
 

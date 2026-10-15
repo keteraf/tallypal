@@ -133,6 +133,24 @@ watch(open, (isOpen) => {
   }
 })
 
+/**
+ * Phone sheet: the grid's height with the whole list showing, held while a filter narrows it, so the sheet
+ * keeps its size through every match count (and the no-match line) instead of shrinking under the thumb.
+ */
+const gridMinHeight = ref<string | undefined>(undefined)
+
+watch(
+  query,
+  (value, previous) => {
+    if (value === "") {
+      gridMinHeight.value = undefined
+    } else if (previous === "" && usesSheet.value && gridRef.value) {
+      gridMinHeight.value = `${gridRef.value.offsetHeight}px`
+    }
+  },
+  { flush: "pre" },
+)
+
 const tiles = (container: HTMLElement | null): HTMLElement[] => [...(container?.querySelectorAll<HTMLElement>("[data-picker-tile]") ?? [])]
 
 function focusReturnTarget(): void {
@@ -275,7 +293,7 @@ function onFilterKeydown(event: KeyboardEvent): void {
         </Button>
       </div>
 
-      <div :id="`${panelId}-grid`" ref="gridRef" role="radiogroup" :aria-label="sheetTitle" class="grid grid-cols-4 gap-1.5" @keydown="onGridKeydown">
+      <div :id="`${panelId}-grid`" ref="gridRef" role="radiogroup" :aria-label="sheetTitle" class="grid grid-cols-4 content-start gap-1.5" :style="{ minHeight: gridMinHeight }" @keydown="onGridKeydown">
         <CategoryTile
           v-for="category in matches"
           :key="category.category_id"

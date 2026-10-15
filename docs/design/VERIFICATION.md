@@ -3271,7 +3271,8 @@ button beside the filter. Not adopted anywhere yet (R6/R7). Screens: `{desktop,m
 
 **ACCEPTED differences (owner, 2026-10-15)** — recorded so R8 does not re-flag them:
 - **Phone tile width 62 px at 375** (CA-02 M gap): a 5-column row inside the 20 px sheet gutter. The design draws the phone at 393 px,
-  where the same row is 65 px; the tiles keep the design's 76 px height and ≥ 62 px at 360.
+  where the same row is 65 px; the tiles keep the design's 76 px height and are **≥ 57 px at 360, with no label clipped** (corrected
+  2026-10-15: the first note said "≥ 62 px at 360", which is arithmetically wrong; 57 px is the Add sheet at 360 with a classic scrollbar).
 - **Scrim:** the picker's sheets and the dialog use the app's `--scrim` (`--color-scrim`, .55 + blur), not the design's .45.
 - **Second close button in the phone sheet** (beside the filter, as drawn): it closes the same category sheet as the sheet's own
   header close, so both keep the accessible name "Close" (`common.close`). A button that did something else would need its own name.
@@ -3303,6 +3304,54 @@ Stats activity now reads "category · date" as drawn. The Tally detail payload s
 the first screenshots showed). `category_code` removed from every payload, type and the repository, with its two tests (owner-approved); `KEY_VERSION` v13 → v14.
 Shared browser-test helpers moved to `tests/Browser/Support.php`.
 
+**R8 final verification (2026-10-15, at `77158b9`).** DemoSeeder re-run before and after (the run saved two incomes and a
+`demo-empty` tally through the UI). Built assets (`public/hot` set aside: Vite 504 "Outdated Optimize Dep"), no console errors.
+188 viewport shots in `.verify/app/categories-final/`, 1440×900 + 375×812, dark + light, EN + IT wherever the design has an IT frame
+(frames 01–10).
+- **Totals (44 rows):** PASS 41 · REGRESSED 0 · STILL OPEN 2 (CA-13 M, CA-14 M) · ACCEPTED 1 (CA-02 M).
+- **STILL OPEN — Edit page at phone widths.** `tallies/transactions/Edit.vue` renders the picker inside the page card, so it gets
+  255 px at 375 (the Add sheet gives 335): tiles 49 px at 375 / 46 at 360. It clips "Refunds & returns", "Groceries" and "Transportation" (EN)
+  and "Trasporti" (IT, 360). R7 passed it in error: its own screenshot shows "Refunds &…". The Add sheet is clean at 375 and 360.
+- **Picker at 360×800 (Add):** 4 + All on both types, no label truncated (EN + IT, row and grid, dark + light), no horizontal scroll.
+- **Regressions:** F-089 holds (submit inside the viewport at 1440×900, 1280×720, 375, 360, with All open too). F-092 / B-11 hold
+  (pill menu of 10 currencies; untouched form follows Household EUR ↔ Weekend Trip USD; manual GBP survives two tally switches; the
+  category survives too). By category on Home and Stats: EUR rows 950.00 + 346.85 + 184.50 (◌) + 158.30 + 149.20 + Other 316.09 =
+  2,104.94 = OUT = the DB's October EUR expenses; "Other currencies: $ 274.50" = the DB's USD expenses. A € 3,200 Salary added in the UI
+  raised IN, not By category. Rows on Home Recent (¤ Salary, ↺ Refunds & returns after the UI adds), Tally detail and Stats activity match frames 11–13.
+- **Data rules:** an income with Groceries and an expense with Salary are both rejected (forced through the real form: E1 state,
+  `aria-invalid`, "The category must match the transaction type.", dialog kept open, nothing saved; the JSON request returns **422**
+  on `category_id`). "Housing": no category, slug or label in the app or DB; the word remains only in the marketing features tile's sample
+  copy (pre-branch, separate context) and `/dev/design-system` fixtures. "All 16" / "All 11" ("Tutte 16" / "Tutte 11").
+- **`deploy/CHECKLIST.md`:** covers migrations (3), `ReferenceDataSeeder` right after migrate (4) and the `ALLOW_ACTIVITY_RESET`
+  flow (9). It does **not** mention Chromium for the gate: only CI installs it (`shared-ci.yml`), so a manual `composer check` before
+  deploy on a fresh machine fails at `test:browser`.
+- **Observations (not CA rows):** the phone "All" sheet is content-sized (`max-h-[80%]`, 407 px), so it shrinks to 235 px when a filter
+  leaves one match; on the Edit page and in the IT Add dialog the date reads "October 15, 2026" (not localized, pre-branch); titles stop at
+  25 characters (`transactions.title` is `string(25)`, pre-branch), so the design's "Trenitalia — cancelled train" cannot be entered;
+  `Rules/CategoryMatchesType` reports **0.0 %** line coverage although `TransactionCategoryValidationTest` exercises it (total still 99.4 %).
+- **Gate:** `composer check; echo "exit: $?"` → `exit: 0` — Vitest 59 passed; Pest 904 passed (3,900 assertions), coverage
+  **99.4 %**; mutation **100.00 %** (1,765 mutations, 3 timeouts); browser 40 passed.
+- **Verdict: no-merge** until CA-13 M / CA-14 M are fixed (Edit-page labels clip at 375 and 360). Everything else is green.
+
+**R9 fixes (2026-10-15).**
+- **CA-13 M / CA-14 M:** `tallies/transactions/Edit.vue` — the form card is `sm:` only (`sm:rounded-card sm:border sm:bg-surface sm:p-6 md:p-7`), so below
+  640 px the form spans the content width. Picker 335 px at 375, 320 at 360 (= the Add sheet); desktop (1440) and tablet (700) keep the card
+  (1 px border, 28 / 24 px padding). No label clipped at 375 / 360, dark + light, EN + IT, expense + income (incl. "Stipendio" after the flip).
+- **Phone "All" sheet:** `CategoryPicker` holds the grid's unfiltered height (`min-height`) while a filter narrows it, so the sheet stays 493 px
+  at 375 for the full list, 1 match, several matches and the no-match line (was 407 → 235). Vitest + a Pest browser test cover it.
+- **`Rules/CategoryMatchesType` at 0 %:** it **is** the only enforcement — with the rule removed from both requests, 9 of 31
+  `TransactionCategoryValidationTest` cases fail (302 / 201 / 200 instead of 422). The 0 % was attribution: the test's `covers()` named only the two
+  requests, so the rule's lines counted for no one. `covers()` now names the rule too and it reports 100 %.
+- **Gate:** `composer check; echo "exit: $?"` → `exit: 0` — Vitest 61 passed; Pest 904 passed (3,900 assertions), coverage **99.8 %**; mutation **100.00 %** (1,771 mutations, 3 timeouts); browser 49 passed.
+- **Docs:** `npx playwright install chromium` in `deploy/CHECKLIST.md` and `CLAUDE.md`; CA-02 M acceptance corrected to ≥ 57 px at 360, no label clipped.
+
+**Follow-ups (record only, R9).**
+- **Italian dates:** the Edit page and the Add dialog format the date with `en-US` (`DateFormatter('en-US', …)`), so Italian shows "October 15, 2026".
+  Localise it from the active locale.
+- **Transaction title is capped at 25 characters** (`transactions.title` `string(25)`, `max:25` in both requests, `maxlength="25"` in the forms), so the
+  design's "Trenitalia — cancelled train" cannot be entered. Widen it with the O-03 pattern (migration + `max:` in the requests + forms + tests) in the
+  settle-up branch.
+
 **Follow-up (record only): `transactions.created_by`.** Frequent categories count on `transactions.party_id` (the payer, or the
 receiver of an income), because no column records who created a row. Add `created_by` and switch `frequentCategories()` to it.
 
@@ -3324,7 +3373,7 @@ responsive rule (inline panel ≥ md, second sheet < md).
 | CA-01 | D | Glyph map row in `/dev/design-system`: 16 expense + 11 income + ↓ + ◌, each tinted by its `--cN`, none a colour emoji | `section-s1` (table, strip) | default | [x] PASS (R5, dark + light): tinted by the §7.1 colour (was an index cycle), ↓ `--pos`, ◌ `--text-3`; `desktop/r5-picker-glyph-map-{dark,light}-1440.png` |
 | CA-01 | M | same | `mobile-*-section-s1` | default | [x] PASS (R5): `mobile/r5-picker-glyph-map-{dark,light}-375.png` |
 | CA-02 | D | Tile states: default, hover, focus, selected, selected + focus, "All N", "All N" open | `tile-states` | all | [x] PASS (R5, dark + light): measured 76 min-height, r14, `9px 4px 8px`, 30/r10/14px square, 10.5/500/−.015em label, 1.5px inset accent ring, 2px accent outline offset 2; `desktop/r5-picker-tile-states-{dark,light}-1440.png` |
-| CA-02 | M | same, tile ≥ 65 × 76 | `mobile-*-tile-states` | all | [x] PASS, gap ACCEPTED (R5; owner 2026-10-15): states identical; at 375 a 5-column row inside the 20px sheet gutter is **62 px** wide (design drawn at 393 → 65); `mobile/r5-picker-tile-states-{dark,light}-375.png` |
+| CA-02 | M | same, tile ≥ 65 × 76 | `mobile-*-tile-states` | all | [x] PASS, gap ACCEPTED (R5; owner 2026-10-15): states identical; at 375 a 5-column row inside the 20px sheet gutter is **62 px** wide (design drawn at 393 → 65); `mobile/r5-picker-tile-states-{dark,light}-375.png`. **R8:** inside the Add sheet, desktop Chromium's 10 px classic scrollbar makes it 60.3 px at 375 and 57.2 at 360 (62 / 59 with overlay scrollbars, as on phones). The ACCEPTED note's "≥ 62 px at 360" was arithmetically wrong; the acceptance is corrected to **≥ 57 px at 360, no label clipped** (owner, 2026-10-15). No label truncates at either width. |
 | CA-03 | D | Add · Expense · Groceries selected, 5 frequent + All | `frame-01-dark-expense-selected` | selected | [x] PASS (R6, dark + light): row of 5 + All 16, Groceries selected (accent ring), amount/title/tally/date unchanged; `desktop/r6-add-expense-selected-1440-{dark,light}.png` vs `desktop-frame-01-dark-expense-selected-{dark,light}-en` |
 | CA-03 | M | Add · Expense · selected, 4 frequent + All | `frame-05-dark-expense-selected` | selected | [x] PASS (R6, 375 + 360, dark + light): 4 + All 16, sheet scrolls, submit sticky; `mobile/r6-add-expense-selected-{375,360}-{dark,light}.png` vs `desktop-frame-05-dark-expense-selected-{dark,light}-en` |
 | CA-04 | D | Add · switched to Income · pick cleared, `--neg` notice, nudge | `frame-02-dark-switched-to-income-cleared` | cleared | [x] PASS (R6): Groceries cleared on Expense → Income, `--neg` notice under the row; `desktop/r6-add-switched-cleared-it-1440-{dark,light}.png` vs `desktop-frame-02-dark-switched-to-income-cleared-{dark,light}-it` |
@@ -3346,9 +3395,9 @@ responsive rule (inline panel ≥ md, second sheet < md).
 | CA-12 | D | Italian labels: hyphenation, 2-line clamp, cleared copy "… è una categoria di uscita: rimossa." | `frame-01…-it`, `frame-02…-it`, `frame-04…-it` | it | [x] PASS (R6): no Italian label truncated in the row or the grid (measured `scrollHeight`/`scrollWidth`, 1440); cleared copy "Spesa è una categoria di uscita: rimossa."; `desktop/r6-add-switched-cleared-it-1440-*.png` vs `desktop-frame-02…-it` |
 | CA-12 | M | same | `frame-05…-it`, `frame-06…-it`, `frame-07…-it` | it | [x] PASS (R6): same check at 375 and 360, none truncated ("Resi e rimborsi" wraps to two lines); `mobile/r6-add-switched-cleared-it-{375,360}-*.png` vs `desktop-frame-06…-it`, `desktop-frame-07…-it` |
 | CA-13 | D | Edit · Income · saved non-frequent "Sold items" pinned first | `frame-09-desktop-dark-income-sold-items-not-frequent-pinned-first` | pinned | [x] PASS (R7, dark + light): saved "Sold items" (not frequent) pinned first and selected, `+` in `--pos`; `desktop/r7-edit-income-sold-1440-{dark,light}.png` vs `desktop-frame-09-desktop-dark-income-sold-items-not-frequent-pinned-first-{dark,light}-en` |
-| CA-13 | M | same | `frame-09…` anatomy | pinned | [x] PASS (R7): `mobile/r7-edit-income-sold-375-{dark,light}.png` vs `desktop-frame-09…` anatomy |
+| CA-13 | M | same | `frame-09…` anatomy | pinned | [x] PASS (R9, 375 + 360, dark + light, EN + IT): below `sm` the Edit page drops the card (no border, background or padding), so the picker is 335 px at 375 / 320 at 360, the Add sheet's width, tiles 62 / 59 px. "Refunds & returns", "Side work", "Stipendio" (after the flip to Income) and "Lavoro extra" are not clipped; `EditTransactionFormTest` asserts it. `categories-final/ca13-edit-income-m-{375,360}-{dark,light}-{en,it}.png` vs `desktop-frame-09-…` |
 | CA-14 | D | Edit · Expense · Travel | `frame-10-phone-light-expense-travel` anatomy | selected | [x] PASS (R7): Travel selected and pinned first; `desktop/r7-edit-expense-travel-1440-{dark,light}.png` vs `desktop-frame-10-phone-light-expense-travel-{dark,light}-en` anatomy |
-| CA-14 | M | same | `frame-10-phone-light-expense-travel` | selected | [x] PASS (R7): 4 + All 16; `mobile/r7-edit-expense-travel-375-{dark,light}.png` vs `desktop-frame-10-phone-light-expense-travel-{dark,light}-en` |
+| CA-14 | M | same | `frame-10-phone-light-expense-travel` | selected | [x] PASS (R9, 375 + 360, dark + light, EN + IT): same cause and fix as CA-13 M; "Groceries", "Trasporti" and "Stipendio" fit whole. The only break is the design's own soft hyphen, "Transpor-tation", drawn in frame 10 and identical in the Add sheet at the same width. `categories-final/ca14-edit-expense-m-{375,360}-{dark,light}-{en,it}.png` vs `mobile-frame-10-phone-light-expense-travel-{dark,light}-en` |
 | CA-15 | D | Edit · type flip clears + notice, Save stays enabled, 422 never reached | `section-s4` | cleared | [x] PASS (R7): Pest browser `EditTransactionFormTest` (1440, dark + light): flip clears, `--neg` notice, Save saves with no category (422 never reached); server 422 shows the E1 error state |
 | CA-15 | M | same | `section-s4` | cleared | [x] PASS (R7): same Pest browser tests at 375 |
 | CA-16 | D | Home Recent: income rows with income glyph/colour, sub = category, `+` `--pos`; Salary "¤ Salary" | `frame-11-home-recent` | data | [x] PASS (R7): income glyph/colour by category, sub = category, Uncategorised ◌ in `--text-3`; `desktop/r7-home-recent-1440-{dark,light}.png` vs `desktop-frame-11-home-recent-{dark,light}` |
@@ -3359,8 +3408,8 @@ responsive rule (inline panel ≥ md, second sheet < md).
 | CA-18 | M | same, stacked | `frame-13…` anatomy | data | [x] PASS (R7): `mobile/r7-stats-activity-375-{dark,light}.png` vs `mobile-frame-13-…` |
 | CA-19 | D | Home + Stats By category: no income category, ever (B-16) | Batch 1/4 refs (`../desktop/home-1.png`, `../desktop/stats-0.png`) | data | [x] PASS (R4, 2026-10-15): no income row on either card despite 9 income categories in the month; `desktop/ca19-22-home-1440.png`, `ca19-22-stats-1440.png` |
 | CA-19 | M | same | `../mobile/home-2.png`, Stats mobile ref | data | [x] PASS (R4): `mobile/ca19-22-home-375.png`, `ca19-22-stats-375.png` |
-| CA-20 | D | Frequent row: `demo-empty` (defaults) vs `demo` (learned order, ≥ 2 uses / 90 days) | `section-s3` text | data | [ ] |
-| CA-20 | M | same, 4 tiles | `section-s3` text | data | [ ] |
+| CA-20 | D | Frequent row: `demo-empty` (defaults) vs `demo` (learned order, ≥ 2 uses / 90 days) | `section-s3` text | data | [x] PASS (R8, dark + light): `demo-empty` (a tally created for the check, then re-seeded) shows the design defaults Groceries, Dining Out, Transportation, Bills, Subscriptions / Salary, Side work, Refunds & returns, Gifts, Investments; `demo` shows Groceries, Dining Out, Transportation, Entertainment, Personal Care, the DB's ≥ 2-use order (ties by most recent), income padded with Gifts, Investments. `categories-final/ca20-{defaults,learned}-{expense,income}-d-{dark,light}.png` |
+| CA-20 | M | same, 4 tiles | `section-s3` text | data | [x] PASS (R8): 4 + All on both accounts; `categories-final/ca20-{defaults,learned}-{expense,income}-m-{dark,light}.png` |
 | CA-21 | D | Uncategorised income row: ↓ in `--pos`, sub = "Uncategorised" (owner, R7) | — (app rule, FP-13) | data | [x] PASS (R7): "Cash from a friend" in `desktop/r7-detail-solo-1440-{dark,light}.png` |
 | CA-21 | M | same | — | data | [x] PASS (R7): `mobile/r7-detail-solo-375-{dark,light}.png` |
 | CA-22 | D | Home + Stats By category: "Uncategorised" row with ◌ (`--text-3`), rows add up to the total | Batch 1/4 refs (`../desktop/home-1.png`, `../desktop/stats-0.png`) | data | [x] PASS (R4, dark): row anatomy (marker, name, bar, value, pct) identical to the design's rows; ◌ is a hollow ring in `--text-3`, faint on `surface-1` but visible; 950.00 + 346.85 + 184.50 + 158.30 + 149.20 + Other 316.09 = 2,104.94 = Stats total; `desktop/ca19-22-{home,stats}-1440.png` |

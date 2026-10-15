@@ -123,7 +123,7 @@ const submit = () => {
                 </h1>
             </div>
 
-            <div class="rounded-card border border-line bg-surface p-6 md:p-7">
+            <div class="sm:rounded-card sm:border sm:border-line sm:bg-surface sm:p-6 md:p-7">
                 <form class="flex flex-col" @submit.prevent="submit" @keydown.esc="dismissPickerLayer">
                     <FormField :error="form.errors.amount">
                         <AmountInput

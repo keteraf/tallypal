@@ -1,6 +1,6 @@
 import i18n from '@/i18n';
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
 import type { PickerCategory } from './pickerLogic';
 import CategoryPicker from './CategoryPicker.vue';
@@ -139,6 +139,35 @@ describe('CategoryPicker', () => {
         expect(filter).not.toBeNull();
         expect(document.activeElement).not.toBe(filter);
         expect(document.body.textContent).toContain('Expense categories');
+    });
+
+    it('holds the phone sheet grid at its unfiltered height while a filter narrows it, and releases it when cleared', async () => {
+        const height = vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(318);
+        const picker = mountPicker({ layout: 'sheet', open: true });
+        await nextTick();
+        const grid = (): HTMLElement => document.querySelector<HTMLElement>('[role="radiogroup"][id$="-grid"]')!;
+
+        expect(grid().style.minHeight).toBe('');
+
+        await picker.setProps({ query: 'tra' });
+        expect(grid().style.minHeight).toBe('318px');
+
+        height.mockReturnValue(120);
+        await picker.setProps({ query: 'zzz' });
+        expect(grid().style.minHeight).toBe('318px');
+
+        await picker.setProps({ query: '' });
+        expect(grid().style.minHeight).toBe('');
+        height.mockRestore();
+    });
+
+    it('does not pin the inline panel height', async () => {
+        vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(318);
+        const picker = mountPicker({ open: true });
+        await picker.setProps({ query: 'tra' });
+
+        expect(picker.find('[role="radiogroup"][id$="-grid"]').attributes('style') ?? '').not.toContain('min-height');
+        vi.restoreAllMocks();
     });
 
     it('dismiss() closes the open panel first, then the cleared notice, then reports nothing left', async () => {

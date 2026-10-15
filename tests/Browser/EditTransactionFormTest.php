@@ -67,13 +67,19 @@ function updatedTransaction(mixed $page, Transaction $transaction, Closure $isSa
     throw new RuntimeException("Transaction [{$transaction->uuid}] was not updated.");
 }
 
-function openEditTransaction(Transaction $transaction, string $theme, int $width, int $height): mixed
+function openEditTransaction(Transaction $transaction, string $theme, int $width, int $height, string $locale = 'en'): mixed
 {
     $url = route('tallies.transactions.edit', [$transaction->tally, $transaction], false);
     $page = $theme === 'dark' ? visit($url)->inDarkMode() : visit($url)->inLightMode();
     $page->resize($width, $height);
 
-    waitUntil($page, "document.querySelector('" . PICKER_ROW . "') !== null");
+    if ($locale !== 'en') {
+        $page->script("localStorage.setItem('locale', '{$locale}')");
+        $page->script('location.reload()');
+    }
+
+    // Labels are measured against the web font, not the fallback it replaces a moment later.
+    waitUntil($page, "document.querySelector('" . PICKER_ROW . "') !== null && document.fonts.status === 'loaded'");
 
     return $page;
 }
@@ -91,6 +97,26 @@ it('prefills the saved category, pinned first when it is not a frequent one', fu
     expect($page->script("document.querySelector('" . PICKER_ROW . "')?.getAttribute('data-category-id')"))
         ->toBe((string) categoryId('sold_items'));
 })->with('viewports')->with('themes');
+
+it('gives the picker the full content width on a phone, so no label is clipped (CA-13 / CA-14)', function (int $width, string $theme, string $locale) {
+    $transaction = savedTransactionIn($this->tally, $this->user, 'travel', TransactionType::EXPENSE);
+
+    $page = openEditTransaction($transaction, $theme, $width, 800, $locale);
+    $pickerIsAsWideAsForm = "(() => { const picker = document.querySelector('[data-slot=\"category-picker\"]'); return picker.getBoundingClientRect().width === picker.closest('form').getBoundingClientRect().width; })()";
+
+    // No card around the form below sm: the picker gets the 20px gutters' worth of width the Add sheet has.
+    expect($page->script($pickerIsAsWideAsForm))->toBeTrue()
+        ->and($page->script("document.querySelector('[data-slot=\"category-picker\"]').getBoundingClientRect().width"))->toEqual($width - 40)
+        ->and(truncatedLabels($page))->toBe([]);
+
+    $page->click('[role="radiogroup"] button:has-text("' . ($locale === 'it' ? 'Entrata' : 'Income') . '")');
+    waitUntil($page, "document.querySelector('[data-picker-all]').textContent.includes('" . ($locale === 'it' ? 'Tutte 11' : 'All 11') . "')");
+
+    expect(truncatedLabels($page))->toBe([])
+        ->and($page->script('document.documentElement.scrollWidth <= document.documentElement.clientWidth'))->toBeTrue();
+
+    $page->assertNoJavaScriptErrors();
+})->with([375, 360])->with('themes')->with(['en', 'it']);
 
 it('saves a different category for the transaction', function (int $width, int $height) {
     $transaction = savedTransactionIn($this->tally, $this->user, 'groceries', TransactionType::EXPENSE);

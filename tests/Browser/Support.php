@@ -20,3 +20,13 @@ function waitUntil(mixed $page, string $condition): void
 {
     $page->page()->waitForFunction($condition);
 }
+
+/** True when a label wraps past its two lines or is cut off by the tile. */
+function truncatedLabels(mixed $page): array
+{
+    return (array) $page->script(<<<'JS'
+        [...document.querySelectorAll('[data-picker-tile] span')]
+            .filter((label) => label.scrollHeight > label.clientHeight + 1 || label.scrollWidth > label.clientWidth + 1)
+            .map((label) => label.textContent)
+    JS);
+}

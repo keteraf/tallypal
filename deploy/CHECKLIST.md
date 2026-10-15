@@ -3,6 +3,9 @@
 Run in this order on production. Steps 1–8 belong to every deploy from now on. Step 9 runs **once**, for the
 restyle + categories release, and is never part of the regular deploy commands.
 
+**Before the deploy**, on the machine that runs the gate: `npx playwright install chromium` (needed by `composer check`;
+its last step, `test:browser`, fails on a fresh machine without it). CI installs it in `shared-ci.yml`.
+
 1. **Environment.** `.env` has `APP_NAME=Tallypal` (not `TallyPal`: it shows in titles and mails, FP-16) and
    `APP_ENV=production` (the `/dev/*` routes are only registered outside production).
 2. **Code + dependencies.** `composer install --no-dev --optimize-autoloader`, `npm ci`.

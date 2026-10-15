@@ -306,4 +306,6 @@ Rules — these are mandatory for all UI work:
 - **No UI item may be marked verified without a screenshot of it.**
 - A finding is FIXED only after a side-by-side comparison with its .verify/design/ reference.
 - Done means `composer check; echo "exit: $?"` prints `exit: 0`. Run it exactly like that and quote the `exit:` line together with the final summary lines (test count, coverage, mutation score) in your report.
+- `npx playwright install chromium` (needed by `composer check`): run it once on a fresh machine; `composer check` ends with the
+  Pest browser tests (`test:browser`) and fails without that Chromium. CI installs it in `shared-ci.yml`.
 - Per-class mutation scores (`--class`) are informational only. The gate is the full `composer test:mutate` run.
