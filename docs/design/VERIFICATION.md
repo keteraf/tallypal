@@ -280,6 +280,9 @@ blocked items across batches 1–7: **Blocked items** below.
   Ski Cabin (3 members 40/30/30, EUR only; Noah Whitfield is settled, Priya Shah owes you 40.00, F-061):
   `0d3e0000-0000-7000-8000-000000000006`.
   (All earlier ids, e.g. `01a136a8-…`, are gone and 404.)
+  Since R4 the demo user also has income categories (Salary, Side work, Refunds & returns, Gifts, Investments, Sold items),
+  one uncategorised income, uncategorised expenses (an "Uncategorised" ◌ row ranks 3rd in October's By category), and a
+  learned frequent row (groceries, dining_out, transportation / salary, side_work), all dated relative to now.
 - Overlays: `n` opens Add transaction (tally picker step first); the sidebar `+` (`aria-label="New
   tally"`) opens New tally on desktop, the dashed "New tally" rail card on mobile Home; Share opens
   from the detail header.
@@ -3180,7 +3183,7 @@ wrong).
 
 **B-16 — Breakdowns: no income, and an "Uncategorised" row** (audit: already filtered by type; C-D1)
 - **Status: DONE (R3) backend + row UI** — rows carry `slug` and `is_uncategorised`; `KEY_VERSION` v13; `categories.uncategorised` EN/IT;
-  the ◌ row is in `HomeCategoriesBreakdown.vue` and `StatsCategoryBreakdown.vue` (not yet screenshotted: CA-19/CA-22 open).
+  the ◌ row is in `HomeCategoriesBreakdown.vue` and `StatsCategoryBreakdown.vue` (screenshotted in R4: CA-19/CA-22 pass).
 - Income: tests only, unless they fail. `HomeControllerTest` and `StatsControllerTest`: a user with an income in an
   income category (and a large amount) in the range → its category never appears in `categories_breakdown` /
   `categories`, and the totals equal the expenses only.
@@ -3193,7 +3196,8 @@ wrong).
   + Other add up to the period's expense total** (FP-09); an uncategorised **income** never appears.
 
 **B-17 — `tallypal:reset-activity`** (C-D11)
-- **Status: PLANNED**
+- **Status: DONE (R4)** — `App\Console\Commands\ResetActivityCommand`; also refuses unless `ALLOW_ACTIVITY_RESET=true`
+  (`config('app.allow_activity_reset')`), see `deploy/CHECKLIST.md` step 9. Tests: `tests/Feature/Console/Commands/ResetActivityCommandTest.php`.
 - `php artisan tallypal:reset-activity --force`. Without `--force`: prints the row counts it would delete and exits
   **1** without touching anything (no interactive prompt, so it cannot be confirmed by accident in a pipeline).
 - With `--force`, in one DB transaction: delete `transactions`, `tally_invitations`, `tally_user`, `tallies` (that order;
@@ -3239,12 +3243,22 @@ migration gave it slug `housing_17`; it will show in the local picker until dele
 coverage, mutation score 100.00%).
 
 **Follow-ups (recorded in R2, not done yet).**
-- **R4 — delete unused non-reference categories.** Add a migration that deletes the categories that are not in the
+- **R4 — delete unused non-reference categories (DONE R4: migration `2026_10_15_090000`).** Add a migration that deletes the categories that are not in the
   `ReferenceDataSeeder` set (matched by `slug`) and have no transactions; this removes the hand-added "Housing"
   (`housing_17`) in every environment. Test: a non-reference category that **is** in use is kept (and an unused one is deleted,
   a reference one is never deleted).
 - **After this branch — unique `currencies.code`.** First fix the test fixtures that create duplicate currency codes
   (see B-13: ~66 tests create a second EUR/USD/GBP/JPY row), then add a unique index on `currencies.code`.
+
+**R4 done (2026-10-15).** `tallypal:reset-activity` (guarded by `ALLOW_ACTIVITY_RESET`), migration `2026_10_15_090000` deleting unused
+non-reference categories (dev DB: "Housing" gone, 27 categories, 16 expense), `DemoSeeder` (incomes use income categories, 4 uncategorised
+rows, relative-dated "recent habits" so the demo user's frequent row is groceries / dining_out / transportation and salary / side_work).
+The uncategorised total is sized (184.50) to rank in the top five, otherwise it folds into Other and no ◌ row shows.
+Seen while screenshotting, not changed: an uncategorised expense in Home Recent / Stats activity shows the sub-line "expense" (the type)
+instead of a label such as "Uncategorised".
+
+**Follow-up (record only): `transactions.created_by`.** Frequent categories count on `transactions.party_id` (the payer, or the
+receiver of an income), because no column records who created a row. Add `created_by` and switch `frequentCategories()` to it.
 
 **R3 done (2026-10-15).** `TransactionStatsRepository::frequentCategories()` (+ `CategoryType::defaultSlugs()`), `frequent_categories`
 in the form data; `categoriesBreakdown()` returns `slug` / `is_uncategorised` (label from i18n), `CategoryBars` adds them to Other.
@@ -3297,11 +3311,11 @@ responsive rule (inline panel ≥ md, second sheet < md).
 | CA-17 | M | same, stacked | `frame-12…` anatomy | data | [ ] |
 | CA-18 | D | Stats All activity rows (Bonus ✪, Gifts ❖, Investments ▲, Salary ¤) | `frame-13-stats-all-activity` | data | [ ] |
 | CA-18 | M | same, stacked | `frame-13…` anatomy | data | [ ] |
-| CA-19 | D | Home + Stats By category: no income category, ever (B-16) | Batch 1/4 refs (`../desktop/home-1.png`, `../desktop/stats-0.png`) | data | [ ] |
-| CA-19 | M | same | `../mobile/home-2.png`, Stats mobile ref | data | [ ] |
+| CA-19 | D | Home + Stats By category: no income category, ever (B-16) | Batch 1/4 refs (`../desktop/home-1.png`, `../desktop/stats-0.png`) | data | [x] PASS (R4, 2026-10-15): no income row on either card despite 9 income categories in the month; `desktop/ca19-22-home-1440.png`, `ca19-22-stats-1440.png` |
+| CA-19 | M | same | `../mobile/home-2.png`, Stats mobile ref | data | [x] PASS (R4): `mobile/ca19-22-home-375.png`, `ca19-22-stats-375.png` |
 | CA-20 | D | Frequent row: `demo-empty` (defaults) vs `demo` (learned order, ≥ 2 uses / 90 days) | `section-s3` text | data | [ ] |
 | CA-20 | M | same, 4 tiles | `section-s3` text | data | [ ] |
 | CA-21 | D | Uncategorised income row: ↓ in `--pos`, sub = "Income" | — (app rule, FP-13) | data | [ ] |
 | CA-21 | M | same | — | data | [ ] |
-| CA-22 | D | Home + Stats By category: "Uncategorised" row with ◌ (`--text-3`), rows add up to the total | Batch 1/4 refs (`../desktop/home-1.png`, `../desktop/stats-0.png`) | data | [ ] |
-| CA-22 | M | same | `../mobile/home-2.png` | data | [ ] |
+| CA-22 | D | Home + Stats By category: "Uncategorised" row with ◌ (`--text-3`), rows add up to the total | Batch 1/4 refs (`../desktop/home-1.png`, `../desktop/stats-0.png`) | data | [x] PASS (R4, dark): row anatomy (marker, name, bar, value, pct) identical to the design's rows; ◌ is a hollow ring in `--text-3`, faint on `surface-1` but visible; 950.00 + 346.85 + 184.50 + 158.30 + 149.20 + Other 316.09 = 2,104.94 = Stats total; `desktop/ca19-22-{home,stats}-1440.png` |
+| CA-22 | M | same | `../mobile/home-2.png` | data | [x] PASS (R4, dark): same rows at 375, no overflow; `mobile/ca19-22-{home,stats}-375.png` |

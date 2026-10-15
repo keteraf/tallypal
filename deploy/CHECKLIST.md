@@ -20,6 +20,10 @@ restyle + categories release, and is never part of the regular deploy commands.
    - Same for `/dev/error-page`: prints `404`.
    - The page `<title>` reads "Tallypal".
 9. **One-off: wipe test activity** (this release only; production is a friends-only test environment).
-   `php artisan tallypal:reset-activity --force` deletes every transaction, tally invitation, membership and tally,
-   keeps users, roles, tokens, currencies and categories, and clears every user's Home cache. Without `--force` it only
-   prints what it would delete and exits 1.
+   1. Add `ALLOW_ACTIVITY_RESET=true` to the environment (and `php artisan config:clear` if config is cached). Set it
+      **only for the wipe**: without it the command refuses to run, with or without `--force`.
+   2. `php artisan tallypal:reset-activity` prints the row counts it would delete and exits 1. Check them.
+   3. `php artisan tallypal:reset-activity --force` deletes every transaction, tally invitation, membership and tally,
+      keeps users, roles, tokens, currencies and categories, clears every user's Home cache and rotates their sidebar
+      tokens.
+   4. **Remove `ALLOW_ACTIVITY_RESET` from the environment right after** (and re-run `php artisan optimize`).

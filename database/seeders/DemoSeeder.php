@@ -128,6 +128,7 @@ class DemoSeeder extends Seeder
         $this->seedTripTransactions($trip, $demo, $noah, $currencies, $categories);
         $this->seedMixedCurrencyTransactions($cityBreak, $demo, $currencies, $categories);
         $this->seedThreeMemberTransactions($skiCabin, $demo, $priya, $noah, $currencies, $categories);
+        $this->seedRecentHabits($household, $solo, $demo, $currencies, $categories);
 
         TallyInvitation::query()->create([
             'tally_id' => $household->tally_id,
@@ -184,7 +185,7 @@ class DemoSeeder extends Seeder
         Tally $tally,
         User $party,
         Currency $currency,
-        Category $category,
+        ?Category $category,
         TransactionType $type,
         string $title,
         float $amount,
@@ -194,7 +195,7 @@ class DemoSeeder extends Seeder
             'tally_id' => $tally->tally_id,
             'party_id' => $party->id,
             'currency_id' => $currency->currency_id,
-            'category_id' => $category->category_id,
+            'category_id' => $category?->category_id,
             'type' => $type,
             'title' => $title,
             'amount' => $amount,
@@ -225,7 +226,7 @@ class DemoSeeder extends Seeder
             $this->addTransaction($tally, $demo, $eur, $categories['rent'], TransactionType::EXPENSE, 'Rent', 950.00, $monthAnchor->day(1));
 
             if ($lastDay >= 5) {
-                $this->addTransaction($tally, $demo, $eur, $categories['bills'], TransactionType::INCOME, 'Salary', 2650.00, $monthAnchor->day(5));
+                $this->addTransaction($tally, $demo, $eur, $categories['salary'], TransactionType::INCOME, 'Salary', 2650.00, $monthAnchor->day(5));
             }
 
             $entries = [
@@ -373,5 +374,53 @@ class DemoSeeder extends Seeder
         $this->addTransaction($tally, $demo, $eur, $categories['travel'], TransactionType::EXPENSE, 'Cabin rental', 120.00, $monthStart);
         $this->addTransaction($tally, $noah, $eur, $categories['dining_out'], TransactionType::EXPENSE, 'Fondue night', 60.00, $monthStart);
         $this->addTransaction($tally, $priya, $eur, $categories['entertainment'], TransactionType::EXPENSE, 'Lift passes', 20.00, $monthStart);
+    }
+
+    /**
+     * Dated relative to now, so the demo user's frequent categories (two or more uses in the last 90
+     * days) stay populated whatever day the seeder runs: groceries, dining out and transportation lead
+     * the expenses, Salary and Side work the incomes. Also the uncategorised rows: three expenses in
+     * the current month (the ◌ row of the By category cards) and one income (the ↓ state).
+     *
+     * @param  Collection<string, Currency>  $currencies
+     * @param  Collection<string, Category>  $categories
+     */
+    private function seedRecentHabits(Tally $household, Tally $solo, User $demo, Collection $currencies, Collection $categories): void
+    {
+        $eur = $currencies->get('EUR');
+        $today = CarbonImmutable::now()->startOfDay();
+
+        $expenses = [
+            ['groceries', 'Market stall', 18.30, [1, 4, 6, 9, 13, 17, 21, 33, 47, 62]],
+            ['dining_out', 'Takeaway', 15.80, [2, 8, 19, 29, 52, 70]],
+            ['transportation', 'Taxi', 22.40, [3, 11, 26, 40, 66]],
+        ];
+
+        foreach ($expenses as [$slug, $title, $amount, $offsets]) {
+            foreach ($offsets as $offset) {
+                $this->addTransaction($household, $demo, $eur, $categories[$slug], TransactionType::EXPENSE, $title, $amount, $today->subDays($offset));
+            }
+        }
+
+        $incomes = [
+            [$solo, 'side_work', 'Freelance invoice', 320.00, [6, 23, 41, 70]],
+            [$household, 'refunds_returns', 'Returned jacket', 45.90, [10]],
+            [$solo, 'gifts_received', 'Birthday gift', 100.00, [35]],
+            [$solo, 'investments', 'Dividend', 62.30, [28]],
+            [$solo, 'sold_items', 'Sold bike lights', 85.00, [17]],
+        ];
+
+        foreach ($incomes as [$tally, $slug, $title, $amount, $offsets]) {
+            foreach ($offsets as $offset) {
+                $this->addTransaction($tally, $demo, $eur, $categories[$slug], TransactionType::INCOME, $title, $amount, $today->subDays($offset));
+            }
+        }
+
+        $monthStart = $today->startOfMonth();
+
+        $this->addTransaction($household, $demo, $eur, null, TransactionType::EXPENSE, 'Cash withdrawal', 160.00, $monthStart);
+        $this->addTransaction($solo, $demo, $eur, null, TransactionType::EXPENSE, 'Misc. purchase', 18.50, $monthStart);
+        $this->addTransaction($solo, $demo, $eur, null, TransactionType::EXPENSE, 'Parking', 6.00, $today);
+        $this->addTransaction($solo, $demo, $eur, null, TransactionType::INCOME, 'Cash from a friend', 50.00, $today->subDays(15));
     }
 }
