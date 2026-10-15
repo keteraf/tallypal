@@ -3352,6 +3352,24 @@ Shared browser-test helpers moved to `tests/Browser/Support.php`.
   design's "Trenitalia — cancelled train" cannot be entered. Widen it with the O-03 pattern (migration + `max:` in the requests + forms + tests) in the
   settle-up branch.
 
+**Delta check (2026-10-15, at `7c7f81d`).** DemoSeeder re-run first; nothing saved through the browser. Built assets (`public/hot` set aside:
+the Vite dev server fails "Failed to fetch dynamically imported module"), Debugbar hidden for the shots, no console errors. 96 shots in
+`.verify/app/categories-delta/` (375×812 and 360×800 × dark/light × EN/IT), measurements in `measurements.json`.
+- **CA-13 M / CA-14 M: PASS (re-confirmed).** Edit page, income "Sold items" (pinned first, selected, `+€` in `--pos`) and expense "Travel",
+  each also flipped to the other type (pick cleared, `--neg` notice). Picker 335 px at 375 / 320 at 360, tiles 62.2 / 59.2 px, **0 truncated labels
+  in 32 states**, no horizontal scroll. Compared with `desktop-frame-09-…-{dark,light}-{en,it}`, `desktop-frame-10-…`, `desktop-frame-06-…-it`.
+- **Phone "All" sheet while filtering: PASS.** Expense: full 16 → "tra" 2 → "spesa" 1 → "zzz" none; income: full 11 → "vin" 2 (Winnings + Sold items
+  via the "vinted" alias) → "stipendio" 1 → "zzz" none. Sheet height constant in every state (**expense 493 px, income 407 px**, both widths),
+  filter not focused on open, no label truncated. Compared with `desktop-frame-07-dark-income-all-sheet-open-*` and
+  `desktop-interactive-phone-all-sheet-filtered-*` ("re" gives the design's same 9 tiles).
+- **Mutation scope (report only).** `test:mutate` = `pest --no-tia --parallel --mutate --min=90`, **no `--everything`** (not in `composer.json`,
+  `tests/Pest.php` or CI). Pest only mutates classes named in `covers()` / `mutates()` and runs only the tests that declare them: the run says
+  "1771 Mutations for **60 Files**" (725 tests). 37 of the 97 class-likes in `app/` are named by no test, so they get no mutants; 2 of them were added
+  on this branch (`ResetActivityCommand`, `CategoryType`). The third class added here, `Rules/CategoryMatchesType`, is named (R9).
+- **Gate:** `composer check; echo "exit: $?"` → `exit: 0`. Vitest 61 passed; Pest 904 passed (3,900 assertions), coverage **99.8 %**; mutation
+  **100.00 %** (1,771 mutations, 3 timeouts); browser 49 passed.
+- **Verdict: merge.** No CA row open.
+
 **Follow-up (record only): `transactions.created_by`.** Frequent categories count on `transactions.party_id` (the payer, or the
 receiver of an income), because no column records who created a row. Add `created_by` and switch `frequentCategories()` to it.
 
@@ -3395,9 +3413,9 @@ responsive rule (inline panel ≥ md, second sheet < md).
 | CA-12 | D | Italian labels: hyphenation, 2-line clamp, cleared copy "… è una categoria di uscita: rimossa." | `frame-01…-it`, `frame-02…-it`, `frame-04…-it` | it | [x] PASS (R6): no Italian label truncated in the row or the grid (measured `scrollHeight`/`scrollWidth`, 1440); cleared copy "Spesa è una categoria di uscita: rimossa."; `desktop/r6-add-switched-cleared-it-1440-*.png` vs `desktop-frame-02…-it` |
 | CA-12 | M | same | `frame-05…-it`, `frame-06…-it`, `frame-07…-it` | it | [x] PASS (R6): same check at 375 and 360, none truncated ("Resi e rimborsi" wraps to two lines); `mobile/r6-add-switched-cleared-it-{375,360}-*.png` vs `desktop-frame-06…-it`, `desktop-frame-07…-it` |
 | CA-13 | D | Edit · Income · saved non-frequent "Sold items" pinned first | `frame-09-desktop-dark-income-sold-items-not-frequent-pinned-first` | pinned | [x] PASS (R7, dark + light): saved "Sold items" (not frequent) pinned first and selected, `+` in `--pos`; `desktop/r7-edit-income-sold-1440-{dark,light}.png` vs `desktop-frame-09-desktop-dark-income-sold-items-not-frequent-pinned-first-{dark,light}-en` |
-| CA-13 | M | same | `frame-09…` anatomy | pinned | [x] PASS (R9, 375 + 360, dark + light, EN + IT): below `sm` the Edit page drops the card (no border, background or padding), so the picker is 335 px at 375 / 320 at 360, the Add sheet's width, tiles 62 / 59 px. "Refunds & returns", "Side work", "Stipendio" (after the flip to Income) and "Lavoro extra" are not clipped; `EditTransactionFormTest` asserts it. `categories-final/ca13-edit-income-m-{375,360}-{dark,light}-{en,it}.png` vs `desktop-frame-09-…` |
+| CA-13 | M | same | `frame-09…` anatomy | pinned | [x] PASS (R9, 375 + 360, dark + light, EN + IT): below `sm` the Edit page drops the card (no border, background or padding), so the picker is 335 px at 375 / 320 at 360, the Add sheet's width, tiles 62 / 59 px. "Refunds & returns", "Side work", "Stipendio" (after the flip to Income) and "Lavoro extra" are not clipped; `EditTransactionFormTest` asserts it. `categories-final/ca13-edit-income-m-{375,360}-{dark,light}-{en,it}.png` vs `desktop-frame-09-…`. **Delta (`7c7f81d`): PASS re-confirmed**, incl. the flip to Expense; `categories-delta/ca13-*.png` |
 | CA-14 | D | Edit · Expense · Travel | `frame-10-phone-light-expense-travel` anatomy | selected | [x] PASS (R7): Travel selected and pinned first; `desktop/r7-edit-expense-travel-1440-{dark,light}.png` vs `desktop-frame-10-phone-light-expense-travel-{dark,light}-en` anatomy |
-| CA-14 | M | same | `frame-10-phone-light-expense-travel` | selected | [x] PASS (R9, 375 + 360, dark + light, EN + IT): same cause and fix as CA-13 M; "Groceries", "Trasporti" and "Stipendio" fit whole. The only break is the design's own soft hyphen, "Transpor-tation", drawn in frame 10 and identical in the Add sheet at the same width. `categories-final/ca14-edit-expense-m-{375,360}-{dark,light}-{en,it}.png` vs `mobile-frame-10-phone-light-expense-travel-{dark,light}-en` |
+| CA-14 | M | same | `frame-10-phone-light-expense-travel` | selected | [x] PASS (R9, 375 + 360, dark + light, EN + IT): same cause and fix as CA-13 M; "Groceries", "Trasporti" and "Stipendio" fit whole. The only break is the design's own soft hyphen, "Transpor-tation", drawn in frame 10 and identical in the Add sheet at the same width. `categories-final/ca14-edit-expense-m-{375,360}-{dark,light}-{en,it}.png` vs `mobile-frame-10-phone-light-expense-travel-{dark,light}-en`. **Delta (`7c7f81d`): PASS re-confirmed**, incl. the flip to Income; `categories-delta/ca14-*.png` |
 | CA-15 | D | Edit · type flip clears + notice, Save stays enabled, 422 never reached | `section-s4` | cleared | [x] PASS (R7): Pest browser `EditTransactionFormTest` (1440, dark + light): flip clears, `--neg` notice, Save saves with no category (422 never reached); server 422 shows the E1 error state |
 | CA-15 | M | same | `section-s4` | cleared | [x] PASS (R7): same Pest browser tests at 375 |
 | CA-16 | D | Home Recent: income rows with income glyph/colour, sub = category, `+` `--pos`; Salary "¤ Salary" | `frame-11-home-recent` | data | [x] PASS (R7): income glyph/colour by category, sub = category, Uncategorised ◌ in `--text-3`; `desktop/r7-home-recent-1440-{dark,light}.png` vs `desktop-frame-11-home-recent-{dark,light}` |
