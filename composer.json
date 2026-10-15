@@ -97,9 +97,9 @@
         "test:lint": "pint --test",
         "test:refactor": "rector --dry-run",
         "test:types": "phpstan analyse --memory-limit 512M",
-        "test:base": "XDEBUG_MODE=coverage pest --no-tia --colors=always --parallel @additional_args",
-        "test:fast": "XDEBUG_MODE=coverage pest --tia --colors=always --parallel @additional_args",
-        "test:browser": "pest --no-tia --colors=always tests/Browser @additional_args",
+        "test:base": "rm -f vendor/pestphp/pest/.temp/only.lock && XDEBUG_MODE=coverage pest --no-tia --colors=always --parallel @additional_args",
+        "test:fast": "rm -f vendor/pestphp/pest/.temp/only.lock && XDEBUG_MODE=coverage pest --tia --colors=always --parallel @additional_args",
+        "test:browser": "rm -f vendor/pestphp/pest/.temp/only.lock && pest --no-tia --colors=always tests/Browser @additional_args",
         "test:unit": "@test:base --coverage --min=90",
         "test:mutate": "@test:base --mutate --min=90",
         "test": [
@@ -124,6 +124,7 @@
         }
     },
     "config": {
+        "process-timeout": 0,
         "optimize-autoloader": true,
         "preferred-install": "dist",
         "sort-packages": true,
