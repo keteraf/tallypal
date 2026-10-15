@@ -1,22 +1,19 @@
 <x-mail::message>
-# You've been invited to collaborate
+<p class="eyebrow">Invitation</p>
 
-**{{ $inviterName }}** has invited you to collaborate on the tally **"{{ $tallyName }}"** on {{ config('app.name') }}.
+# Join “{{ $tallyName }}”
 
-Accept the invitation to start tracking shared expenses together.
+**{{ $inviterName }}** wants to track shared expenses with you on {{ config('app.name') }}.
+
+<x-mail::tally-card :tally="$tallyName" :inviter="$inviterName" />
 
 <x-mail::button :url="$acceptUrl">
-Accept Invitation
+Accept invitation
 </x-mail::button>
 
-If you don't want to join this tally, you can decline:
-
-<x-mail::button :url="$declineUrl" color="red">
-Decline Invitation
+<x-mail::button :url="$declineUrl" color="secondary">
+Decline
 </x-mail::button>
 
-This invitation will expire in 7 days. If you did not expect this invitation, you can safely ignore this email.
-
-Thanks,<br>
-{{ config('app.name') }}
+<p class="sub">This invitation expires in 7 days. Not expecting it? You can ignore this email.</p>
 </x-mail::message>

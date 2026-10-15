@@ -128,7 +128,7 @@ it('new user mailable has correct content', function () {
     expect($content->with['registerUrl'])->toContain('token-new-content');
 });
 
-it('existing user rendered html contains tallypal brand color', function () {
+it('existing user rendered html uses the design system and carries the invitation', function () {
     $owner = User::factory()->create(['name' => 'Inviter']);
     $tally = Tally::factory()->withOwner($owner)->create(['name' => 'Brand Test']);
 
@@ -144,11 +144,17 @@ it('existing user rendered html contains tallypal brand color', function () {
     $html = $mailable->render();
 
     expect($html)
-        ->toContain('#C2613B')
-        ->toMatch('/viewbox="0 0 64 64"/i');
+        ->toContain('#2d69de')
+        ->toContain('mail-logo.png')
+        ->toContain('Brand Test')
+        ->toContain('Inviter')
+        ->toContain($mailable->content()->with['acceptUrl'])
+        ->toContain('Decline')
+        ->not->toContain('#C2613B')
+        ->not->toContain('Newsreader');
 });
 
-it('new user rendered html contains tallypal brand color', function () {
+it('new user rendered html uses the design system and carries the invitation', function () {
     $owner = User::factory()->create(['name' => 'Inviter']);
     $tally = Tally::factory()->withOwner($owner)->create(['name' => 'Brand Test']);
 
@@ -164,6 +170,11 @@ it('new user rendered html contains tallypal brand color', function () {
     $html = $mailable->render();
 
     expect($html)
-        ->toContain('#C2613B')
-        ->toMatch('/viewbox="0 0 64 64"/i');
+        ->toContain('#2d69de')
+        ->toContain('mail-logo.png')
+        ->toContain('Brand Test')
+        ->toContain('Inviter')
+        ->toContain('token-brand-new')
+        ->not->toContain('#C2613B')
+        ->not->toContain('Newsreader');
 });

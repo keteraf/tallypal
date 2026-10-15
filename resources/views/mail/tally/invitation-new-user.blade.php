@@ -1,16 +1,15 @@
 <x-mail::message>
-# You've been invited to join {{ config('app.name') }}
+<p class="eyebrow">Invitation</p>
 
-**{{ $inviterName }}** has invited you to collaborate on the tally **"{{ $tallyName }}"** on {{ config('app.name') }}.
+# You're invited to {{ config('app.name') }}
 
-To accept this invitation, create your free account — once you register, you'll be automatically added to the tally.
+**{{ $inviterName }}** wants to track shared expenses with you. Create your free account and you'll be added to the tally automatically.
+
+<x-mail::tally-card :tally="$tallyName" :inviter="$inviterName" />
 
 <x-mail::button :url="$registerUrl">
-Create Account & Accept
+Create account and join
 </x-mail::button>
 
-This invitation will expire in 7 days. If you did not expect this invitation, you can safely ignore this email.
-
-Thanks,<br>
-{{ config('app.name') }}
+<p class="sub">This invitation expires in 7 days. Not expecting it? You can ignore this email.</p>
 </x-mail::message>

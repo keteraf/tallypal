@@ -2,6 +2,13 @@
 
 declare(strict_types=1);
 
+use App\Models\Tally;
+use App\Models\TallyInvitation;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
+
 it('renders the error page preview with a 404 status outside production', function (): void {
     $this->get(route('dev.error-page'))
         ->assertNotFound()
@@ -37,3 +44,28 @@ it('ships the status-specific error titles in every locale', function (string $l
     'it 500' => ['it', 'generic', "'Ops! Qualcosa è andato storto'"],
     'it 503' => ['it', 'unavailable', "'Torniamo tra pochi minuti'"],
 ]);
+
+it('renders every email preview from the seeded data', function (string $template, string $expected): void {
+    $owner = User::factory()->create(['name' => 'Preview Owner']);
+    $tally = Tally::factory()->withOwner($owner)->create(['name' => 'Preview Tally']);
+    $tally->invitations()->create([
+        'invited_by_user_id' => $owner->id,
+        'email' => 'invitee@example.com',
+        'token' => 'token-preview',
+        'status' => TallyInvitation::STATUS_PENDING,
+        'expires_at' => now()->addDays(7),
+    ]);
+
+    $this->get(route('dev.mail', ['template' => $template]))
+        ->assertOk()
+        ->assertSee($expected, false);
+})->with([
+    'existing user invitation' => ['invitation-existing', 'Accept invitation'],
+    'new user invitation' => ['invitation-new', 'Create account and join'],
+    'verify email' => ['verify-email', 'Verify Email Address'],
+    'reset password' => ['reset-password', 'Reset Password'],
+]);
+
+it('rejects unknown email previews', function (): void {
+    $this->get('/dev/mail/unknown')->assertNotFound();
+});
