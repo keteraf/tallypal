@@ -1,16 +1,8 @@
 <script setup lang="ts">
+import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
+import DeleteSection from '@/components/DeleteSection.vue';
 import { Button } from '@/components/ui/button';
 import { ChipGroup, type ChipOption } from '@/components/ui/choice-chip';
-import {
-    Dialog,
-    DialogClose,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from '@/components/ui/dialog';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -161,37 +153,25 @@ const deleteTally = () => {
                 </Form>
             </div>
 
-            <div v-if="isOwner" class="mt-6 space-y-4 rounded-sm border border-neg/30 bg-neg/[0.05] px-5 py-4">
-                <div class="space-y-1 text-neg">
-                    <p class="font-mono text-xs tracking-[0.12em] uppercase">{{ $t('common.warning') }}</p>
-                    <p class="text-sm">{{ $t('tallies.delete_confirm_description', { name: tally.name }) }}</p>
-                </div>
-                <Dialog>
-                    <DialogTrigger as-child>
-                        <Button variant="destructive">
-                            <Trash2 class="size-4" />
-                            {{ $t('tallies.delete_tally') }}
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>{{ $t('tallies.delete_confirm_title') }}</DialogTitle>
-                            <DialogDescription>{{ $t('tallies.delete_confirm_description', { name: tally.name }) }}</DialogDescription>
-                            <p v-if="other_members_count > 0" class="text-sm font-medium text-neg">
-                                {{ $t('tallies.delete_shared_notice', { name: tally.name, count: other_members_count }, other_members_count) }}
-                            </p>
-                        </DialogHeader>
-                        <DialogFooter>
-                            <DialogClose as-child>
-                                <Button variant="ghost" type="button">{{ $t('common.cancel') }}</Button>
-                            </DialogClose>
-                            <Button variant="destructive" :disabled="deleteForm.processing" @click="deleteTally">
-                                {{ deleteForm.processing ? $t('common.deleting') : $t('tallies.delete_tally') }}
-                            </Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
-            </div>
+            <DeleteSection v-if="isOwner" :title="$t('tallies.delete_tally')" :description="$t('tallies.delete_hint')">
+                <ConfirmDeleteDialog
+                    :title="$t('tallies.delete_confirm_title')"
+                    :description="$t('tallies.delete_confirm_description', { name: tally.name })"
+                    :notice="
+                        other_members_count > 0
+                            ? $t('tallies.delete_shared_notice', { name: tally.name, count: other_members_count }, other_members_count)
+                            : null
+                    "
+                    :confirm-label="$t('tallies.delete_tally')"
+                    :processing="deleteForm.processing"
+                    @confirm="deleteTally"
+                >
+                    <Button variant="destructive" type="button">
+                        <Trash2 class="size-4" />
+                        {{ $t('tallies.delete_tally') }}
+                    </Button>
+                </ConfirmDeleteDialog>
+            </DeleteSection>
         </div>
     </WebLayout>
 </template>

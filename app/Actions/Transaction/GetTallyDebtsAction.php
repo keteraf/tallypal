@@ -81,13 +81,18 @@ final readonly class GetTallyDebtsAction
         try {
             $paidRows = $this->paidRows($tallies->map(fn (Tally $tally): int => $tally->tally_id)->all());
 
-            return $tallies->mapWithKeys(fn (Tally $tally): array => [
-                $tally->tally_id => $paidRows->get($tally->tally_id, collect())
-                    ->groupBy('currency_id')
-                    ->sortBy(fn (Collection $currencyRows, int $currencyId): array => [-$currencyRows->sum(fn ($row): int => $row->uses), $currencyId])
-                    ->map(fn (Collection $currencyRows): array => $this->currencyEntry($tally, $currencyRows))
-                    ->values(),
-            ]);
+            return $tallies->mapWithKeys(function (Tally $tally) use ($paidRows): array {
+                /** @var Collection<int, PaidRow> $tallyRows */
+                $tallyRows = $paidRows->get($tally->tally_id, collect());
+
+                return [
+                    $tally->tally_id => $tallyRows
+                        ->groupBy('currency_id')
+                        ->sortBy(fn (Collection $currencyRows, int $currencyId): array => [-$currencyRows->sum(fn ($row): int => $row->uses), $currencyId])
+                        ->map(fn (Collection $currencyRows): array => $this->currencyEntry($tally, $currencyRows))
+                        ->values(),
+                ];
+            });
         } catch (Throwable $e) {
             report($e);
             abort(500);

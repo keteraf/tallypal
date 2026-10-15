@@ -36,6 +36,8 @@ interface TransactionItem {
 }
 
 interface Props {
+    /** One-shot flash from the last write, e.g. `transaction-deleted`. */
+    status?: string | null;
     tally: {
         tally_id: number;
         uuid: string;
@@ -171,6 +173,9 @@ const signedAmount = (transaction: TransactionItem): string =>
 
     <WebLayout>
         <div class="mx-auto w-full max-w-330 px-5 py-6 pb-28 md:px-8 md:py-8">
+            <div v-if="status === 'transaction-deleted'" role="status" class="mb-4 text-sm font-medium text-pos">
+                {{ $t('transactions.deleted') }}
+            </div>
             <div class="md:hidden">
                 <DetailHeader :title="tally.name" :subtitle="memberLabel" :back-href="tallies.index.url()">
                     <template #glyph>

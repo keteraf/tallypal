@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Actions\Transaction\DestroyTransactionAction;
 use App\Actions\Transaction\GetBalanceSummaryAction;
 use App\Actions\Transaction\GetTallyDebtsAction;
 use App\Actions\Transaction\GetTallyPerPersonAction;
@@ -15,6 +16,7 @@ use App\Actions\Transaction\UpdateTransactionAction;
 use App\Contracts\Repositories\TransactionStatsRepositoryInterface;
 use App\DTOs\TransactionDTO;
 use App\Enums\CategoryType;
+use App\Http\Requests\Transactions\DestroyTransactionRequest;
 use App\Http\Requests\Transactions\StoreTransactionRequest;
 use App\Http\Requests\Transactions\UpdateTransactionRequest;
 use App\Models\Category;
@@ -76,6 +78,7 @@ class TransactionController extends Controller
             'debts' => Inertia::merge(fn (): \Illuminate\Support\Collection => $getDebtsAction->handle($tally)),
             'settled_members' => Inertia::merge(fn (): \Illuminate\Support\Collection => $getBalanceSummaryAction->settledMembers($tally)),
             'splits' => Inertia::merge(fn (): \Illuminate\Support\Collection => $getSplitAction->handle($tally)),
+            'status' => $request->session()->get('status'),
         ]);
     }
 
@@ -118,12 +121,13 @@ class TransactionController extends Controller
     /**
      * Show the form for editing the specified transaction.
      */
-    public function edit(Tally $tally, Transaction $transaction): Response
+    public function edit(Request $request, Tally $tally, Transaction $transaction): Response
     {
         $this->authorize('view', $transaction);
 
         return Inertia::render('tallies/transactions/Edit', [
             'tally' => $tally->only(['tally_id', 'uuid', 'name']),
+            'can_delete' => (bool) $request->user()?->can('delete', $transaction),
             'transaction' => $transaction->only(['transaction_id', 'uuid', 'title', 'amount', 'party_id', 'category_id', 'currency_id', 'type', 'transaction_date', 'description']),
             ...$this->transactionFormData($tally),
         ]);
@@ -146,6 +150,18 @@ class TransactionController extends Controller
         $action->handle($transaction, $transactionDTO);
 
         return redirect()->route('tallies.transactions.index', $tally);
+    }
+
+    /**
+     * Remove the specified transaction from storage.
+     */
+    public function destroy(DestroyTransactionRequest $request, Tally $tally, Transaction $transaction, DestroyTransactionAction $action): RedirectResponse
+    {
+        abort_unless($transaction->tally_id === $tally->tally_id, 404);
+
+        $action->handle($transaction);
+
+        return redirect()->route('tallies.transactions.index', $tally)->with('status', 'transaction-deleted');
     }
 
     /**

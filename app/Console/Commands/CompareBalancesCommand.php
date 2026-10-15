@@ -18,6 +18,8 @@ use Illuminate\Support\Collection;
  * One-off, read-only check before deploying B-04: for every tally, compares the debts the pre-B-04
  * `GetTallyDebtsAction::handle()` produced (floats, members' pivot rows only) with the new integer
  * `ledger()`. A user's net is what the settlements say they get (+) or pay (−), in minor units.
+ *
+ * @phpstan-import-type LedgerEntry from GetTallyDebtsAction
  */
 class CompareBalancesCommand extends Command
 {
@@ -46,6 +48,7 @@ class CompareBalancesCommand extends Command
             foreach ($tallies as $tally) {
                 $scanned++;
                 $old = $this->legacyDebts($tally);
+                /** @var Collection<int, LedgerEntry> $new */
                 $new = $ledgers->get($tally->tally_id) ?? collect();
                 $tallyChanged = false;
 

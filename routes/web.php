@@ -59,7 +59,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('tallies/{tally}/transactions/form-data', [TransactionController::class, 'formData'])->name('tallies.transactions.form-data');
 
-    Route::resource('tallies.transactions', TransactionController::class)->only(['index', 'create', 'store', 'edit', 'update']);
+    Route::resource('tallies.transactions', TransactionController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
 });
 
 require __DIR__ . '/settings.php';

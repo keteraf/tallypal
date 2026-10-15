@@ -218,6 +218,29 @@ it('deletes a tally and redirects to index', function (): void {
     ]);
 });
 
+it('forbids a member who is not the owner from deleting the tally', function (): void {
+    $owner = User::factory()->create();
+    $member = User::factory()->create();
+    $tally = App\Models\Tally::factory()->create(['owner_id' => $owner->id]);
+    $tally->users()->syncWithoutDetaching([$owner->id, $member->id]);
+
+    actingAs($member)
+        ->delete(route('tallies.destroy', $tally))
+        ->assertForbidden();
+
+    $this->assertModelExists($tally);
+});
+
+it('forbids a stranger from deleting the tally', function (): void {
+    $tally = App\Models\Tally::factory()->create();
+
+    actingAs(User::factory()->create())
+        ->delete(route('tallies.destroy', $tally))
+        ->assertForbidden();
+
+    $this->assertModelExists($tally);
+});
+
 it('passes the delete flash to the index page once', function (): void {
     $user = User::factory()->create();
 
