@@ -32,10 +32,13 @@ class SetupSuperAdmin extends Command
     {
         $role = Role::findOrCreate('Super Admin');
 
+        /** @var string $password */
+        $password = $this->argument('password');
+
         $user = User::create([
             'name' => 'Super Admin',
             'email' => $this->argument('email'),
-            'password' => Hash::make($this->argument('password')),
+            'password' => Hash::make($password),
             'email_verified_at' => now(),
         ]);
 

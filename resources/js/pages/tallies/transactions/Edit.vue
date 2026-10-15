@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
+import DeleteSection from '@/components/DeleteSection.vue';
 import { AmountInput } from '@/components/ui/amount-input';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -14,11 +16,13 @@ import tallies from '@/routes/tallies';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { DateFormatter, getLocalTimeZone, parseDate } from '@internationalized/date';
-import { CalendarIcon } from 'lucide-vue-next';
+import { CalendarIcon, Trash2 } from 'lucide-vue-next';
 import { computed, ref, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 interface Props {
+    /** The transaction policy allows this user to delete it. */
+    can_delete: boolean;
     tally: {
         tally_id: number;
         uuid: string;
@@ -103,6 +107,12 @@ const dismissPickerLayer = (event: KeyboardEvent) => {
 const selectedCurrency = computed(() => props.currencies.find((currency) => currency.currency_id.toString() === form.currency_id));
 
 const partyLabel = computed(() => (form.type === 'income' ? t('transactions.fields.received_by') : t('transactions.fields.paid_by')));
+
+const deleteForm = useForm({});
+
+const deleteTransaction = () => {
+    deleteForm.delete(tallies.transactions.destroy.url({ tally: props.tally.uuid, transaction: props.transaction.uuid }));
+};
 
 const submit = () => {
     form.patch(tallies.transactions.update.url({ tally: props.tally.uuid, transaction: props.transaction.uuid }));
@@ -229,6 +239,21 @@ const submit = () => {
                     </div>
                 </form>
             </div>
+
+            <DeleteSection v-if="can_delete" :title="$t('transactions.delete_button')" :description="$t('transactions.delete_hint')">
+                <ConfirmDeleteDialog
+                    :title="$t('transactions.delete_confirm_title')"
+                    :description="$t('transactions.delete_confirm_description', { title: transaction.title, name: tally.name })"
+                    :confirm-label="$t('transactions.delete_button')"
+                    :processing="deleteForm.processing"
+                    @confirm="deleteTransaction"
+                >
+                    <Button variant="destructive" type="button">
+                        <Trash2 class="size-4" />
+                        {{ $t('transactions.delete_button') }}
+                    </Button>
+                </ConfirmDeleteDialog>
+            </DeleteSection>
         </div>
     </WebLayout>
 </template>
