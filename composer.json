@@ -110,6 +110,7 @@
         "check": [
             "npm run build",
             "npx vue-tsc --noEmit",
+            "npm run test",
             "@test",
             "@test:mutate"
         ]
