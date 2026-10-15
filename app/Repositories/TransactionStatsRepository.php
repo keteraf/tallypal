@@ -102,7 +102,7 @@ final class TransactionStatsRepository implements TransactionStatsRepositoryInte
 
     /**
      * @param  Collection<int, int>  $tallyIds
-     * @return array<int, array{uuid: string, title: string, type: string, amount: float, transaction_date: string, category_id: int|null, category_name: string|null, category_code: string, category_slug: string|null, category_color: string|null, tally_name: string, is_shared: bool, currency_symbol: string}>
+     * @return array<int, array{uuid: string, title: string, type: string, amount: float, transaction_date: string, category_id: int|null, category_name: string|null, category_slug: string|null, category_color: string|null, tally_name: string, is_shared: bool, currency_symbol: string}>
      */
     public function recentTransactions(Collection $tallyIds): array
     {
@@ -133,7 +133,6 @@ final class TransactionStatsRepository implements TransactionStatsRepositoryInte
                     'transaction_date' => (string) $tx->transaction_date,
                     'category_id' => $tx->category_id,
                     'category_name' => $rawCategoryName,
-                    'category_code' => $this->categoryCode($rawCategoryName),
                     'category_slug' => $this->nullableString($tx->getAttribute('category_slug')),
                     'category_color' => $this->nullableString($tx->getAttribute('category_color')),
                     'tally_name' => $tx->tally === null ? '' : (string) $tx->tally->name,
@@ -182,7 +181,6 @@ final class TransactionStatsRepository implements TransactionStatsRepositoryInte
                     'transaction_date' => (string) $tx->transaction_date,
                     'category_id' => $tx->category_id,
                     'category_name' => $rawCategoryName,
-                    'category_code' => $this->categoryCode($rawCategoryName),
                     'category_slug' => $this->nullableString($tx->getAttribute('category_slug')),
                     'category_color' => $this->nullableString($tx->getAttribute('category_color')),
                     'tally_uuid' => (string) $tally->uuid,
@@ -477,18 +475,5 @@ final class TransactionStatsRepository implements TransactionStatsRepositoryInte
     private function nullableString(mixed $value): ?string
     {
         return is_string($value) ? $value : null;
-    }
-
-    private function categoryCode(?string $name): string
-    {
-        if ($name === null) { // @pest-mutate-ignore
-            return '··'; // @pest-mutate-ignore
-        }
-
-        $cleaned = preg_replace('/[^A-Za-z]/', '', $name) ?? '';
-
-        return $cleaned === ''
-            ? '··'
-            : mb_strtoupper(mb_substr($cleaned, 0, 2));
     }
 }

@@ -11,12 +11,11 @@ use App\Models\User;
 use Database\Seeders\ReferenceDataSeeder;
 use Illuminate\Support\Facades\Vite;
 
+require_once __DIR__ . '/Support.php';
+
 /**
  * The category picker (E7) inside Add transaction: the desktop dialog and the phone sheet.
  */
-const PICKER_FILTER = 'input[aria-controls$="-grid"]';
-const PICKER_ROW = '[data-slot="category-picker"] [data-picker-tile]';
-
 beforeEach(function () {
     // Always the built assets, never a dev server that may be running beside the suite.
     Vite::useHotFile(storage_path('framework/vite.hot.disabled'));
@@ -80,11 +79,6 @@ function focusedElement(mixed $page): string
     JS);
 }
 
-function categoryId(string $slug): int
-{
-    return (int) Category::query()->where('slug', $slug)->value('category_id');
-}
-
 /** The form lives in the overlay (dialog or sheet), so it is on the page exactly while the overlay is open. */
 function dialogIsOpen(mixed $page): bool
 {
@@ -115,12 +109,6 @@ function savedTransaction(mixed $page, string $title): Transaction
 function titleValue(mixed $page): string
 {
     return (string) $page->script("document.querySelector('#title')?.value ?? ''");
-}
-
-/** Waits in the browser for a JavaScript condition, so a test waits for the effect and never for a fixed time. */
-function waitUntil(mixed $page, string $condition): void
-{
-    $page->page()->waitForFunction($condition);
 }
 
 /** True when a label wraps past its two lines or is cut off by the tile. */

@@ -1,7 +1,6 @@
 /**
  * Category → glyph map (F-037), keyed on the category `slug` (owner decision C-D2, which replaced the
- * `category_id` key: ids of seeded rows are not guaranteed equal across environments). Never the
- * derived, colliding two-letter `category_code`. Source of truth: VERIFICATION.md, Categories batch.
+ * `category_id` key: ids of seeded rows are not guaranteed equal across environments). Source of truth: VERIFICATION.md, Categories batch.
  *
  * Glyphs render as text, tinted by CSS `color`. Every glyph with an emoji form
  * (`Emoji=Yes`) carries U+FE0E (text presentation) so it never renders as a colour emoji.

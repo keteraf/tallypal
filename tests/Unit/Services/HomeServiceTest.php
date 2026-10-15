@@ -197,7 +197,7 @@ test('payload contains all required top-level keys', function (): void {
     $tallyIds = collect([7]);
     $currency = ['symbol' => '$', 'code' => 'USD', 'decimals' => 2, 'currency_id' => 3];
     $balance = ['net' => 50.0, 'income' => 100.0, 'expense' => 50.0, 'currency_symbol' => '$', 'currency_code' => 'USD', 'decimals' => 2];
-    $recentTx = [['uuid' => 'tx1', 'title' => 'Coffee', 'type' => 'expense', 'amount' => 5.0, 'transaction_date' => '2025-09-20', 'category_id' => null, 'category_name' => null, 'category_code' => '··', 'tally_name' => 'Main', 'currency_symbol' => '$']];
+    $recentTx = [['uuid' => 'tx1', 'title' => 'Coffee', 'type' => 'expense', 'amount' => 5.0, 'transaction_date' => '2025-09-20', 'category_id' => null, 'category_name' => null, 'tally_name' => 'Main', 'currency_symbol' => '$']];
     $weeklyHistory = [['label' => 'W 38', 'amount' => 50.0, 'is_current' => true]];
     $categories = [['name' => 'Food', 'amount' => 50.0, 'percentage' => 100.0, 'bar_fill' => 100.0, 'is_other' => false]];
 

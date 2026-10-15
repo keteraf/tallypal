@@ -2,7 +2,7 @@
 import { AmountInput } from '@/components/ui/amount-input';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { ChipGroup, type ChipOption } from '@/components/ui/choice-chip';
+import { CategoryPicker, type FrequentCategories, type PickerCategory } from '@/components/ui/category-picker';
 import { FormField } from '@/components/ui/form-field';
 import { filledFieldClass, Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -10,13 +10,12 @@ import { SegmentedControl } from '@/components/ui/segmented-control';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import WebLayout from '@/layouts/WebLayout.vue';
-import { categoryColorFromId } from '@/lib/category';
 import tallies from '@/routes/tallies';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { DateFormatter, getLocalTimeZone, parseDate } from '@internationalized/date';
 import { CalendarIcon } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { computed, ref, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 interface Props {
@@ -31,13 +30,15 @@ interface Props {
         title: string;
         amount: number;
         party_id: number;
-        category_id: number;
+        category_id: number | null;
         currency_id: number;
         type: string;
         transaction_date: string;
         description: string | null;
     };
-    categories: Array<{ category_id: number; name: string }>;
+    categories: Array<PickerCategory & { name: string }>;
+    /** `frequent_categories` from the form data: slugs per type, most used first. */
+    frequent_categories: FrequentCategories;
     currencies: Array<{ currency_id: number; name: string; code: string; symbol: string }>;
     parties: Array<{ id: number; name: string }>;
 }
@@ -67,7 +68,7 @@ const form = useForm({
     title: props.transaction.title,
     amount: props.transaction.amount.toFixed(2),
     party_id: props.transaction.party_id.toString(),
-    category_id: props.transaction.category_id.toString(),
+    category_id: props.transaction.category_id,
     currency_id: props.transaction.currency_id.toString(),
     type: props.transaction.type as 'expense' | 'income',
     transaction_date: props.transaction.transaction_date,
@@ -89,13 +90,15 @@ const typeOptions = [
     { value: 'income' as const, label: t('transactions.fields.income'), accent: 'positive' as const },
 ];
 
-const categoryOptions = computed<ChipOption<string>[]>(() =>
-    props.categories.map((category) => ({
-        value: category.category_id.toString(),
-        label: category.name,
-        color: categoryColorFromId(category.category_id),
-    })),
-);
+const categoryPicker = useTemplateRef('categoryPicker');
+
+/** Esc closes one layer at a time: the picker's open panel, then its "cleared" notice. */
+const dismissPickerLayer = (event: KeyboardEvent) => {
+    if (categoryPicker.value?.dismiss()) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+};
 
 const selectedCurrency = computed(() => props.currencies.find((currency) => currency.currency_id.toString() === form.currency_id));
 
@@ -121,7 +124,7 @@ const submit = () => {
             </div>
 
             <div class="rounded-card border border-line bg-surface p-6 md:p-7">
-                <form class="flex flex-col" @submit.prevent="submit">
+                <form class="flex flex-col" @submit.prevent="submit" @keydown.esc="dismissPickerLayer">
                     <FormField :error="form.errors.amount">
                         <AmountInput
                             id="amount"
@@ -129,6 +132,7 @@ const submit = () => {
                             :label="t('transactions.fields.amount')"
                             :hint="t('transactions.fields.amount_hint')"
                             :currency="selectedCurrency?.symbol"
+                            :tone="form.type === 'income' ? 'positive' : 'default'"
                         />
                     </FormField>
 
@@ -148,8 +152,14 @@ const submit = () => {
                         />
                     </FormField>
 
-                    <FormField :label="t('transactions.fields.category')" :error="form.errors.category_id">
-                        <ChipGroup v-model="form.category_id" :options="categoryOptions" />
+                    <FormField :label="t('transactions.fields.category')" for="category_id" :error="form.errors.category_id">
+                        <CategoryPicker
+                            ref="categoryPicker"
+                            v-model="form.category_id"
+                            :type="form.type"
+                            :categories="categories"
+                            :frequent="frequent_categories"
+                        />
                     </FormField>
 
                     <div class="grid grid-cols-2 gap-2.5">

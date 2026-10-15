@@ -4,6 +4,7 @@ import { CardHeader } from '@/components/ui/card-header';
 import { categoryGlyph } from '@/components/ui/category-glyph';
 import type { DataTableColumn } from '@/components/ui/data-table';
 import { DataTable, DataTableItem } from '@/components/ui/data-table';
+import { useCategoryLabel } from '@/composables/useCategoryLabel';
 import { transactionGlyphColor } from '@/lib/category';
 import tallies from '@/routes/tallies';
 import { computed } from 'vue';
@@ -18,6 +19,7 @@ const props = defineProps<{
 }>();
 
 const { t } = useI18n();
+const categoryLabel = useCategoryLabel();
 
 const columns = computed<DataTableColumn[]>(() => [
     { key: 'title', label: t('home.recent.columns.transaction') },
@@ -50,8 +52,8 @@ const signedAmount = (tx: RecentTransaction): string =>
             <template #cell-title="{ row }">
                 <DataTableItem
                     :title="row.title"
-                    :subtitle="row.category_name ?? row.type"
-                    :color="transactionGlyphColor(row.type, row.category_name ?? row.category_code)"
+                    :subtitle="categoryLabel({ slug: row.category_slug, name: row.category_name })"
+                    :color="transactionGlyphColor(row.type, { category_id: row.category_id, color: row.category_color })"
                     :glyph="categoryGlyph(row.category_slug, row.type)"
                 >
                     <template #inline>

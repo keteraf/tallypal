@@ -161,43 +161,6 @@ test('recentTransactions flags rows of multi-member tallies as shared', function
         ->and($result[1]['is_shared'])->toBeTrue();
 });
 
-test('recentTransactions category_code uses first two letters of category name', function (): void {
-    $user = User::factory()->create();
-    $currency = Currency::factory()->create(['decimals' => 2, 'symbol' => '€']);
-    $tally = Tally::factory()->create(['owner_id' => $user->id]);
-    $today = now()->toDateString();
-
-    $category = Category::factory()->create(['name' => 'Groceries']);
-
-    Transaction::factory()->forTally($tally)->forParty($user)->withCurrency($currency)
-        ->create(['type' => 'expense', 'amount' => 5.0, 'title' => 'Item', 'transaction_date' => $today, 'category_id' => $category->getKey()]);
-
-    $repo = new TransactionStatsRepository;
-    $result = $repo->recentTransactions(collect([$tally->tally_id]));
-
-    $row = collect($result)->firstWhere('title', 'Item');
-    expect($row['category_id'])->toBe($category->getKey())
-        ->and($row['category_code'])->toBe('GR')
-        ->and($row['category_name'])->toBe('Groceries');
-});
-
-test('recentTransactions category_code is double-dot for numeric-only category names', function (): void {
-    $user = User::factory()->create();
-    $currency = Currency::factory()->create(['decimals' => 2, 'symbol' => '€']);
-    $tally = Tally::factory()->create(['owner_id' => $user->id]);
-
-    $category = Category::factory()->create(['name' => '123']);
-
-    Transaction::factory()->forTally($tally)->forParty($user)->withCurrency($currency)
-        ->create(['type' => 'expense', 'amount' => 5.0, 'title' => 'Numeric Cat', 'transaction_date' => now()->toDateString(), 'category_id' => $category->getKey()]);
-
-    $repo = new TransactionStatsRepository;
-    $result = $repo->recentTransactions(collect([$tally->tally_id]));
-
-    $tx = collect($result)->firstWhere('title', 'Numeric Cat');
-    expect($tx['category_code'])->toBe('··');
-});
-
 test('recentTransactions and activity send the category slug and colour, null without a category', function (): void {
     $user = User::factory()->create();
     $currency = Currency::factory()->create(['decimals' => 2, 'symbol' => '€']);
@@ -624,7 +587,6 @@ test('activity keeps each row in its own currency and flags rows of multi-member
         'transaction_date' => '2026-10-02',
         'category_id' => $food->getKey(),
         'category_name' => 'Food',
-        'category_code' => 'FO',
         'category_slug' => 'food',
         'category_color' => 'c4',
         'tally_uuid' => $solo->uuid,

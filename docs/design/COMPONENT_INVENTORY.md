@@ -457,7 +457,7 @@ Legend for **Replaces**:
   Labels via `t('categories.<slug>')`. **Built (R5):** also `v-model:open`, `v-model:query` (optional) and
   `layout: 'auto' | 'inline' | 'sheet'` (`auto` follows md; the others pin a shape for `/dev/design-system`). `CategoryTile`
   takes `preview: 'hover' | 'focus'` for static state swatches only. Rules in `ui/category-picker/pickerLogic.ts`.
-- **Used by:** Add transaction (R6, done: dialog, phone sheet and Create page), Edit (R7). Checklist CA-01..CA-15.
+- **Used by:** Add transaction (R6, done: dialog, phone sheet and Create page), Edit page (R7, done). Checklist CA-01..CA-15.
   **Adopted (R6):** exposes `dismiss(): boolean` (closes the open panel, else the cleared notice) so a form can leave Esc for its dialog;
   inside a `FormField` the row takes `aria-invalid` / `aria-describedby` and a `--neg` outline (E1 error state).
 

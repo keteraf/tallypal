@@ -66,7 +66,7 @@ class TransactionController extends Controller
                     'amount' => $t->amount,
                     'type' => $t->type->value,
                     'transaction_date' => $t->transaction_date,
-                    'category' => $t->category ? ['category_id' => $t->category->category_id, 'name' => $t->category->name] : null,
+                    'category' => $t->category ? ['category_id' => $t->category->category_id, 'slug' => $t->category->slug, 'name' => $t->category->name, 'color' => $t->category->color] : null,
                     'currency' => $t->currency ? ['symbol' => $t->currency->symbol, 'decimals' => $t->currency->decimals] : null,
                     'party' => $t->party ? ['name' => $t->party->name, 'initials' => $t->party->initials(), 'color' => $t->party->avatarColor()] : null,
                 ]);

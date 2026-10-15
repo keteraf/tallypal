@@ -3291,6 +3291,18 @@ notice, server-422 state, Enter containment, two-step Esc for the panel and for 
 sheet). Outside the PHPUnit suites (so outside coverage and mutation), run by the new `composer test:browser`, the last step of
 `composer check`; it always uses the built assets (`npm run build` runs first). Screens: `{desktop,mobile}/r6-*`.
 
+**Approved dependency (owner, 2026-10-15):** `pestphp/pest-plugin-browser` (with `playwright` in `package.json`) is approved. `composer check`
+now needs a Playwright Chromium wherever it runs: locally `npx playwright install chromium`; in CI the `Install Playwright Chromium` step of
+`.github/workflows/shared-ci.yml` (`npx playwright install --with-deps chromium`).
+
+**R7 done (2026-10-15).** Edit page: `CategoryPicker` replaces the chip wrap (prefill, type flip clears with the notice, 422 in the E1 error state, `+` in `--pos` on
+Income, Esc closes one layer at a time); `EditTransactionFormTest` (browser). Rows in Home Recent, Tally detail and Stats All activity (C-D4, scoped): the tile takes
+the category's stored `color` (income categories included), the glyph is the category's own (↓ only for an uncategorised income, ◌ in `--text-3` for an uncategorised
+expense), amounts keep `--pos`; the sub-line is the i18n label by slug (`useCategoryLabel`), "Uncategorised" / "Senza categoria" when there is none, never the type.
+Stats activity now reads "category · date" as drawn. The Tally detail payload sends `category.slug` and `category.color` (B-13 had planned it; they were missing, which
+the first screenshots showed). `category_code` removed from every payload, type and the repository, with its two tests (owner-approved); `KEY_VERSION` v13 → v14.
+Shared browser-test helpers moved to `tests/Browser/Support.php`.
+
 **Follow-up (record only): `transactions.created_by`.** Frequent categories count on `transactions.party_id` (the payer, or the
 receiver of an income), because no column records who created a row. Add `created_by` and switch `frequentCategories()` to it.
 
@@ -3333,23 +3345,23 @@ responsive rule (inline panel ≥ md, second sheet < md).
 | CA-11 | M | Touch: tap All → sheet, filter only focuses when tapped; tap tile picks and closes | `section-s3` rules | interaction | [x] PASS (R6): All opens the sheet with the filter unfocused (`filter focused on open: false` at 375), a tile pick closes it; Pest browser tests at 375 for Enter / Esc / tab order |
 | CA-12 | D | Italian labels: hyphenation, 2-line clamp, cleared copy "… è una categoria di uscita: rimossa." | `frame-01…-it`, `frame-02…-it`, `frame-04…-it` | it | [x] PASS (R6): no Italian label truncated in the row or the grid (measured `scrollHeight`/`scrollWidth`, 1440); cleared copy "Spesa è una categoria di uscita: rimossa."; `desktop/r6-add-switched-cleared-it-1440-*.png` vs `desktop-frame-02…-it` |
 | CA-12 | M | same | `frame-05…-it`, `frame-06…-it`, `frame-07…-it` | it | [x] PASS (R6): same check at 375 and 360, none truncated ("Resi e rimborsi" wraps to two lines); `mobile/r6-add-switched-cleared-it-{375,360}-*.png` vs `desktop-frame-06…-it`, `desktop-frame-07…-it` |
-| CA-13 | D | Edit · Income · saved non-frequent "Sold items" pinned first | `frame-09-desktop-dark-income-sold-items-not-frequent-pinned-first` | pinned | [ ] |
-| CA-13 | M | same | `frame-09…` anatomy | pinned | [ ] |
-| CA-14 | D | Edit · Expense · Travel | `frame-10-phone-light-expense-travel` anatomy | selected | [ ] |
-| CA-14 | M | same | `frame-10-phone-light-expense-travel` | selected | [ ] |
-| CA-15 | D | Edit · type flip clears + notice, Save stays enabled, 422 never reached | `section-s4` | cleared | [ ] |
-| CA-15 | M | same | `section-s4` | cleared | [ ] |
-| CA-16 | D | Home Recent: income rows with income glyph/colour, sub = category, `+` `--pos`; Salary "¤ Salary" | `frame-11-home-recent` | data | [ ] |
-| CA-16 | M | same, stacked rows | `frame-11-home-recent` anatomy | data | [ ] |
-| CA-17 | D | Tally detail rows (Refunds & returns ↺, Sold items ⬡) | `frame-12-tally-detail-lisbon-trip-transactions` | data | [ ] |
-| CA-17 | M | same, stacked | `frame-12…` anatomy | data | [ ] |
-| CA-18 | D | Stats All activity rows (Bonus ✪, Gifts ❖, Investments ▲, Salary ¤) | `frame-13-stats-all-activity` | data | [ ] |
-| CA-18 | M | same, stacked | `frame-13…` anatomy | data | [ ] |
+| CA-13 | D | Edit · Income · saved non-frequent "Sold items" pinned first | `frame-09-desktop-dark-income-sold-items-not-frequent-pinned-first` | pinned | [x] PASS (R7, dark + light): saved "Sold items" (not frequent) pinned first and selected, `+` in `--pos`; `desktop/r7-edit-income-sold-1440-{dark,light}.png` vs `desktop-frame-09-desktop-dark-income-sold-items-not-frequent-pinned-first-{dark,light}-en` |
+| CA-13 | M | same | `frame-09…` anatomy | pinned | [x] PASS (R7): `mobile/r7-edit-income-sold-375-{dark,light}.png` vs `desktop-frame-09…` anatomy |
+| CA-14 | D | Edit · Expense · Travel | `frame-10-phone-light-expense-travel` anatomy | selected | [x] PASS (R7): Travel selected and pinned first; `desktop/r7-edit-expense-travel-1440-{dark,light}.png` vs `desktop-frame-10-phone-light-expense-travel-{dark,light}-en` anatomy |
+| CA-14 | M | same | `frame-10-phone-light-expense-travel` | selected | [x] PASS (R7): 4 + All 16; `mobile/r7-edit-expense-travel-375-{dark,light}.png` vs `desktop-frame-10-phone-light-expense-travel-{dark,light}-en` |
+| CA-15 | D | Edit · type flip clears + notice, Save stays enabled, 422 never reached | `section-s4` | cleared | [x] PASS (R7): Pest browser `EditTransactionFormTest` (1440, dark + light): flip clears, `--neg` notice, Save saves with no category (422 never reached); server 422 shows the E1 error state |
+| CA-15 | M | same | `section-s4` | cleared | [x] PASS (R7): same Pest browser tests at 375 |
+| CA-16 | D | Home Recent: income rows with income glyph/colour, sub = category, `+` `--pos`; Salary "¤ Salary" | `frame-11-home-recent` | data | [x] PASS (R7): income glyph/colour by category, sub = category, Uncategorised ◌ in `--text-3`; `desktop/r7-home-recent-1440-{dark,light}.png` vs `desktop-frame-11-home-recent-{dark,light}` |
+| CA-16 | M | same, stacked rows | `frame-11-home-recent` anatomy | data | [x] PASS (R7): stacked rows, tally tag inline; `mobile/r7-home-recent-375-{dark,light}.png` vs `mobile-frame-11-home-recent-{dark,light}` |
+| CA-17 | D | Tally detail rows (Refunds & returns ↺, Sold items ⬡) | `frame-12-tally-detail-lisbon-trip-transactions` | data | [x] PASS (R7): Sold items ⬡, Side work ✦, Investments ▲, Gifts ❖ in their colours, `+` in `--pos`; `desktop/r7-detail-{solo,household}-1440-{dark,light}.png` vs `desktop-frame-12-tally-detail-lisbon-trip-transactions-{dark,light}` |
+| CA-17 | M | same, stacked | `frame-12…` anatomy | data | [x] PASS (R7): `mobile/r7-detail-{solo,household}-375-{dark,light}.png` vs `mobile-frame-12-…` |
+| CA-18 | D | Stats All activity rows (Bonus ✪, Gifts ❖, Investments ▲, Salary ¤) | `frame-13-stats-all-activity` | data | [x] PASS (R7): sub = "Category · date"; `desktop/r7-stats-activity-1440-{dark,light}.png` vs `desktop-frame-13-stats-all-activity-{dark,light}` |
+| CA-18 | M | same, stacked | `frame-13…` anatomy | data | [x] PASS (R7): `mobile/r7-stats-activity-375-{dark,light}.png` vs `mobile-frame-13-…` |
 | CA-19 | D | Home + Stats By category: no income category, ever (B-16) | Batch 1/4 refs (`../desktop/home-1.png`, `../desktop/stats-0.png`) | data | [x] PASS (R4, 2026-10-15): no income row on either card despite 9 income categories in the month; `desktop/ca19-22-home-1440.png`, `ca19-22-stats-1440.png` |
 | CA-19 | M | same | `../mobile/home-2.png`, Stats mobile ref | data | [x] PASS (R4): `mobile/ca19-22-home-375.png`, `ca19-22-stats-375.png` |
 | CA-20 | D | Frequent row: `demo-empty` (defaults) vs `demo` (learned order, ≥ 2 uses / 90 days) | `section-s3` text | data | [ ] |
 | CA-20 | M | same, 4 tiles | `section-s3` text | data | [ ] |
-| CA-21 | D | Uncategorised income row: ↓ in `--pos`, sub = "Income" | — (app rule, FP-13) | data | [ ] |
-| CA-21 | M | same | — | data | [ ] |
+| CA-21 | D | Uncategorised income row: ↓ in `--pos`, sub = "Uncategorised" (owner, R7) | — (app rule, FP-13) | data | [x] PASS (R7): "Cash from a friend" in `desktop/r7-detail-solo-1440-{dark,light}.png` |
+| CA-21 | M | same | — | data | [x] PASS (R7): `mobile/r7-detail-solo-375-{dark,light}.png` |
 | CA-22 | D | Home + Stats By category: "Uncategorised" row with ◌ (`--text-3`), rows add up to the total | Batch 1/4 refs (`../desktop/home-1.png`, `../desktop/stats-0.png`) | data | [x] PASS (R4, dark): row anatomy (marker, name, bar, value, pct) identical to the design's rows; ◌ is a hollow ring in `--text-3`, faint on `surface-1` but visible; 950.00 + 346.85 + 184.50 + 158.30 + 149.20 + Other 316.09 = 2,104.94 = Stats total; `desktop/ca19-22-{home,stats}-1440.png` |
 | CA-22 | M | same | `../mobile/home-2.png` | data | [x] PASS (R4, dark): same rows at 375, no overflow; `mobile/ca19-22-{home,stats}-375.png` |

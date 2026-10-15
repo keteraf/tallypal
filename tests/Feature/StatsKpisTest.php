@@ -453,7 +453,6 @@ test('activity rows carry the transaction, its tally and its own currency', func
                 'transaction_date' => '2026-10-13',
                 'category_id' => $food->getKey(),
                 'category_name' => 'Food',
-                'category_code' => 'FO',
                 'category_slug' => 'food',
                 'category_color' => 'c4',
                 'tally_uuid' => $trip->uuid,

@@ -216,7 +216,7 @@ test('monthlyBalance stores result under day-scoped cache key', function (): voi
 test('recentTransactions returns transactions from stats repository', function (): void {
     $userId = 1;
     $tallyIds = collect([1]);
-    $expected = [['uuid' => 'tx1', 'title' => 'Coffee', 'type' => 'expense', 'amount' => 5.0, 'transaction_date' => '2025-05-01', 'category_id' => null, 'category_name' => null, 'category_code' => '··', 'tally_name' => 'Main', 'currency_symbol' => '€']];
+    $expected = [['uuid' => 'tx1', 'title' => 'Coffee', 'type' => 'expense', 'amount' => 5.0, 'transaction_date' => '2025-05-01', 'category_id' => null, 'category_name' => null, 'tally_name' => 'Main', 'currency_symbol' => '€']];
 
     $statsRepo = stubStatsRepo();
     $statsRepo->shouldReceive('recentTransactions')->once()->with($tallyIds)->andReturn($expected);
@@ -424,7 +424,7 @@ test('balanceSummary reads the cached value instead of recomputing', function ()
 
 test('cache keys carry the version segment so entries of a previous release are never read', function (): void {
     expect(HomeCacheService::key(7, 'balance:2025-05-15'))->toBe('home:' . HomeCacheService::KEY_VERSION . ':user:7:balance:2025-05-15')
-        ->and(HomeCacheService::KEY_VERSION)->toBe('v13');
+        ->and(HomeCacheService::KEY_VERSION)->toBe('v14');
 });
 
 test('a value cached under the unversioned key of the previous release is ignored', function (): void {

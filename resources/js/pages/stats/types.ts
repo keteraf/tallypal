@@ -38,7 +38,6 @@ export interface StatsActivityItem {
     transaction_date: string;
     category_id: number | null;
     category_name: string | null;
-    category_code: string;
     category_slug: string | null;
     category_color: CategoryColor | null;
     tally_uuid: string;
