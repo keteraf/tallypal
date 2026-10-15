@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ResponsiveModal from '@/components/ResponsiveModal.vue';
 import { AmountInput } from '@/components/ui/amount-input';
 import type { AvatarGroupItem } from '@/components/ui/avatar';
 import { Avatar, AvatarFallback, AvatarGroup, AvatarImage } from '@/components/ui/avatar';
@@ -7,6 +8,8 @@ import { BalanceHero } from '@/components/ui/balance-hero';
 import { Button } from '@/components/ui/button';
 import { CardHeader } from '@/components/ui/card-header';
 import { CATEGORY_GLYPHS, CategoryGlyph, categoryGlyph } from '@/components/ui/category-glyph';
+import type { PickerCategoryType } from '@/components/ui/category-picker';
+import { CategoryPicker, CategoryTile } from '@/components/ui/category-picker';
 import { CheckList } from '@/components/ui/check-list';
 import type { ChipOption } from '@/components/ui/choice-chip';
 import { ChipGroup } from '@/components/ui/choice-chip';
@@ -42,7 +45,9 @@ import { useAppearance } from '@/composables/useAppearance';
 import { CATEGORY_COLORS } from '@/lib/category';
 import { Head } from '@inertiajs/vue3';
 import { ArrowLeftRight, MoreHorizontal, Plus, Settings2, Split } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { demoCategories, demoCategoryId, demoFrequent } from './categoryFixtures';
 
 const { appearance, updateAppearance } = useAppearance();
 
@@ -150,11 +155,79 @@ const colorOptions: ChipOption[] = [
     { value: 'c6', color: 'c6', glyph: '◇' },
 ];
 
+const colorOfSlug = new Map(demoCategories.map((c) => [c.slug, c.color]));
 const glyphMapRows = [
-    ...Object.entries(CATEGORY_GLYPHS).map(([id, glyph]) => ({ key: `id ${id}`, glyph })),
-    { key: 'income', glyph: categoryGlyph(1, 'income') },
-    { key: 'unmapped', glyph: categoryGlyph(null, 'expense') },
+    ...Object.entries(CATEGORY_GLYPHS).map(([slug, glyph]) => ({ key: slug, glyph, color: colorOfSlug.get(slug) ?? undefined })),
+    { key: 'income, no category', glyph: categoryGlyph(null, 'income'), color: 'pos' as const },
+    { key: 'no category', glyph: categoryGlyph(null, 'expense'), color: undefined },
 ];
+
+// Category picker (E7): every state, both types, in a desktop dialog frame and a phone sheet frame.
+const { t, locale } = useI18n();
+const pickerLocales = [
+    { value: 'en', label: 'English' },
+    { value: 'it', label: 'Italiano' },
+];
+const typeOptions = computed(() => [
+    { value: 'expense', label: t('transactions.fields.expense') },
+    { value: 'income', label: t('transactions.fields.income') },
+]);
+
+interface PickerDemo {
+    key: string;
+    caption: string;
+    type: PickerCategoryType;
+    model: number | null;
+    open?: boolean;
+    query?: string;
+}
+
+const pickerDemos = (layout: 'inline' | 'sheet'): PickerDemo[] => [
+    {
+        key: 'expense-selected',
+        caption: 'Expense · selected',
+        type: 'expense',
+        model: demoCategoryId(layout === 'inline' ? 'groceries' : 'dining_out'),
+    },
+    {
+        key: 'income-cleared',
+        caption: 'Switched to Income · cleared',
+        type: 'income',
+        model: demoCategoryId(layout === 'inline' ? 'groceries' : 'dining_out'),
+    },
+    { key: 'income-selected', caption: 'Income · selected', type: 'income', model: demoCategoryId('salary') },
+    { key: 'expense-cleared', caption: 'Switched to Expense · cleared', type: 'expense', model: demoCategoryId('salary') },
+    { key: 'expense-empty', caption: 'Expense · empty', type: 'expense', model: null },
+    { key: 'income-empty', caption: 'Income · empty', type: 'income', model: null },
+    { key: 'income-pinned', caption: 'Income · Sold items (not frequent, pinned first)', type: 'income', model: demoCategoryId('sold_items') },
+    { key: 'expense-pinned', caption: 'Expense · Travel (not frequent, pinned first)', type: 'expense', model: demoCategoryId('travel') },
+    ...(layout === 'inline'
+        ? [
+              { key: 'expense-open', caption: 'Expense · "All" open', type: 'expense' as const, model: null, open: true },
+              { key: 'income-open', caption: 'Income · "All" open', type: 'income' as const, model: demoCategoryId('salary'), open: true },
+              { key: 'income-filtered', caption: 'Income · filtered "re"', type: 'income' as const, model: null, open: true, query: 're' },
+              {
+                  key: 'expense-alias',
+                  caption: 'Expense · filtered by alias "netflix"',
+                  type: 'expense' as const,
+                  model: null,
+                  open: true,
+                  query: 'netflix',
+              },
+              { key: 'expense-no-match', caption: 'Expense · no match', type: 'expense' as const, model: null, open: true, query: 'zzz' },
+          ]
+        : []),
+];
+const inlinePickers = reactive(pickerDemos('inline'));
+const sheetPickers = reactive(pickerDemos('sheet'));
+
+const livePicker = reactive({
+    open: false,
+    type: 'expense' as PickerCategoryType,
+    model: demoCategoryId('groceries') as number | null,
+    lastCleared: '',
+});
+
 const glyphByColor: Record<string, string> = { c1: '⌂', c2: '✈', c3: '◐', c4: '◈', c5: '♪', c6: '☕' };
 </script>
 
@@ -238,7 +311,9 @@ const glyphByColor: Record<string, string> = { c1: '⌂', c2: '✈', c3: '◐', 
                         <TrendBadge tone="neutral" direction="up" value="27.4%" label="vs Sep 1–14" />
                         <TrendBadge tone="neutral" direction="down" value="4.2%" label="vs March" />
                     </div>
-                    <p class="text-[12px] font-semibold tracking-[0.06em] text-text-3 uppercase">Marketing — status badge (hero, dot supplied by the consumer)</p>
+                    <p class="text-[12px] font-semibold tracking-[0.06em] text-text-3 uppercase">
+                        Marketing — status badge (hero, dot supplied by the consumer)
+                    </p>
                     <div class="flex flex-wrap items-center gap-3">
                         <Badge variant="status"><Dot color="pos" /> 11 currencies · web</Badge>
                     </div>
@@ -300,10 +375,17 @@ const glyphByColor: Record<string, string> = { c1: '⌂', c2: '✈', c3: '◐', 
                         <CategoryGlyph color="c1" size="lg" glyph="⌂" />
                         <CategoryGlyph v-for="c in CATEGORY_COLORS" :key="c" :color="c" size="md" :glyph="glyphByColor[c]" />
                     </div>
-                    <p class="text-[12px] font-semibold tracking-[0.06em] text-text-3 uppercase">Category glyph map (by category_id, text-tinted)</p>
-                    <div class="flex flex-wrap gap-3">
-                        <div v-for="(row, i) in glyphMapRows" :key="row.key" class="flex w-16 flex-col items-center gap-1">
-                            <CategoryGlyph :color="CATEGORY_COLORS[i % 6]" size="md" :glyph="row.glyph" />
+                    <p class="text-[12px] font-semibold tracking-[0.06em] text-text-3 uppercase">
+                        Category glyph map (by slug, tinted by the category's stored colour)
+                    </p>
+                    <div class="flex flex-wrap gap-3" data-ds="glyph-map">
+                        <div v-for="row in glyphMapRows" :key="row.key" class="flex w-16 flex-col items-center gap-1">
+                            <CategoryGlyph
+                                :color="row.color"
+                                size="md"
+                                :glyph="row.glyph"
+                                :class="row.color ? '' : 'bg-[color-mix(in_oklch,var(--text-3)_20%,transparent)] text-text-3'"
+                            />
                             <span class="font-mono text-[11px] text-text-3">{{ row.key }}</span>
                         </div>
                     </div>
@@ -401,9 +483,132 @@ const glyphByColor: Record<string, string> = { c1: '⌂', c2: '✈', c3: '◐', 
                         <ChipGroup v-model="tallyColor" :options="colorOptions" />
                     </div>
                     <div class="space-y-3">
-                        <p class="text-[12px] font-semibold tracking-[0.06em] text-text-3 uppercase">Chips — multiple ({{ tags.join(', ') || 'none' }})</p>
+                        <p class="text-[12px] font-semibold tracking-[0.06em] text-text-3 uppercase">
+                            Chips — multiple ({{ tags.join(', ') || 'none' }})
+                        </p>
                         <ChipGroup v-model="tags" multiple :options="categoryOptions" />
                     </div>
+                </div>
+            </section>
+
+            <!-- ============ CATEGORY PICKER (E7) ============ -->
+            <section class="space-y-6" data-ds-section="category-picker">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <h2 class="text-[12px] font-semibold tracking-[0.06em] text-text-3 uppercase">Category picker (E7)</h2>
+                    <SegmentedControl
+                        variant="mobile"
+                        size="sm"
+                        class="max-w-[220px]"
+                        :options="pickerLocales"
+                        :model-value="locale"
+                        @update:model-value="(value) => (locale = String(value))"
+                    />
+                </div>
+
+                <div class="space-y-3" data-ds="tile-states">
+                    <p class="text-[12px] font-semibold tracking-[0.06em] text-text-3 uppercase">Tile states</p>
+                    <div class="flex flex-wrap items-start gap-4">
+                        <div
+                            v-for="state in ['default', 'hover', 'focus', 'selected', 'sel + focus']"
+                            :key="state"
+                            class="flex w-[76px] flex-col items-center gap-2"
+                        >
+                            <CategoryTile
+                                class="w-full"
+                                tabindex="-1"
+                                glyph="◈"
+                                :label="t('categories.groceries')"
+                                color="c4"
+                                :selected="state.startsWith('sel')"
+                                :preview="state === 'hover' ? 'hover' : state.endsWith('focus') ? 'focus' : undefined"
+                            />
+                            <span class="font-mono text-[11px] text-text-3">{{ state }}</span>
+                        </div>
+                        <div v-for="state in ['all', 'all · open']" :key="state" class="flex w-[76px] flex-col items-center gap-2">
+                            <CategoryTile
+                                class="w-full"
+                                tabindex="-1"
+                                variant="all"
+                                glyph="⋯"
+                                :label="t('category_picker.all', { count: 16 })"
+                                :open="state !== 'all'"
+                            />
+                            <span class="font-mono text-[11px] text-text-3">{{ state }}</span>
+                        </div>
+                        <div class="flex w-[76px] flex-col items-center gap-2">
+                            <CategoryTile class="w-full" tabindex="-1" glyph="◈" :label="t('categories.groceries')" color="c4" tall />
+                            <span class="font-mono text-[11px] text-text-3">sheet · 80</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <p class="text-[12px] font-semibold tracking-[0.06em] text-text-3 uppercase">Desktop dialog (≥ md · inline panel · 5 + All)</p>
+                    <div class="grid gap-5 lg:grid-cols-2">
+                        <div v-for="demo in inlinePickers" :key="demo.key" class="space-y-2" :data-ds="`inline-${demo.key}`">
+                            <p class="text-[12px] text-text-3">{{ demo.caption }}</p>
+                            <div class="w-full max-w-[500px] rounded-lg bg-surface px-6 pt-5 pb-2 shadow-modal">
+                                <FormField :label="t('transactions.fields.category')">
+                                    <CategoryPicker
+                                        v-model="demo.model"
+                                        v-model:open="demo.open"
+                                        v-model:query="demo.query"
+                                        layout="inline"
+                                        :type="demo.type"
+                                        :categories="demoCategories"
+                                        :frequent="demoFrequent"
+                                    />
+                                </FormField>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <p class="text-[12px] font-semibold tracking-[0.06em] text-text-3 uppercase">
+                        Phone sheet (&lt; md · second sheet at 80 % · 4 + All)
+                    </p>
+                    <div class="grid gap-5 sm:grid-cols-2">
+                        <div v-for="demo in sheetPickers" :key="demo.key" class="space-y-2" :data-ds="`sheet-${demo.key}`">
+                            <p class="text-[12px] text-text-3">{{ demo.caption }}</p>
+                            <div class="-mx-5 max-w-[375px] rounded-t-lg border-t border-line bg-surface px-5 pt-2.5 pb-1 sm:mx-0 sm:w-full">
+                                <div class="mx-auto mb-4 h-1 w-9.5 rounded-full bg-surface-3" />
+                                <FormField :label="t('transactions.fields.category')">
+                                    <CategoryPicker
+                                        v-model="demo.model"
+                                        v-model:open="demo.open"
+                                        layout="sheet"
+                                        :type="demo.type"
+                                        :categories="demoCategories"
+                                        :frequent="demoFrequent"
+                                    />
+                                </FormField>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-3" data-ds="live">
+                    <p class="text-[12px] font-semibold tracking-[0.06em] text-text-3 uppercase">
+                        In the Add-transaction shell (dialog ≥ md, sheet &lt; md) · selected {{ livePicker.model ?? 'none'
+                        }}{{ livePicker.lastCleared ? ` · last cleared ${livePicker.lastCleared}` : '' }}
+                    </p>
+                    <Button variant="surface" data-ds="open-live-picker" @click="livePicker.open = true">Open the picker in a modal</Button>
+                    <ResponsiveModal v-model:open="livePicker.open" :title="t('navigation.add_transaction_title')">
+                        <SegmentedControl v-model="livePicker.type" variant="mobile" class="mb-[18px]" :options="typeOptions" />
+                        <FormField :label="t('transactions.fields.category')">
+                            <CategoryPicker
+                                v-model="livePicker.model"
+                                :type="livePicker.type"
+                                :categories="demoCategories"
+                                :frequent="demoFrequent"
+                                @cleared="(slug) => (livePicker.lastCleared = slug)"
+                            />
+                        </FormField>
+                        <FormField :label="t('transactions.fields.title')" for="ds-live-title">
+                            <Input id="ds-live-title" variant="filled" placeholder="e.g. Mercato di Testaccio" />
+                        </FormField>
+                    </ResponsiveModal>
                 </div>
             </section>
 
@@ -460,7 +665,11 @@ const glyphByColor: Record<string, string> = { c1: '⌂', c2: '✈', c3: '◐', 
                 <h2 class="text-[12px] font-semibold tracking-[0.06em] text-text-3 uppercase">Molecules</h2>
 
                 <div class="mx-auto w-full max-w-[400px] space-y-2">
-                    <BalanceHero label="Net this month" :amount="1284.4" :delta="{ tone: 'pos-neg', direction: 'up', value: '12.4%', label: 'vs March' }" />
+                    <BalanceHero
+                        label="Net this month"
+                        :amount="1284.4"
+                        :delta="{ tone: 'pos-neg', direction: 'up', value: '12.4%', label: 'vs March' }"
+                    />
                     <InOutCards :income="3200" :expense="1915" />
                     <QuickActions :actions="quickActions" />
 
@@ -553,15 +762,7 @@ const glyphByColor: Record<string, string> = { c1: '⌂', c2: '✈', c3: '◐', 
                         color="c1"
                         glyph="⌂"
                     />
-                    <TallyListRow
-                        name="Freelance"
-                        meta="Private ledger"
-                        :amount="2210"
-                        :decimals="0"
-                        status="Settled"
-                        color="c3"
-                        glyph="◐"
-                    />
+                    <TallyListRow name="Freelance" meta="Private ledger" :amount="2210" :decimals="0" status="Settled" color="c3" glyph="◐" />
 
                     <SectionHeader label="Detail header" />
                     <DetailHeader title="Lisbon trip" subtitle="3 members · 50 / 50" back-href="#">

@@ -35,7 +35,7 @@ test('the tail beyond the top five becomes one Other row with the summed amount 
     $rows = CategoryBars::build(categoriesOf([40.0, 30.0, 20.0, 10.0, 5.0, 3.0, 2.0, 1.0]));
 
     expect($rows)->toHaveCount(6)
-        ->and($rows[5])->toBe(['name' => 'Other', 'amount' => 6.0, 'percentage' => 5.4, 'bar_fill' => 15.0, 'is_other' => true])
+        ->and($rows[5])->toBe(['name' => 'Other', 'slug' => null, 'is_uncategorised' => false, 'amount' => 6.0, 'percentage' => 5.4, 'bar_fill' => 15.0, 'is_other' => true])
         ->and(array_sum(array_column($rows, 'amount')))->toBe(111.0);
 });
 

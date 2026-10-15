@@ -153,3 +153,22 @@ it('can set null description', function () {
 
     expect($dto->getDescription())->toBeNull();
 });
+
+it('has no category when the data has none', function (array $data) {
+    $dto = TransactionDTO::fromArray([
+        'party_id' => 1,
+        'currency_id' => 2,
+        'type' => 'expense',
+        'title' => 'Test',
+        'amount' => 5,
+        'transaction_date' => '2024-01-01',
+        ...$data,
+    ]);
+
+    expect($dto->getCategoryId())->toBeNull()
+        ->and($dto->toArray()['category_id'])->toBeNull()
+        ->and($dto->setCategoryId(null)->getCategoryId())->toBeNull();
+})->with([
+    'key missing' => [[]],
+    'null' => [['category_id' => null]],
+]);

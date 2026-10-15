@@ -18,6 +18,11 @@ pest()->extend(Tests\TestCase::class)
     ->group('feature', 'unit')
     ->in('Feature', 'Unit');
 
+pest()->extend(Tests\TestCase::class)
+    ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
+    ->group('browser')
+    ->in('Browser');
+
 /*
 |--------------------------------------------------------------------------
 | Expectations

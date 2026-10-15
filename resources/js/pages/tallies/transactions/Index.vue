@@ -13,6 +13,7 @@ import { InOutCards } from '@/components/ui/in-out-cards';
 import { SettleBanner } from '@/components/ui/settle-banner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SplitMemberRow } from '@/components/ui/split-member-row';
+import { useCategoryLabel } from '@/composables/useCategoryLabel';
 import WebLayout from '@/layouts/WebLayout.vue';
 import { categoryColorFromString, transactionGlyphColor, type CategoryColor } from '@/lib/category';
 import tallies from '@/routes/tallies';
@@ -28,7 +29,7 @@ interface TransactionItem {
     amount: number;
     type: string;
     transaction_date: string;
-    category: { category_id: number; name: string } | null;
+    category: { category_id: number; slug: string; name: string; color: CategoryColor | null } | null;
     currency: { symbol: string; decimals: number } | null;
     party: { name: string; initials: string; color: CategoryColor } | null;
     [key: string]: unknown;
@@ -79,6 +80,7 @@ interface Props {
 const props = defineProps<Props>();
 const page = usePage();
 const { t } = useI18n();
+const categoryLabel = useCategoryLabel();
 
 const showShareDialog = ref(false);
 const isOwner = computed(() => page.props.auth.user.id === props.tally.owner_id);
@@ -156,6 +158,9 @@ const memberLabel = computed(() =>
 
 const transactionHref = (transaction: TransactionItem): string =>
     tallies.transactions.edit.url({ tally: props.tally.uuid, transaction: transaction.uuid });
+
+const glyphColor = (transaction: TransactionItem) =>
+    transactionGlyphColor(transaction.type, { category_id: transaction.category?.category_id ?? null, color: transaction.category?.color ?? null });
 
 const signedAmount = (transaction: TransactionItem): string =>
     `${transaction.type === 'income' ? '+' : '−'}${formatCurrency(transaction.amount, transaction.currency ?? undefined)}`;
@@ -345,9 +350,9 @@ const signedAmount = (transaction: TransactionItem): string =>
                                 <template #cell-title="{ row }">
                                     <DataTableItem
                                         :title="row.title"
-                                        :subtitle="row.category?.name ?? row.type"
-                                        :color="transactionGlyphColor(row.type, row.category?.name)"
-                                        :glyph="categoryGlyph(row.category?.category_id, row.type)"
+                                        :subtitle="categoryLabel({ slug: row.category?.slug ?? null, name: row.category?.name ?? null })"
+                                        :color="glyphColor(row)"
+                                        :glyph="categoryGlyph(row.category?.slug, row.type)"
                                     />
                                 </template>
                                 <template #cell-party="{ row }">

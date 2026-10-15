@@ -36,7 +36,7 @@ beforeEach(function () {
         'decimals' => 2,
         'description' => 'US Dollar',
     ]);
-    $this->category = Category::query()->create(['name' => 'Food']);
+    $this->category = Category::factory()->create(['name' => 'Food']);
 });
 
 /**

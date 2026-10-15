@@ -23,11 +23,14 @@ const props = withDefaults(
     label?: string
     /** Caption under the figure. */
     hint?: string
+    /** `positive` is an income: a `+` before the currency and the figure in `--pos` (CA-05). */
+    tone?: "default" | "positive"
     id?: string
     class?: HTMLAttributes["class"]
   }>(),
   {
     decimals: 2,
+    tone: "default",
   },
 )
 
@@ -53,6 +56,7 @@ const fieldWidth = computed(() => {
 <template>
   <div :class="cn('pt-2.5 pb-5 text-center', props.class)">
     <div class="tabular flex items-baseline justify-center gap-[5px] font-mono text-[46px] leading-none font-semibold tracking-[-0.045em]">
+      <span v-if="tone === 'positive'" class="text-[26px] font-medium text-text-3" aria-hidden="true">+</span>
       <!-- The `currency` slot swaps the static mark for a picker (F-092). -->
       <slot name="currency">
         <span v-if="currency" class="text-[26px] font-medium text-text-3">{{ currency }}</span>
@@ -66,7 +70,8 @@ const fieldWidth = computed(() => {
         autocomplete="off"
         :placeholder="placeholder"
         :style="{ width: fieldWidth }"
-        class="tabular min-w-0 appearance-none border-0 bg-transparent p-0 text-center font-mono text-[46px] leading-none font-semibold tracking-[-0.045em] text-text outline-none placeholder:text-text-3"
+        class="tabular min-w-0 appearance-none border-0 bg-transparent p-0 text-center font-mono text-[46px] leading-none font-semibold tracking-[-0.045em] outline-none placeholder:text-text-3"
+        :class="tone === 'positive' ? 'text-pos' : 'text-text'"
       >
     </div>
     <p v-if="hint" class="mt-2 text-[12px] text-text-3">{{ hint }}</p>

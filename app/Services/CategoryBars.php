@@ -14,8 +14,8 @@ namespace App\Services;
 final class CategoryBars
 {
     /**
-     * @param  array<int, array{name: string, amount: float, percentage: float}>  $categories  Every category, largest first.
-     * @return array<int, array{name: string, amount: float, percentage: float, bar_fill: float, is_other: bool}>
+     * @param  array<int, array{name: string, slug: string|null, is_uncategorised: bool, amount: float, percentage: float}>  $categories  Every category, largest first.
+     * @return array<int, array{name: string, slug: string|null, is_uncategorised: bool, amount: float, percentage: float, bar_fill: float, is_other: bool}>
      */
     public static function build(array $categories): array
     {
@@ -34,6 +34,8 @@ final class CategoryBars
         if ($restAmount > 0) {
             $rows[] = [
                 'name' => 'Other',
+                'slug' => null,
+                'is_uncategorised' => false,
                 'amount' => $restAmount,
                 'percentage' => round($restAmount / $total * 100, 1),
                 'bar_fill' => $barFill($restAmount),

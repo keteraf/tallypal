@@ -2,12 +2,14 @@
 
 declare(strict_types=1);
 
+use App\Enums\CategoryType;
 use App\Http\Controllers\Api\TransactionController;
 use App\Models\Category;
 use App\Models\Currency;
 use App\Models\Tally;
 use App\Models\Transaction;
 use App\Models\User;
+use Database\Seeders\ReferenceDataSeeder;
 
 covers(TransactionController::class);
 
@@ -23,12 +25,13 @@ it('lists transactions', function () {
 });
 
 it('stores a transaction', function () {
+    $this->seed(ReferenceDataSeeder::class);
     $user = User::factory()->create();
     $tally = Tally::factory()->create(['owner_id' => $user->id]);
     $party = User::factory()->create();
     $tally->users()->attach($party->id, ['default_share_percentage' => 50]);
     $currency = Currency::query()->inRandomOrder()->first();
-    $category = Category::query()->inRandomOrder()->first();
+    $category = Category::query()->ofType(CategoryType::INCOME)->inRandomOrder()->first();
 
     $data = [
         'party_id' => $party->id,

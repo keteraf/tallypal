@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Enums\CategoryType;
+use App\Enums\TransactionType;
 use App\Models\Category;
 use App\Models\Currency;
 use App\Models\Tally;
@@ -9,6 +11,7 @@ use App\Models\Transaction;
 use App\Models\User;
 use App\Repositories\TransactionStatsRepository;
 use Carbon\CarbonImmutable;
+use Database\Seeders\ReferenceDataSeeder;
 
 covers(TransactionStatsRepository::class);
 
@@ -158,41 +161,28 @@ test('recentTransactions flags rows of multi-member tallies as shared', function
         ->and($result[1]['is_shared'])->toBeTrue();
 });
 
-test('recentTransactions category_code uses first two letters of category name', function (): void {
+test('recentTransactions and activity send the category slug and colour, null without a category', function (): void {
     $user = User::factory()->create();
     $currency = Currency::factory()->create(['decimals' => 2, 'symbol' => '€']);
     $tally = Tally::factory()->create(['owner_id' => $user->id]);
-    $today = now()->toDateString();
-
-    $category = Category::create(['name' => 'Groceries']);
-
-    Transaction::factory()->forTally($tally)->forParty($user)->withCurrency($currency)
-        ->create(['type' => 'expense', 'amount' => 5.0, 'title' => 'Item', 'transaction_date' => $today, 'category_id' => $category->getKey()]);
-
-    $repo = new TransactionStatsRepository;
-    $result = $repo->recentTransactions(collect([$tally->tally_id]));
-
-    $row = collect($result)->firstWhere('title', 'Item');
-    expect($row['category_id'])->toBe($category->getKey())
-        ->and($row['category_code'])->toBe('GR')
-        ->and($row['category_name'])->toBe('Groceries');
-});
-
-test('recentTransactions category_code is double-dot for numeric-only category names', function (): void {
-    $user = User::factory()->create();
-    $currency = Currency::factory()->create(['decimals' => 2, 'symbol' => '€']);
-    $tally = Tally::factory()->create(['owner_id' => $user->id]);
-
-    $category = Category::create(['name' => '123']);
+    $today = CarbonImmutable::now();
+    $category = Category::factory()->create(['slug' => 'test_market', 'color' => 'c4']);
 
     Transaction::factory()->forTally($tally)->forParty($user)->withCurrency($currency)
-        ->create(['type' => 'expense', 'amount' => 5.0, 'title' => 'Numeric Cat', 'transaction_date' => now()->toDateString(), 'category_id' => $category->getKey()]);
+        ->create(['type' => 'expense', 'title' => 'Tagged', 'transaction_date' => $today->toDateString(), 'category_id' => $category->getKey()]);
+    Transaction::factory()->forTally($tally)->forParty($user)->withCurrency($currency)
+        ->create(['type' => 'expense', 'title' => 'Untagged', 'transaction_date' => $today->toDateString(), 'category_id' => null]);
 
     $repo = new TransactionStatsRepository;
-    $result = $repo->recentTransactions(collect([$tally->tally_id]));
+    $recent = collect($repo->recentTransactions(collect([$tally->tally_id])));
+    $activity = collect($repo->activity(collect([$tally->tally_id]), $today->startOfMonth(), $today, 10));
 
-    $tx = collect($result)->firstWhere('title', 'Numeric Cat');
-    expect($tx['category_code'])->toBe('··');
+    foreach ([$recent, $activity] as $rows) {
+        expect(collect($rows->firstWhere('title', 'Tagged'))->only(['category_slug', 'category_color'])->all())
+            ->toBe(['category_slug' => 'test_market', 'category_color' => 'c4'])
+            ->and(collect($rows->firstWhere('title', 'Untagged'))->only(['category_slug', 'category_color'])->all())
+            ->toBe(['category_slug' => null, 'category_color' => null]);
+    }
 });
 
 test('weeklyHistory returns exactly 12 weeks with correct label format', function (): void {
@@ -253,8 +243,8 @@ test('categoriesBreakdown returns name, amount, and percentage for each category
     $tally = Tally::factory()->create(['owner_id' => $user->id]);
     $now = CarbonImmutable::now();
 
-    $catA = Category::create(['name' => 'FoodX']);
-    $catB = Category::create(['name' => 'TransportX']);
+    $catA = Category::factory()->create(['name' => 'FoodX']);
+    $catB = Category::factory()->create(['name' => 'TransportX']);
 
     Transaction::factory()->forTally($tally)->forParty($user)->withCurrency($currency)
         ->create(['type' => 'expense', 'amount' => 60.0, 'transaction_date' => $now->toDateString(), 'category_id' => $catA->getKey()]);
@@ -397,7 +387,7 @@ test('categoriesBreakdown returns every category, largest first, with percentage
 
     // Create 8 distinct categories and transactions
     for ($i = 1; $i <= 8; $i++) {
-        $cat = Category::create(['name' => "TestCat{$i}"]);
+        $cat = Category::factory()->create(['name' => "TestCat{$i}"]);
         Transaction::factory()->forTally($tally)->forParty($user)->withCurrency($currency)
             ->create(['type' => 'expense', 'amount' => 10.0, 'transaction_date' => $now->toDateString(), 'category_id' => $cat->getKey()]);
     }
@@ -581,7 +571,7 @@ test('activity keeps each row in its own currency and flags rows of multi-member
     $solo->users()->attach($user->id, ['default_share_percentage' => 100]);
     $shared = Tally::factory()->create(['owner_id' => $user->id, 'name' => 'Shared']);
     $shared->users()->attach(User::factory()->create()->id, ['default_share_percentage' => 50]);
-    $food = Category::create(['name' => 'Food']);
+    $food = Category::factory()->create(['name' => 'Food', 'slug' => 'food', 'color' => 'c4']);
     $soloTx = Transaction::factory()->forTally($solo)->forParty($user)->withCurrency($pound)->withCategory($food)
         ->create(['type' => 'expense', 'amount' => 12.40, 'transaction_date' => '2026-10-02', 'title' => 'Ramen']);
     Transaction::factory()->forTally($shared)->forParty($user)->withCurrency($pound)
@@ -597,7 +587,8 @@ test('activity keeps each row in its own currency and flags rows of multi-member
         'transaction_date' => '2026-10-02',
         'category_id' => $food->getKey(),
         'category_name' => 'Food',
-        'category_code' => 'FO',
+        'category_slug' => 'food',
+        'category_color' => 'c4',
         'tally_uuid' => $solo->uuid,
         'tally_name' => 'Solo',
         'is_shared' => false,
@@ -605,4 +596,128 @@ test('activity keeps each row in its own currency and flags rows of multi-member
         'currency_code' => 'GBP',
         'decimals' => 2,
     ])->and($result[1]['is_shared'])->toBeTrue();
+});
+
+// ─── frequentCategories ───────────────────────────────────────────────────────
+
+/**
+ * One transaction per date, all entered by $user in a tally of their own, in a seeded category.
+ *
+ * @param  array<int, string>  $dates
+ */
+function enterCategoryUses(User $user, string $slug, array $dates): void
+{
+    $category = Category::query()->where('slug', $slug)->firstOrFail();
+    $tally = Tally::factory()->create(['owner_id' => $user->id]);
+
+    foreach ($dates as $date) {
+        Transaction::factory()->forTally($tally)->forParty($user)->withCategory($category)
+            ->withType(TransactionType::from($category->type->value))
+            ->create(['transaction_date' => $date]);
+    }
+}
+
+test('frequentCategories falls back to the design defaults of each type when nothing qualifies', function (): void {
+    $this->seed(ReferenceDataSeeder::class);
+    $user = User::factory()->create();
+    $repo = new TransactionStatsRepository;
+    $now = CarbonImmutable::parse('2026-10-15');
+
+    expect($repo->frequentCategories($user->id, CategoryType::EXPENSE, $now))
+        ->toBe(['groceries', 'dining_out', 'transportation', 'bills', 'subscriptions'])
+        ->and($repo->frequentCategories($user->id, CategoryType::INCOME, $now))
+        ->toBe(['salary', 'side_work', 'refunds_returns', 'gifts_received', 'investments']);
+});
+
+test('frequentCategories needs a category used at least twice', function (): void {
+    $this->seed(ReferenceDataSeeder::class);
+    $user = User::factory()->create();
+    enterCategoryUses($user, 'healthcare', ['2026-10-01', '2026-10-02']);
+    enterCategoryUses($user, 'travel', ['2026-10-03']);
+
+    expect((new TransactionStatsRepository)->frequentCategories($user->id, CategoryType::EXPENSE, CarbonImmutable::parse('2026-10-15')))
+        ->toBe(['healthcare', 'groceries', 'dining_out', 'transportation', 'bills']);
+});
+
+test('frequentCategories counts day 90 and ignores day 91 and the future', function (): void {
+    $this->seed(ReferenceDataSeeder::class);
+    $user = User::factory()->create();
+    enterCategoryUses($user, 'healthcare', ['2026-07-17', '2026-10-15']);
+    enterCategoryUses($user, 'education', ['2026-07-17', '2026-07-16']);
+    enterCategoryUses($user, 'travel', ['2026-10-16', '2026-10-17']);
+
+    expect((new TransactionStatsRepository)->frequentCategories($user->id, CategoryType::EXPENSE, CarbonImmutable::parse('2026-10-15')))
+        ->toBe(['healthcare', 'groceries', 'dining_out', 'transportation', 'bills']);
+});
+
+test('frequentCategories ranks by use count, then by the most recent use', function (): void {
+    $this->seed(ReferenceDataSeeder::class);
+    $user = User::factory()->create();
+    enterCategoryUses($user, 'education', ['2026-09-01', '2026-09-02']);
+    enterCategoryUses($user, 'utilities', ['2026-10-01', '2026-10-02']);
+    enterCategoryUses($user, 'healthcare', ['2026-08-01', '2026-08-02', '2026-08-03']);
+
+    expect((new TransactionStatsRepository)->frequentCategories($user->id, CategoryType::EXPENSE, CarbonImmutable::parse('2026-10-15')))
+        ->toBe(['healthcare', 'utilities', 'education', 'groceries', 'dining_out']);
+});
+
+test('frequentCategories returns at most five and the fill never repeats a qualifying default', function (): void {
+    $this->seed(ReferenceDataSeeder::class);
+    $busy = User::factory()->create();
+
+    foreach (['healthcare', 'education', 'utilities', 'travel', 'rent', 'insurance'] as $index => $slug) {
+        enterCategoryUses($busy, $slug, ['2026-10-0' . ($index + 1), '2026-10-0' . ($index + 1)]);
+    }
+
+    $single = User::factory()->create();
+    enterCategoryUses($single, 'groceries', ['2026-10-01', '2026-10-02']);
+    $repo = new TransactionStatsRepository;
+    $now = CarbonImmutable::parse('2026-10-15');
+
+    expect($repo->frequentCategories($busy->id, CategoryType::EXPENSE, $now))
+        ->toBe(['insurance', 'rent', 'travel', 'utilities', 'education'])
+        ->and($repo->frequentCategories($single->id, CategoryType::EXPENSE, $now))
+        ->toBe(['groceries', 'dining_out', 'transportation', 'bills', 'subscriptions']);
+});
+
+test('frequentCategories keeps income and expense apart', function (): void {
+    $this->seed(ReferenceDataSeeder::class);
+    $user = User::factory()->create();
+    enterCategoryUses($user, 'healthcare', ['2026-10-01', '2026-10-02']);
+    enterCategoryUses($user, 'bonus', ['2026-10-03', '2026-10-04']);
+    $repo = new TransactionStatsRepository;
+    $now = CarbonImmutable::parse('2026-10-15');
+
+    expect($repo->frequentCategories($user->id, CategoryType::EXPENSE, $now))
+        ->toBe(['healthcare', 'groceries', 'dining_out', 'transportation', 'bills'])
+        ->and($repo->frequentCategories($user->id, CategoryType::INCOME, $now))
+        ->toBe(['bonus', 'salary', 'side_work', 'refunds_returns', 'gifts_received']);
+});
+
+test('frequentCategories ignores uncategorised transactions', function (): void {
+    $this->seed(ReferenceDataSeeder::class);
+    $user = User::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $user->id]);
+    Transaction::factory()->forTally($tally)->forParty($user)->withType(TransactionType::EXPENSE)->count(3)
+        ->create(['category_id' => null, 'transaction_date' => '2026-10-01']);
+
+    expect((new TransactionStatsRepository)->frequentCategories($user->id, CategoryType::EXPENSE, CarbonImmutable::parse('2026-10-15')))
+        ->toBe(['groceries', 'dining_out', 'transportation', 'bills', 'subscriptions']);
+});
+
+test('frequentCategories never counts what another user entered, even in a shared tally', function (): void {
+    $this->seed(ReferenceDataSeeder::class);
+    $me = User::factory()->create();
+    $other = User::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $me->id]);
+    $tally->users()->attach([$me->id => ['default_share_percentage' => 50], $other->id => ['default_share_percentage' => 50]]);
+    $category = Category::query()->where('slug', 'healthcare')->firstOrFail();
+    Transaction::factory()->forTally($tally)->forParty($other)->withCategory($category)->withType(TransactionType::EXPENSE)->count(5)
+        ->create(['transaction_date' => '2026-10-01']);
+    $repo = new TransactionStatsRepository;
+    $now = CarbonImmutable::parse('2026-10-15');
+
+    expect($repo->frequentCategories($me->id, CategoryType::EXPENSE, $now))
+        ->toBe(['groceries', 'dining_out', 'transportation', 'bills', 'subscriptions'])
+        ->and($repo->frequentCategories($other->id, CategoryType::EXPENSE, $now)[0])->toBe('healthcare');
 });

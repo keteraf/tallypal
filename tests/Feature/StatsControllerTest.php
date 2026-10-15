@@ -212,8 +212,8 @@ function seedMixedCurrencyStats(): array
     $user = User::factory()->create();
     $euro = Currency::factory()->create(['decimals' => 2, 'symbol' => '€', 'code' => 'EUR']);
     $dollar = Currency::factory()->create(['decimals' => 2, 'symbol' => '$', 'code' => 'USD']);
-    $food = Category::create(['name' => 'Food']);
-    $travel = Category::create(['name' => 'Travel']);
+    $food = Category::factory()->create(['name' => 'Food', 'slug' => 'x-food']);
+    $travel = Category::factory()->create(['name' => 'Travel', 'slug' => 'x-travel']);
     $tally = Tally::factory()->create(['owner_id' => $user->id]);
 
     Transaction::factory()->forTally($tally)->forParty($user)->withCurrency($euro)
@@ -237,7 +237,7 @@ test('stats of a mixed EUR/USD month use only the most-used currency and list th
             ->where('total_out', 50)
             ->where('series.11.amount', 30)
             ->where('categories', [
-                ['name' => 'Food', 'amount' => 50, 'percentage' => 100, 'bar_fill' => 100, 'is_other' => false],
+                ['name' => 'Food', 'slug' => 'x-food', 'is_uncategorised' => false, 'amount' => 50, 'percentage' => 100, 'bar_fill' => 100, 'is_other' => false],
             ])
             ->where('other_currencies', [
                 ['amount' => 12.5, 'currency_symbol' => '$', 'currency_code' => 'USD', 'decimals' => 2],
@@ -276,7 +276,7 @@ test('stats use the user default currency over the most-used one', function (): 
             ->where('total_out', 12.5)
             ->where('series.11.amount', 12.5)
             ->where('categories', [
-                ['name' => 'Travel', 'amount' => 12.5, 'percentage' => 100, 'bar_fill' => 100, 'is_other' => false],
+                ['name' => 'Travel', 'slug' => 'x-travel', 'is_uncategorised' => false, 'amount' => 12.5, 'percentage' => 100, 'bar_fill' => 100, 'is_other' => false],
             ])
             ->where('other_currencies', [
                 ['amount' => 50, 'currency_symbol' => '€', 'currency_code' => 'EUR', 'decimals' => 2],
@@ -299,7 +299,7 @@ function seedCategoryExpenses(User $user, array $amountsByCategory): void
             'type' => 'expense',
             'amount' => $amount,
             'transaction_date' => '2026-10-13',
-            'category_id' => Category::create(['name' => $name])->getKey(),
+            'category_id' => Category::factory()->create(['name' => $name, 'slug' => 'x-' . mb_strtolower($name)])->getKey(),
         ]);
     }
 }
@@ -313,12 +313,12 @@ test('stats category bars are relative to the largest category and the rest is o
         ->get('/stats?range=month')
         ->assertInertia(fn (AssertableInertia $page): AssertableInertia => $page
             ->where('categories', [
-                ['name' => 'Rent', 'amount' => 400, 'percentage' => 50, 'bar_fill' => 100, 'is_other' => false],
-                ['name' => 'Food', 'amount' => 200, 'percentage' => 25, 'bar_fill' => 50, 'is_other' => false],
-                ['name' => 'Travel', 'amount' => 100, 'percentage' => 12.5, 'bar_fill' => 25, 'is_other' => false],
-                ['name' => 'Fun', 'amount' => 50, 'percentage' => 6.3, 'bar_fill' => 12.5, 'is_other' => false],
-                ['name' => 'Gym', 'amount' => 25, 'percentage' => 3.1, 'bar_fill' => 6.25, 'is_other' => false],
-                ['name' => 'Other', 'amount' => 25, 'percentage' => 3.1, 'bar_fill' => 6.25, 'is_other' => true],
+                ['name' => 'Rent', 'slug' => 'x-rent', 'is_uncategorised' => false, 'amount' => 400, 'percentage' => 50, 'bar_fill' => 100, 'is_other' => false],
+                ['name' => 'Food', 'slug' => 'x-food', 'is_uncategorised' => false, 'amount' => 200, 'percentage' => 25, 'bar_fill' => 50, 'is_other' => false],
+                ['name' => 'Travel', 'slug' => 'x-travel', 'is_uncategorised' => false, 'amount' => 100, 'percentage' => 12.5, 'bar_fill' => 25, 'is_other' => false],
+                ['name' => 'Fun', 'slug' => 'x-fun', 'is_uncategorised' => false, 'amount' => 50, 'percentage' => 6.3, 'bar_fill' => 12.5, 'is_other' => false],
+                ['name' => 'Gym', 'slug' => 'x-gym', 'is_uncategorised' => false, 'amount' => 25, 'percentage' => 3.1, 'bar_fill' => 6.25, 'is_other' => false],
+                ['name' => 'Other', 'slug' => null, 'is_uncategorised' => false, 'amount' => 25, 'percentage' => 3.1, 'bar_fill' => 6.25, 'is_other' => true],
             ])
         );
 });
@@ -335,9 +335,9 @@ test('stats Other bar never sets the scale and is capped at 100 when it is the l
         ->get('/stats?range=month')
         ->assertInertia(fn (AssertableInertia $page): AssertableInertia => $page
             ->has('categories', 6)
-            ->where('categories.0', ['name' => 'Rent', 'amount' => 100, 'percentage' => 17.2, 'bar_fill' => 100, 'is_other' => false])
+            ->where('categories.0', ['name' => 'Rent', 'slug' => 'x-rent', 'is_uncategorised' => false, 'amount' => 100, 'percentage' => 17.2, 'bar_fill' => 100, 'is_other' => false])
             ->where('categories.4.bar_fill', 60)
-            ->where('categories.5', ['name' => 'Other', 'amount' => 180, 'percentage' => 31, 'bar_fill' => 100, 'is_other' => true])
+            ->where('categories.5', ['name' => 'Other', 'slug' => null, 'is_uncategorised' => false, 'amount' => 180, 'percentage' => 31, 'bar_fill' => 100, 'is_other' => true])
         );
 });
 
@@ -352,4 +352,61 @@ test('stats without a rest of categories has no Other row', function (): void {
             ->has('categories', 5)
             ->where('categories.4.is_other', false)
         );
+});
+
+test('stats By category shows uncategorised spending as a row, ranks it by amount and never shows income', function (): void {
+    $this->travelTo('2026-10-14 12:00:00');
+    $user = User::factory()->create();
+    $euro = Currency::factory()->create(['decimals' => 2, 'symbol' => '€', 'code' => 'EUR']);
+    $tally = Tally::factory()->create(['owner_id' => $user->id]);
+    $food = Category::factory()->create(['name' => 'Food', 'slug' => 'x-food']);
+    $salary = Category::factory()->income()->create(['name' => 'Salary', 'slug' => 'x-salary']);
+    $enter = fn (string $type, float $amount, ?Category $category) => Transaction::factory()->forTally($tally)->forParty($user)->withCurrency($euro)
+        ->create(['type' => $type, 'amount' => $amount, 'transaction_date' => '2026-10-10', 'category_id' => $category?->getKey()]);
+    $enter('expense', 200.0, $food);
+    $enter('expense', 60.0, null);
+    $enter('expense', 40.0, null);
+    $enter('income', 5000.0, $salary);
+    $enter('income', 300.0, null);
+
+    actingAs($user)
+        ->get('/stats?range=month')
+        ->assertInertia(fn (AssertableInertia $page): AssertableInertia => $page
+            ->where('categories', [
+                ['name' => 'Food', 'slug' => 'x-food', 'is_uncategorised' => false, 'amount' => 200, 'percentage' => 66.7, 'bar_fill' => 100, 'is_other' => false],
+                ['name' => 'Uncategorised', 'slug' => null, 'is_uncategorised' => true, 'amount' => 100, 'percentage' => 33.3, 'bar_fill' => 50, 'is_other' => false],
+            ])
+            ->etc()
+        );
+});
+
+test('stats By category ranks a larger uncategorised row first and folds a small one into Other', function (): void {
+    $this->travelTo('2026-10-14 12:00:00');
+    $user = User::factory()->create();
+    $euro = Currency::factory()->create(['decimals' => 2, 'symbol' => '€', 'code' => 'EUR']);
+    $tally = Tally::factory()->create(['owner_id' => $user->id]);
+    $enter = fn (float $amount, ?string $name) => Transaction::factory()->forTally($tally)->forParty($user)->withCurrency($euro)->create([
+        'type' => 'expense', 'amount' => $amount, 'transaction_date' => '2026-10-10',
+        'category_id' => $name === null ? null : Category::factory()->create(['name' => $name, 'slug' => 'x-' . mb_strtolower($name)])->getKey(),
+    ]);
+    $enter(500.0, null);
+    $enter(50.0, 'A');
+
+    actingAs($user)->get('/stats?range=month')->assertInertia(fn (AssertableInertia $page): AssertableInertia => $page
+        ->where('categories.0.is_uncategorised', true)
+        ->where('categories.0.amount', 500)
+        ->where('categories.1.name', 'A')
+        ->etc());
+
+    Transaction::query()->whereNull('category_id')->update(['amount' => 500]);
+
+    foreach (['B' => 40.0, 'C' => 30.0, 'D' => 20.0, 'E' => 10.0, 'F' => 1.0] as $name => $amount) {
+        $enter($amount, $name);
+    }
+
+    actingAs($user)->get('/stats?range=month')->assertInertia(fn (AssertableInertia $page): AssertableInertia => $page
+        ->has('categories', 6)
+        ->where('categories.5', fn ($other): bool => $other['is_other'] === true && $other['is_uncategorised'] === false && $other['slug'] === null && $other['amount'] === 6)
+        ->where('categories', fn ($rows): bool => collect($rows)->where('is_uncategorised', true)->isEmpty() && array_sum(array_column($rows->toArray(), 'amount')) === 156)
+        ->etc());
 });

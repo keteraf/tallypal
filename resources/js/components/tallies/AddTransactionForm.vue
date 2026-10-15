@@ -2,25 +2,24 @@
 import { AmountInput } from '@/components/ui/amount-input';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { ChipGroup, type ChipOption } from '@/components/ui/choice-chip';
+import { CategoryPicker, type FrequentCategories, type PickerCategory } from '@/components/ui/category-picker';
 import { FormField } from '@/components/ui/form-field';
 import { filledFieldClass, Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { SegmentedControl } from '@/components/ui/segmented-control';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { categoryColorFromId } from '@/lib/category';
 import tallies from '@/routes/tallies';
 import { Link, useForm, usePage } from '@inertiajs/vue3';
 import { DateFormatter, getLocalTimeZone, parseDate, today } from '@internationalized/date';
 import { CalendarIcon } from 'lucide-vue-next';
-import { computed, ref, watch } from 'vue';
+import { computed, ref, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 /**
  * Shared "Add transaction" form — the Add-tx sheet/dialog body from the design
- * source, in one screen: big `AmountInput`, type `SegmentedControl`, category
- * `ChipGroup` and filled `FormField`s. Replaces the three-step wizard; the posted
+ * source, in one screen: big `AmountInput`, type `SegmentedControl`, the
+ * `CategoryPicker` (E7) and filled `FormField`s. Replaces the three-step wizard; the posted
  * payload, the route and the server-side validation are unchanged, and the wizard's
  * per-step gate becomes a single completeness check on the submit button.
  *
@@ -30,7 +29,9 @@ import { useI18n } from 'vue-i18n';
  */
 const props = defineProps<{
     tallyUuid: string;
-    categories: Array<{ category_id: number; name: string }>;
+    categories: Array<PickerCategory & { name: string }>;
+    /** `frequent_categories` from the form data: slugs per type, most used first. */
+    frequentCategories: FrequentCategories;
     currencies: Array<{ currency_id: number; uuid: string; name: string; code: string; symbol: string }>;
     parties: Array<{ id: number; name: string }>;
     /** The user's default currency; prefills the currency select, which stays editable. */
@@ -53,7 +54,7 @@ const form = useForm({
     title: '',
     amount: '',
     party_id: page.props.auth.user.id.toString(),
-    category_id: '',
+    category_id: null as number | null,
     currency_id: props.currencies.find((currency) => currency.uuid === props.defaultCurrencyUuid)?.currency_id.toString() ?? '',
     type: 'expense' as 'expense' | 'income',
     transaction_date: today(getLocalTimeZone()).toString(),
@@ -75,13 +76,19 @@ const typeOptions = [
     { value: 'income' as const, label: t('transactions.fields.income'), accent: 'positive' as const },
 ];
 
-const categoryOptions = computed<ChipOption<string>[]>(() =>
-    props.categories.map((category) => ({
-        value: category.category_id.toString(),
-        label: category.name,
-        color: categoryColorFromId(category.category_id),
-    })),
-);
+const categoryPicker = useTemplateRef('categoryPicker');
+
+/**
+ * Esc closes one layer at a time: the picker's open panel or "cleared" notice first, the surrounding
+ * dialog / sheet only on the next press. Only reached for key presses inside the form; popovers and
+ * select lists portal out of it and handle their own.
+ */
+const dismissPickerLayer = (event: KeyboardEvent) => {
+    if (categoryPicker.value?.dismiss()) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+};
 
 const selectedCurrency = computed(() => props.currencies.find((currency) => currency.currency_id.toString() === form.currency_id));
 
@@ -116,12 +123,7 @@ watch(
 const partyLabel = computed(() => (form.type === 'income' ? t('transactions.fields.received_by') : t('transactions.fields.paid_by')));
 
 const isComplete = computed(
-    () =>
-        form.title.trim().length > 0 &&
-        form.category_id !== '' &&
-        form.currency_id !== '' &&
-        form.amount !== '' &&
-        parseFloat(form.amount.replace(',', '.')) > 0,
+    () => form.title.trim().length > 0 && form.currency_id !== '' && form.amount !== '' && parseFloat(form.amount.replace(',', '.')) > 0,
 );
 
 const submit = () => {
@@ -132,7 +134,7 @@ const submit = () => {
 </script>
 
 <template>
-    <form class="flex flex-col" @submit.prevent="submit">
+    <form class="flex flex-col" @submit.prevent="submit" @keydown.esc="dismissPickerLayer">
         <FormField :error="form.errors.amount ?? form.errors.currency_id">
             <AmountInput
                 id="amount"
@@ -140,6 +142,7 @@ const submit = () => {
                 :label="t('transactions.fields.amount')"
                 :hint="t('transactions.fields.amount_hint')"
                 :currency="selectedCurrency?.symbol"
+                :tone="form.type === 'income' ? 'positive' : 'default'"
             >
                 <template #currency>
                     <Select :model-value="form.currency_id" @update:model-value="chooseCurrency">
@@ -176,8 +179,14 @@ const submit = () => {
             />
         </FormField>
 
-        <FormField :label="t('transactions.fields.category')" :error="form.errors.category_id">
-            <ChipGroup v-model="form.category_id" :options="categoryOptions" />
+        <FormField :label="t('transactions.fields.category')" for="category_id" :error="form.errors.category_id">
+            <CategoryPicker
+                ref="categoryPicker"
+                v-model="form.category_id"
+                :type="form.type"
+                :categories="categories"
+                :frequent="frequentCategories"
+            />
         </FormField>
 
         <div class="grid grid-cols-1 gap-x-2.5" :class="{ 'md:grid-cols-2': tallyOptions }">

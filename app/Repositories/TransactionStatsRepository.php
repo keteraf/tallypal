@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Contracts\Repositories\TransactionStatsRepositoryInterface;
+use App\Enums\CategoryType;
 use App\Enums\TransactionType;
 use App\Models\Currency;
 use App\Models\Tally;
@@ -26,6 +27,14 @@ use Illuminate\Support\Facades\DB;
  */
 final class TransactionStatsRepository implements TransactionStatsRepositoryInterface
 {
+    private const int FREQUENT_WINDOW_DAYS = 90; // @pest-mutate-ignore
+
+    private const int FREQUENT_MIN_USES = 2; // @pest-mutate-ignore
+
+    private const int FREQUENT_LIMIT = 5; // @pest-mutate-ignore
+
+    private const string UNCATEGORISED_NAME = 'Uncategorised'; // @pest-mutate-ignore
+
     /**
      * @param  Collection<int, int>  $tallyIds
      * @return CurrencyShape
@@ -93,7 +102,7 @@ final class TransactionStatsRepository implements TransactionStatsRepositoryInte
 
     /**
      * @param  Collection<int, int>  $tallyIds
-     * @return array<int, array{uuid: string, title: string, type: string, amount: float, transaction_date: string, category_id: int|null, category_name: string|null, category_code: string, tally_name: string, is_shared: bool, currency_symbol: string}>
+     * @return array<int, array{uuid: string, title: string, type: string, amount: float, transaction_date: string, category_id: int|null, category_name: string|null, category_slug: string|null, category_color: string|null, tally_name: string, is_shared: bool, currency_symbol: string}>
      */
     public function recentTransactions(Collection $tallyIds): array
     {
@@ -104,7 +113,7 @@ final class TransactionStatsRepository implements TransactionStatsRepositoryInte
                 $tally->withMembersCount();
             }])
             ->leftJoin('categories', 'transactions.category_id', '=', 'categories.category_id')
-            ->select('transactions.*', 'categories.name as category_name')
+            ->select('transactions.*', 'categories.name as category_name', 'categories.slug as category_slug', 'categories.color as category_color')
             ->orderByDesc('transaction_date')
             ->orderByDesc('created_at')
             ->limit(7)
@@ -124,7 +133,8 @@ final class TransactionStatsRepository implements TransactionStatsRepositoryInte
                     'transaction_date' => (string) $tx->transaction_date,
                     'category_id' => $tx->category_id,
                     'category_name' => $rawCategoryName,
-                    'category_code' => $this->categoryCode($rawCategoryName),
+                    'category_slug' => $this->nullableString($tx->getAttribute('category_slug')),
+                    'category_color' => $this->nullableString($tx->getAttribute('category_color')),
                     'tally_name' => $tx->tally === null ? '' : (string) $tx->tally->name,
                     'is_shared' => (int) $usersCount > 1,
                     'currency_symbol' => $currency === null ? '' : (string) $currency->symbol,
@@ -148,7 +158,7 @@ final class TransactionStatsRepository implements TransactionStatsRepositoryInte
                 $tally->withMembersCount();
             }])
             ->leftJoin('categories', 'transactions.category_id', '=', 'categories.category_id')
-            ->select('transactions.*', 'categories.name as category_name')
+            ->select('transactions.*', 'categories.name as category_name', 'categories.slug as category_slug', 'categories.color as category_color')
             ->orderByDesc('transactions.transaction_date')
             ->orderByDesc('transactions.created_at')
             ->limit($limit)
@@ -171,7 +181,8 @@ final class TransactionStatsRepository implements TransactionStatsRepositoryInte
                     'transaction_date' => (string) $tx->transaction_date,
                     'category_id' => $tx->category_id,
                     'category_name' => $rawCategoryName,
-                    'category_code' => $this->categoryCode($rawCategoryName),
+                    'category_slug' => $this->nullableString($tx->getAttribute('category_slug')),
+                    'category_color' => $this->nullableString($tx->getAttribute('category_color')),
                     'tally_uuid' => (string) $tally->uuid,
                     'tally_name' => (string) $tally->name,
                     'is_shared' => (int) $usersCount > 1,
@@ -226,21 +237,21 @@ final class TransactionStatsRepository implements TransactionStatsRepositoryInte
 
     /**
      * @param  Collection<int, int>  $tallyIds
-     * @return array<int, array{name: string, amount: float, percentage: float}>
+     * @return array<int, array{name: string, slug: string|null, is_uncategorised: bool, amount: float, percentage: float}>
      */
     public function categoriesBreakdown(Collection $tallyIds, CarbonImmutable $monthStart, CarbonImmutable $now, int $currencyId): array
     {
-        /** @var Collection<int, object{category_name: string, total: float|int|string}> $rows */
+        /** @var Collection<int, object{category_name: string|null, category_slug: string|null, total: float|int|string}> $rows */
         $rows = DB::table(Transaction::TABLE_NAME)
             ->join('currencies', 'transactions.currency_id', '=', 'currencies.currency_id')
             ->leftJoin('categories', 'transactions.category_id', '=', 'categories.category_id')
-            ->selectRaw('COALESCE(categories.name, ?) as category_name, COALESCE(SUM(' . Transaction::NORMALIZED_AMOUNT_EXPRESSION . '), 0) as total', ['Uncategorised'])
+            ->selectRaw('categories.name as category_name, categories.slug as category_slug, COALESCE(SUM(' . Transaction::NORMALIZED_AMOUNT_EXPRESSION . '), 0) as total')
             ->whereIn('transactions.tally_id', $tallyIds->all())
             ->where('transactions.type', TransactionType::EXPENSE->value)
             ->where('transactions.currency_id', $currencyId)
             ->where('transactions.transaction_date', '>=', $monthStart->toDateString())
             ->where('transactions.transaction_date', '<=', $now->toDateString())
-            ->groupBy('categories.category_id', 'categories.name')
+            ->groupBy('categories.category_id', 'categories.name', 'categories.slug')
             ->orderByDesc('total')
             ->get();
 
@@ -251,11 +262,36 @@ final class TransactionStatsRepository implements TransactionStatsRepositoryInte
             $amount = (float) $row->total;
 
             return [
-                'name' => $row->category_name,
+                'name' => $row->category_name ?? self::UNCATEGORISED_NAME,
+                'slug' => $row->category_slug,
+                'is_uncategorised' => $row->category_name === null,
                 'amount' => $amount,
                 'percentage' => $totalSum > 0 ? round(($amount / $totalSum) * 100, 1) : 0.0,
             ];
         })->all();
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function frequentCategories(int $userId, CategoryType $type, CarbonImmutable $now): array
+    {
+        /** @var list<string> $frequent */
+        $frequent = DB::table(Transaction::TABLE_NAME)
+            ->join('categories', 'transactions.category_id', '=', 'categories.category_id')
+            ->where('transactions.party_id', $userId)
+            ->where('transactions.type', $type->value)
+            ->whereBetween('transactions.transaction_date', [$now->subDays(self::FREQUENT_WINDOW_DAYS)->toDateString(), $now->toDateString()])
+            ->groupBy('categories.category_id', 'categories.slug')
+            ->havingRaw('COUNT(*) >= ?', [self::FREQUENT_MIN_USES])
+            ->orderByRaw('COUNT(*) DESC')
+            ->orderByRaw('MAX(transactions.transaction_date) DESC')
+            ->orderBy('categories.category_id')
+            ->limit(self::FREQUENT_LIMIT)
+            ->pluck('categories.slug')
+            ->all();
+
+        return array_slice(array_values(array_unique([...$frequent, ...$type->defaultSlugs()])), 0, self::FREQUENT_LIMIT);
     }
 
     /**
@@ -433,16 +469,11 @@ final class TransactionStatsRepository implements TransactionStatsRepositoryInte
             ->all();
     }
 
-    private function categoryCode(?string $name): string
+    /**
+     * A joined column that is null for a transaction with no category.
+     */
+    private function nullableString(mixed $value): ?string
     {
-        if ($name === null) { // @pest-mutate-ignore
-            return '··'; // @pest-mutate-ignore
-        }
-
-        $cleaned = preg_replace('/[^A-Za-z]/', '', $name) ?? '';
-
-        return $cleaned === ''
-            ? '··'
-            : mb_strtoupper(mb_substr($cleaned, 0, 2));
+        return is_string($value) ? $value : null;
     }
 }

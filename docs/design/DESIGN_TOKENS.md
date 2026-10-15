@@ -385,6 +385,49 @@ and the Add-tx sheet has colored category chips — so color is a user choice, n
 > the `color` columns and the create/edit endpoints accept it. Until then the frontend uses the
 > deterministic fallback so screens render.
 
+### 7.1 Category colours (Categories batch, `Tallypal Categories.html`)
+
+**Rule (owner, C-D4): the glyph identifies a category everywhere; colour only separates rows within a view.**
+
+Each category has a fixed token, persisted in `categories.color` by `ReferenceDataSeeder` (B-13). It tints the category's
+**glyph tile** in transaction rows and in the picker (`color-mix(in oklch, var(--cN) 20%, transparent)` fill, `var(--cN)`
+glyph). The By category cards do **not** use it: they keep FP-12's rank colours (§1.3), and their "Uncategorised" row
+shows ◌ in `--text-3` instead of a dot. Income **amounts** stay `--pos`; an uncategorised income keeps ↓ in `--pos`.
+
+| Token | Expense | Income |
+|---|---|---|
+| `c1` | Education, Insurance, Rent | Investments, Rental income, Pension & benefits |
+| `c2` | Subscriptions, Transportation, Travel | Side work, Refunds & returns |
+| `c3` | Healthcare | Salary, Other income |
+| `c4` | Bills, Groceries, Household Supplies | Bonus, Sold items |
+| `c5` | Gifts & Donations, Utilities | Winnings |
+| `c6` | Clothing, Dining Out, Entertainment, Personal Care | Gifts |
+
+### 7.2 Category picker values (COMPONENT_INVENTORY E7)
+
+All existing tokens; nothing new is added to `app.css` except the two keyframes.
+
+| Element | Value | Token / utility |
+|---|---|---|
+| Row grid | 6 columns ≥ md (5 frequent + All), 5 < md (4 + All), `gap 6px` | `gap-1.5` |
+| Grid | 4 columns, `gap 6px` | `gap-1.5` |
+| Tile | `--surface-2`, radius 14px, padding `9px 4px 8px`, column flex `gap 6px`, min-height 76px (80px in the phone sheet), `--text-2` | `bg-surface-2`, `rounded-sm` (`--radius-sm`) |
+| Tile hover | `--surface-3`, `--text` | `hover:bg-surface-3` |
+| Tile selected | bg `color-mix(--accent 16%, --surface-2)`, inset ring `1.5px --accent`, `--text`; glyph square `--accent` bg / `--accent-ink` | accent mix |
+| Tile focus | outline `2px --accent`, offset 2px | `focus-visible:outline-accent` |
+| Glyph square | 30 × 30, radius 10px, 14px/600, bg `color-mix(--cN 20%, transparent)`, colour `--cN` | `CategoryGlyph` (new `size="tile"`: 30 / r10 / 14px) |
+| Label | 10.5px/500, `-.015em`, line-height 1.15, centred, 2-line clamp, soft hyphens for long words | `--text-nav` size (10.5px, §2.2) with weight 500, tracking `-.015em` |
+| "All" tile glyph | `⋯`, `--surface-3` bg, `--text-2`; open: `--text` bg, `--surface` glyph | — |
+| Status line | 12px `--text-3`, `margin-top 9px`, min-height 17px; `.warn` `--neg` + `nudge` .35s ease-out | `text-xs text-text-3` / `text-neg` |
+| Inline panel (≥ md) | `margin-top 10px`, `1px --line` border, radius 20px, padding 10px, `drop` .2s ease-out | `rounded-card border-line` |
+| Filter field | height 42px, `--surface-2`, radius 14px, padding `0 13px`, 14px, search icon 15px `--text-3`, focus border `--accent`; kbd hint mono 10.5px, `1px --line`, radius 5px | `Input variant="filled"` |
+| Close button | 40px circle icon button | `IconButton` (A2) |
+| Empty grid | full row, padding `22px 0`, 13px `--text-3`, centred | — |
+| Phone "All" sheet | second `ui/sheet` bottom, `max-height 80%`, title 19px/600, scrim `rgba(0,0,0,.45)` | `ui/sheet` (D1) |
+
+Keyframes: `nudge` (translateX 0 → −4px → 3px → 0, .35s ease-out) and `drop` (opacity 0 / translateY −4px → none,
+.2s ease-out). Both respect `prefers-reduced-motion` (no animation).
+
 ---
 
 ## 8. Marketing site extensions (source: `Tallypal Site.html`)

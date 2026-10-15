@@ -216,7 +216,7 @@ test('monthlyBalance stores result under day-scoped cache key', function (): voi
 test('recentTransactions returns transactions from stats repository', function (): void {
     $userId = 1;
     $tallyIds = collect([1]);
-    $expected = [['uuid' => 'tx1', 'title' => 'Coffee', 'type' => 'expense', 'amount' => 5.0, 'transaction_date' => '2025-05-01', 'category_id' => null, 'category_name' => null, 'category_code' => '··', 'tally_name' => 'Main', 'currency_symbol' => '€']];
+    $expected = [['uuid' => 'tx1', 'title' => 'Coffee', 'type' => 'expense', 'amount' => 5.0, 'transaction_date' => '2025-05-01', 'category_id' => null, 'category_name' => null, 'tally_name' => 'Main', 'currency_symbol' => '€']];
 
     $statsRepo = stubStatsRepo();
     $statsRepo->shouldReceive('recentTransactions')->once()->with($tallyIds)->andReturn($expected);
@@ -327,7 +327,7 @@ test('categoriesBreakdown folds the tail beyond the top five into one Other row 
     $result = makeCacheService(stubTallyRepo(), $statsRepo)->categoriesBreakdown(1, collect([1]), $now->startOfMonth(), $now, 4, $now->format('Y-m'));
 
     expect($result)->toHaveCount(6)
-        ->and($result[5])->toBe(['name' => 'Other', 'amount' => 6.0, 'percentage' => 5.4, 'bar_fill' => 15.0, 'is_other' => true])
+        ->and($result[5])->toBe(['name' => 'Other', 'slug' => null, 'is_uncategorised' => false, 'amount' => 6.0, 'percentage' => 5.4, 'bar_fill' => 15.0, 'is_other' => true])
         ->and(array_sum(array_column($result, 'amount')))->toBe(111.0);
 });
 
@@ -424,7 +424,7 @@ test('balanceSummary reads the cached value instead of recomputing', function ()
 
 test('cache keys carry the version segment so entries of a previous release are never read', function (): void {
     expect(HomeCacheService::key(7, 'balance:2025-05-15'))->toBe('home:' . HomeCacheService::KEY_VERSION . ':user:7:balance:2025-05-15')
-        ->and(HomeCacheService::KEY_VERSION)->toBe('v11');
+        ->and(HomeCacheService::KEY_VERSION)->toBe('v14');
 });
 
 test('a value cached under the unversioned key of the previous release is ignored', function (): void {

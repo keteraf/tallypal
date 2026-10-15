@@ -72,16 +72,21 @@ export function breakdownRowColors(rows: readonly { is_other: boolean }[]): Brea
     });
 }
 
-/** A glyph tint: a category hue, or `--pos` for the income arrow. */
-export type GlyphColor = CategoryColor | 'pos';
+/** A glyph tint: a category hue, `--pos` for the uncategorised-income arrow, `--text-3` for the uncategorised ◌. */
+export type GlyphColor = CategoryColor | 'pos' | 'text-3';
 
 /**
- * Tint of a transaction row's glyph. Income is always `--pos` (money in, unambiguous; matches its
- * `+` amount), never a hue picked from a hash: it used to render the ↓ red (FP-13). An expense is
- * tinted by its category name, falling back to its type.
+ * Tint of a transaction row's glyph tile (C-D4, scoped): a category's stored colour, income categories
+ * included, falling back to the picker's id cycle when a row has none. A row with no category keeps the
+ * neutral marks: the uncategorised income ↓ in `--pos` (matching its `+` amount) and the uncategorised
+ * expense ◌ in `--text-3`. The amount keeps its own `--pos` rule; the tile never decides it.
  */
-export function transactionGlyphColor(type: string, categoryName?: string | null): GlyphColor {
-    return type === 'income' ? 'pos' : categoryColorFromString(categoryName ?? type);
+export function transactionGlyphColor(type: string, category: { category_id: number | null; color: CategoryColor | null }): GlyphColor {
+    if (category.category_id === null) {
+        return type === 'income' ? 'pos' : 'text-3';
+    }
+
+    return category.color ?? categoryColorFromId(category.category_id);
 }
 
 /**

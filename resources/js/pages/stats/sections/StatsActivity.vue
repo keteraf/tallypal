@@ -5,6 +5,7 @@ import { categoryGlyph } from '@/components/ui/category-glyph';
 import type { DataTableColumn } from '@/components/ui/data-table';
 import { DataTable, DataTableItem } from '@/components/ui/data-table';
 import { EmptyState } from '@/components/ui/empty-state';
+import { useCategoryLabel } from '@/composables/useCategoryLabel';
 import { transactionGlyphColor } from '@/lib/category';
 import { formatCurrency } from '@/pages/home/utils';
 import type { StatsActivityItem } from '@/pages/stats/types';
@@ -17,6 +18,7 @@ defineProps<{
 }>();
 
 const { t, locale } = useI18n();
+const categoryLabel = useCategoryLabel();
 
 const columns = computed<DataTableColumn[]>(() => [
     { key: 'title', label: t('stats.activity.transaction') },
@@ -41,9 +43,9 @@ const signedAmount = (row: StatsActivityItem): string =>
             <template #cell-title="{ row }">
                 <DataTableItem
                     :title="row.title"
-                    :subtitle="shortDate(row.transaction_date)"
-                    :color="transactionGlyphColor(row.type, row.category_name)"
-                    :glyph="categoryGlyph(row.category_id ?? undefined, row.type)"
+                    :subtitle="`${categoryLabel({ slug: row.category_slug, name: row.category_name })} · ${shortDate(row.transaction_date)}`"
+                    :color="transactionGlyphColor(row.type, { category_id: row.category_id, color: row.category_color })"
+                    :glyph="categoryGlyph(row.category_slug, row.type)"
                 >
                     <template #inline>
                         <Badge :variant="row.is_shared ? 'accent' : 'pill'" class="ml-[5px] whitespace-nowrap">{{ row.tally_name }}</Badge>

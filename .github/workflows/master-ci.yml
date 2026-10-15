@@ -12,4 +12,4 @@ jobs:
   test:
     uses: ./.github/workflows/shared-ci.yml
     with:
-      test_command: ""
+      test_command: ${{ github.event_name == 'pull_request' && 'composer check' || 'composer test' }}

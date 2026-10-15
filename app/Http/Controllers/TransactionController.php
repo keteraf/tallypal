@@ -12,7 +12,9 @@ use App\Actions\Transaction\GetTallyTotalsAction;
 use App\Actions\Transaction\GetTallyTransactionsAction;
 use App\Actions\Transaction\StoreTransactionAction;
 use App\Actions\Transaction\UpdateTransactionAction;
+use App\Contracts\Repositories\TransactionStatsRepositoryInterface;
 use App\DTOs\TransactionDTO;
+use App\Enums\CategoryType;
 use App\Http\Requests\Transactions\StoreTransactionRequest;
 use App\Http\Requests\Transactions\UpdateTransactionRequest;
 use App\Models\Category;
@@ -20,6 +22,7 @@ use App\Models\Currency;
 use App\Models\Tally;
 use App\Models\Transaction;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -29,6 +32,8 @@ use Inertia\Response;
 class TransactionController extends Controller
 {
     use AuthorizesRequests;
+
+    public function __construct(private readonly TransactionStatsRepositoryInterface $statsRepository) {}
 
     /**
      * Display a listing of the transactions for a tally.
@@ -61,7 +66,7 @@ class TransactionController extends Controller
                     'amount' => $t->amount,
                     'type' => $t->type->value,
                     'transaction_date' => $t->transaction_date,
-                    'category' => $t->category ? ['category_id' => $t->category->category_id, 'name' => $t->category->name] : null,
+                    'category' => $t->category ? ['category_id' => $t->category->category_id, 'slug' => $t->category->slug, 'name' => $t->category->name, 'color' => $t->category->color] : null,
                     'currency' => $t->currency ? ['symbol' => $t->currency->symbol, 'decimals' => $t->currency->decimals] : null,
                     'party' => $t->party ? ['name' => $t->party->name, 'initials' => $t->party->initials(), 'color' => $t->party->avatarColor()] : null,
                 ]);
@@ -102,7 +107,7 @@ class TransactionController extends Controller
      */
     public function store(StoreTransactionRequest $request, Tally $tally, StoreTransactionAction $action): RedirectResponse
     {
-        /** @var array{party_id: int|numeric-string, currency_id: int|numeric-string, category_id: int|numeric-string, type: string, title: string, description?: string|null, amount: float|numeric-string, transaction_date: string} $data */
+        /** @var array{party_id: int|numeric-string, currency_id: int|numeric-string, category_id?: int|numeric-string|null, type: string, title: string, description?: string|null, amount: float|numeric-string, transaction_date: string} $data */
         $data = $request->validated();
         $transactionDTO = TransactionDTO::fromArray($data);
         $action->handle($transactionDTO, $tally);
@@ -135,7 +140,7 @@ class TransactionController extends Controller
     ): RedirectResponse {
         $this->authorize('update', $transaction);
 
-        /** @var array{party_id: int|numeric-string, currency_id: int|numeric-string, category_id: int|numeric-string, type: string, title: string, description?: string|null, amount: float|numeric-string, transaction_date: string} $data */
+        /** @var array{party_id: int|numeric-string, currency_id: int|numeric-string, category_id?: int|numeric-string|null, type: string, title: string, description?: string|null, amount: float|numeric-string, transaction_date: string} $data */
         $data = $request->validated();
         $transactionDTO = TransactionDTO::fromArray($data);
         $action->handle($transaction, $transactionDTO);
@@ -146,12 +151,19 @@ class TransactionController extends Controller
     /**
      * Build the shared categories / currencies / parties payload for the transaction form.
      *
-     * @return array{categories: \Illuminate\Database\Eloquent\Collection<int, Category>, currencies: \Illuminate\Database\Eloquent\Collection<int, Currency>, default_currency_uuid: string|null, parties: \Illuminate\Support\Collection<int, array{id: int, name: string}>}
+     * @return array{frequent_categories: array{expense: list<string>, income: list<string>}, categories: \Illuminate\Database\Eloquent\Collection<int, Category>, currencies: \Illuminate\Database\Eloquent\Collection<int, Currency>, default_currency_uuid: string|null, parties: \Illuminate\Support\Collection<int, array{id: int, name: string}>}
      */
     private function transactionFormData(Tally $tally): array
     {
+        $userId = (int) auth()->id();
+        $now = CarbonImmutable::now();
+
         return [
-            'categories' => Category::all(['category_id', 'name']),
+            'frequent_categories' => [
+                'expense' => $this->statsRepository->frequentCategories($userId, CategoryType::EXPENSE, $now),
+                'income' => $this->statsRepository->frequentCategories($userId, CategoryType::INCOME, $now),
+            ],
+            'categories' => Category::query()->orderBy(Category::PRIMARY_KEY)->get([Category::PRIMARY_KEY, 'slug', 'type', 'name', 'color']),
             'currencies' => Currency::all(['currency_id', 'uuid', 'name', 'code', 'symbol']),
             'default_currency_uuid' => $tally->prefillCurrency(auth()->user())?->uuid,
             'parties' => $tally->users()->get()->map(fn (User $u): array => ['id' => $u->id, 'name' => $u->name]),

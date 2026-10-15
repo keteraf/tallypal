@@ -30,3 +30,4 @@ yarn-error.log
 !docs/design/
 /.verify/
 /.playwright-mcp/
+/tests/Browser/Screenshots/

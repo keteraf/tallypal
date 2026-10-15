@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Enums\CategoryType;
 use App\Models\Category;
 
 covers(Category::class);
@@ -30,5 +31,14 @@ it('has correct primary key', function () {
 
 it('has fillable attributes', function () {
     $category = new Category();
-    expect($category->getFillable())->toBe(['name', 'icon', 'color']);
+    expect($category->getFillable())->toBe(['type', 'slug', 'name', 'description', 'icon', 'color']);
+});
+
+it('scopes categories to one transaction type', function () {
+    $expense = Category::factory()->create();
+    $income = Category::factory()->income()->create();
+
+    expect(Category::query()->ofType(CategoryType::INCOME)->pluck('category_id')->all())->toBe([$income->category_id])
+        ->and(Category::query()->ofType(CategoryType::EXPENSE)->pluck('category_id')->all())->toContain($expense->category_id)
+        ->not->toContain($income->category_id);
 });

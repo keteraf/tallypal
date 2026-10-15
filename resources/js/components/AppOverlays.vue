@@ -3,6 +3,7 @@ import ResponsiveModal from '@/components/ResponsiveModal.vue';
 import AddTransactionForm from '@/components/tallies/AddTransactionForm.vue';
 import NewTallyForm from '@/components/tallies/NewTallyForm.vue';
 import { Button } from '@/components/ui/button';
+import type { FrequentCategories, PickerCategory } from '@/components/ui/category-picker';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAddTransaction } from '@/composables/useAddTransaction';
 import { useNewTally } from '@/composables/useNewTally';
@@ -36,7 +37,8 @@ interface TallyPickerItem {
 }
 
 interface FormDataPayload {
-    categories: Array<{ category_id: number; name: string }>;
+    categories: Array<PickerCategory & { name: string }>;
+    frequent_categories: FrequentCategories;
     currencies: Array<{ currency_id: number; uuid: string; name: string; code: string; symbol: string }>;
     parties: Array<{ id: number; name: string }>;
     default_currency_uuid: string | null;
@@ -162,6 +164,7 @@ function handleSubmitted(): void {
             <AddTransactionForm
                 :tally-uuid="selectedTallyUuid"
                 :categories="formData.categories"
+                :frequent-categories="formData.frequent_categories"
                 :currencies="formData.currencies"
                 :parties="formData.parties"
                 :default-currency-uuid="formData.default_currency_uuid"

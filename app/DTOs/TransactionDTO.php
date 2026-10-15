@@ -9,7 +9,7 @@ final class TransactionDTO
     public function __construct(
         private int $party_id,
         private int $currency_id,
-        private int $category_id,
+        private ?int $category_id,
         private string $type,
         private string $title,
         private ?string $description,
@@ -18,14 +18,14 @@ final class TransactionDTO
     ) {}
 
     /**
-     * @param  array{party_id: int|numeric-string, currency_id: int|numeric-string, category_id: int|numeric-string, type: string, title: string, description?: string|null, amount: float|numeric-string, transaction_date: string}  $data
+     * @param  array{party_id: int|numeric-string, currency_id: int|numeric-string, category_id?: int|numeric-string|null, type: string, title: string, description?: string|null, amount: float|numeric-string, transaction_date: string}  $data
      */
     public static function fromArray(array $data): self
     {
         return new self(
             party_id: (int) $data['party_id'],
             currency_id: (int) $data['currency_id'],
-            category_id: (int) $data['category_id'],
+            category_id: isset($data['category_id']) ? (int) $data['category_id'] : null,
             type: $data['type'],
             title: $data['title'],
             description: $data['description'] ?? null,
@@ -75,12 +75,12 @@ final class TransactionDTO
         return $this;
     }
 
-    public function getCategoryId(): int
+    public function getCategoryId(): ?int
     {
         return $this->category_id;
     }
 
-    public function setCategoryId(int $category_id): self
+    public function setCategoryId(?int $category_id): self
     {
         $this->category_id = $category_id;
 

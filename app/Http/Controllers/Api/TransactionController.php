@@ -40,7 +40,7 @@ class TransactionController extends Controller
      */
     public function store(StoreTransactionRequest $request, Tally $tally, StoreTransactionAction $action): TransactionResource
     {
-        /** @var array{party_id: int|numeric-string, currency_id: int|numeric-string, category_id: int|numeric-string, type: string, title: string, description?: string|null, amount: float|numeric-string, transaction_date: string} $data */
+        /** @var array{party_id: int|numeric-string, currency_id: int|numeric-string, category_id?: int|numeric-string|null, type: string, title: string, description?: string|null, amount: float|numeric-string, transaction_date: string} $data */
         $data = $request->validated();
         $transactionDTO = TransactionDTO::fromArray($data);
         $transaction = $action->handle($transactionDTO, $tally);
@@ -63,7 +63,7 @@ class TransactionController extends Controller
      */
     public function update(UpdateTransactionRequest $request, Tally $tally, Transaction $transaction, UpdateTransactionAction $action): TransactionResource
     {
-        /** @var array{party_id: int|numeric-string, currency_id: int|numeric-string, category_id: int|numeric-string, type: string, title: string, description?: string|null, amount: float|numeric-string, transaction_date: string} $data */
+        /** @var array{party_id: int|numeric-string, currency_id: int|numeric-string, category_id?: int|numeric-string|null, type: string, title: string, description?: string|null, amount: float|numeric-string, transaction_date: string} $data */
         $data = $request->validated();
         $transactionDTO = TransactionDTO::fromArray($data);
         $transaction = $action->handle($transaction, $transactionDTO);

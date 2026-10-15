@@ -438,7 +438,7 @@ test('activity breaks a same-day tie by the most recently entered transaction', 
 test('activity rows carry the transaction, its tally and its own currency', function (): void {
     $user = User::factory()->create();
     $trip = kpiSharedTally($user, User::factory()->create(), ['name' => 'Trip']);
-    $food = Category::create(['name' => 'Food']);
+    $food = Category::factory()->create(['name' => 'Food', 'slug' => 'food', 'color' => 'c4']);
     $transaction = Transaction::factory()->forTally($trip)->forParty($user)->withCurrency($this->dollar)->withCategory($food)
         ->create(['type' => 'expense', 'amount' => 12.50, 'transaction_date' => '2026-10-13', 'title' => 'Lunch']);
 
@@ -453,7 +453,8 @@ test('activity rows carry the transaction, its tally and its own currency', func
                 'transaction_date' => '2026-10-13',
                 'category_id' => $food->getKey(),
                 'category_name' => 'Food',
-                'category_code' => 'FO',
+                'category_slug' => 'food',
+                'category_color' => 'c4',
                 'tally_uuid' => $trip->uuid,
                 'tally_name' => 'Trip',
                 'is_shared' => true,

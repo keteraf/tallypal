@@ -108,7 +108,7 @@ it('pins the transaction item fields and pagination metadata', function () {
         ->withCurrency($currency)
         ->withType(TransactionType::EXPENSE)
         ->create();
-    Transaction::factory()->count(19)->forTally($tally)->create();
+    Transaction::factory()->count(19)->forTally($tally)->withType(TransactionType::EXPENSE)->create();
 
     $this->actingAs($user)->get(route('tallies.transactions.index', $tally))
         ->assertInertia(fn ($page) => $page
@@ -126,7 +126,7 @@ it('pins the transaction item fields and pagination metadata', function () {
                 ->has('amount')
                 ->has('type')
                 ->has('transaction_date')
-                ->has('category', fn ($c) => $c->has('category_id')->has('name'))
+                ->has('category', fn ($c) => $c->has('category_id')->has('slug')->has('name')->has('color'))
                 ->has('currency', fn ($c) => $c->has('symbol')->has('decimals'))
                 ->has('party', fn ($p) => $p->has('name')->has('initials')->has('color'))
             )
@@ -162,9 +162,18 @@ it('maps the exact values of a single transaction', function () {
             ->where('transactions.data.0.amount', fn (int|float $amount): bool => (float) $amount === (float) $transaction->amount)
             ->where('transactions.data.0.type', 'income')
             ->where('transactions.data.0.transaction_date', $transaction->transaction_date)
-            ->where('transactions.data.0.category', ['category_id' => $category->category_id, 'name' => $category->name])
+            ->where('transactions.data.0.category', ['category_id' => $category->category_id, 'slug' => $category->slug, 'name' => $category->name, 'color' => $category->color])
             ->where('transactions.data.0.currency', ['symbol' => $currency->symbol, 'decimals' => $currency->decimals])
         );
+});
+
+it('sends no category for an uncategorised transaction', function () {
+    $user = User::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $user->id]);
+    Transaction::factory()->forTally($tally)->withType(TransactionType::INCOME)->create(['category_id' => null]);
+
+    $this->actingAs($user)->get(route('tallies.transactions.index', $tally))
+        ->assertInertia(fn ($page) => $page->where('transactions.data.0.category', null));
 });
 
 it('exposes the transactions as an appendable scroll prop on page 2', function () {

@@ -45,6 +45,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Allow Activity Reset
+    |--------------------------------------------------------------------------
+    |
+    | `tallypal:reset-activity` wipes every tally and transaction, so it refuses to
+    | run unless this is true. Set ALLOW_ACTIVITY_RESET=true only for the wipe and
+    | remove it right after (deploy/CHECKLIST.md).
+    |
+    */
+
+    'allow_activity_reset' => (bool) env('ALLOW_ACTIVITY_RESET', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application URL
     |--------------------------------------------------------------------------
     |
