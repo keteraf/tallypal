@@ -5,23 +5,11 @@
             <table cellpadding="0" cellspacing="0" border="0" align="center" role="presentation">
                 <tr>
                     <td style="vertical-align: middle; padding-right: 10px;">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="40" height="40"
-                             aria-hidden="true">
-                            <rect width="64" height="64" rx="14" ry="14" fill="#F6F2EC"></rect>
-                            <g stroke="#1A1612" stroke-width="4.5" stroke-linecap="round" fill="none">
-                                <line x1="19" y1="15" x2="19" y2="49"></line>
-                                <line x1="28" y1="15" x2="28" y2="49"></line>
-                                <line x1="37" y1="15" x2="37" y2="49"></line>
-                                <line x1="46" y1="15" x2="46" y2="49"></line>
-                            </g>
-                            <line x1="13" y1="51" x2="52" y2="13" stroke="#C2613B" stroke-width="4.5"
-                                  stroke-linecap="round"></line>
-                        </svg>
+                        <img src="{{ asset('mail-logo.png') }}" width="28" height="28" alt=""
+                             style="display: block; border: 0; border-radius: 9px;">
                     </td>
                     <td style="vertical-align: middle;">
-                        <span
-                            style="font-family: 'Newsreader', Georgia, 'Times New Roman', serif; font-size: 26px; font-weight: 600; color: #1A1612; letter-spacing: -0.01em; text-decoration: none;">Tally<em
-                                style="font-style: italic; color: #C2613B;">pal</em></span>
+                        <span class="brand-name">{{ $slot }}</span>
                     </td>
                 </tr>
             </table>

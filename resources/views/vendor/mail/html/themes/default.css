@@ -1,3 +1,13 @@
+/*
+ * Email theme — hex conversions of docs/design/DESIGN_TOKENS.md §1 (email clients have no oklch()/var()).
+ * The dark values live in the layout's prefers-color-scheme block (layout.blade.php); keep both in sync.
+ *
+ *   #f5f7fb  --bg            #12161f  --text      #2d69de  --accent
+ *   #ffffff  --surface       #484d57  --text-2    #ffffff  --accent-ink
+ *   #edf0f6  --surface-2     #767a84  --text-3    #d73240  --neg
+ *   #dbdee5  --line
+ */
+
 /* Base */
 body,
 body *:not(html):not(style):not(br):not(tr):not(code) {
@@ -14,8 +24,8 @@ body *:not(html):not(style):not(br):not(tr):not(code) {
 }
 
 body {
-    background-color: #f8f6f1;
-    color: #1a1612;
+    background-color: #f5f7fb;
+    color: #12161f;
     margin: 0;
     padding: 0;
     width: 100% !important;
@@ -28,11 +38,16 @@ ol,
 blockquote {
     line-height: 1.6;
     text-align: left;
-    color: #1a1612;
+    color: #484d57;
+}
+
+strong {
+    color: #12161f;
+    font-weight: 600;
 }
 
 a {
-    color: #c2613b;
+    color: #2d69de;
     text-decoration: underline;
 }
 
@@ -41,32 +56,34 @@ a img {
 }
 
 h1 {
-    color: #1a1612;
-    font-size: 22px;
+    color: #12161f;
+    font-size: 24px;
     font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1.25;
     margin-top: 0;
     text-align: left;
-    letter-spacing: -0.01em;
 }
 
 h2 {
-    color: #1a1612;
-    font-size: 18px;
+    color: #12161f;
+    font-size: 19px;
     font-weight: 600;
+    letter-spacing: -0.025em;
     margin-top: 0;
     text-align: left;
 }
 
 h3 {
-    color: #1a1612;
-    font-size: 16px;
+    color: #12161f;
+    font-size: 15px;
     font-weight: 600;
     margin-top: 0;
     text-align: left;
 }
 
 p {
-    font-size: 16px;
+    font-size: 15px;
     line-height: 1.6;
     margin-top: 0;
     text-align: left;
@@ -74,7 +91,7 @@ p {
 
 p.sub {
     font-size: 12px;
-    color: #8a8580;
+    color: #767a84;
 }
 
 img {
@@ -86,7 +103,7 @@ img {
     -premailer-cellpadding: 0;
     -premailer-cellspacing: 0;
     -premailer-width: 100%;
-    background-color: #f8f6f1;
+    background-color: #f5f7fb;
     margin: 0;
     padding: 0;
     width: 100%;
@@ -103,14 +120,20 @@ img {
 
 /* Header */
 .header {
-    padding: 28px 0;
+    padding: 32px 0 24px;
     text-align: center;
 }
 
 .header a {
-    color: #1a1612;
-    font-size: 22px;
+    color: #12161f;
+    text-decoration: none;
+}
+
+.brand-name {
+    color: #12161f;
+    font-size: 16px;
     font-weight: 600;
+    letter-spacing: -0.02em;
     text-decoration: none;
 }
 
@@ -119,9 +142,7 @@ img {
     -premailer-cellpadding: 0;
     -premailer-cellspacing: 0;
     -premailer-width: 100%;
-    background-color: #f8f6f1;
-    border-bottom: 1px solid #ddd8d0;
-    border-top: 1px solid #ddd8d0;
+    background-color: #f5f7fb;
     margin: 0;
     padding: 0;
     width: 100%;
@@ -132,10 +153,8 @@ img {
     -premailer-cellspacing: 0;
     -premailer-width: 570px;
     background-color: #ffffff;
-    border-color: #ddd8d0;
-    border-radius: 12px;
-    border-width: 1px;
-    box-shadow: 0 2px 0 rgba(26, 22, 18, 0.02);
+    border: 1px solid #dbdee5;
+    border-radius: 20px;
     margin: 0 auto;
     padding: 0;
     width: 570px;
@@ -146,16 +165,26 @@ img {
     padding: 32px;
 }
 
+/* Eyebrow */
+.eyebrow {
+    color: #767a84;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    margin: 0 0 12px;
+    text-transform: uppercase;
+}
+
 /* Subcopy */
 .subcopy {
-    border-top: 1px solid #ddd8d0;
-    margin-top: 25px;
-    padding-top: 25px;
+    border-top: 1px solid #dbdee5;
+    margin-top: 24px;
+    padding-top: 24px;
 }
 
 .subcopy p {
-    font-size: 13px;
-    color: #8a8580;
+    font-size: 12px;
+    color: #767a84;
 }
 
 /* Footer */
@@ -170,13 +199,13 @@ img {
 }
 
 .footer p {
-    color: #8a8580;
+    color: #767a84;
     font-size: 12px;
     text-align: center;
 }
 
 .footer a {
-    color: #8a8580;
+    color: #767a84;
     text-decoration: underline;
 }
 
@@ -190,14 +219,14 @@ img {
 }
 
 .table th {
-    border-bottom: 1px solid #ddd8d0;
+    border-bottom: 1px solid #dbdee5;
     margin: 0;
     padding-bottom: 8px;
 }
 
 .table td {
-    color: #1a1612;
-    font-size: 15px;
+    color: #484d57;
+    font-size: 14px;
     line-height: 18px;
     margin: 0;
     padding: 10px 0;
@@ -208,7 +237,7 @@ img {
     -premailer-cellpadding: 0;
     -premailer-cellspacing: 0;
     -premailer-width: 100%;
-    margin: 30px auto;
+    margin: 24px auto;
     padding: 0;
     text-align: center;
     width: 100%;
@@ -216,52 +245,53 @@ img {
 
 .button {
     -webkit-text-size-adjust: none;
-    border-radius: 8px;
-    color: #ffffff;
+    border-radius: 999px;
     display: inline-block;
-    overflow: hidden;
-    text-decoration: none;
+    font-size: 14.5px;
     font-weight: 600;
-    font-size: 15px;
-    padding: 12px 24px;
+    letter-spacing: -0.01em;
     line-height: 1;
+    overflow: hidden;
+    padding: 14px 24px;
+    text-decoration: none;
 }
 
 .button-blue,
-.button-primary {
-    background-color: #c2613b;
-    border: 2px solid #c2613b;
+.button-green,
+.button-primary,
+.button-success {
+    background-color: #2d69de;
+    border: 1px solid #2d69de;
     color: #ffffff;
 }
 
-.button-green,
-.button-success {
-    background-color: #c2613b;
-    border: 2px solid #c2613b;
-    color: #ffffff;
+.button-secondary {
+    background-color: #edf0f6;
+    border: 1px solid #dbdee5;
+    color: #12161f;
 }
 
 .button-red,
 .button-error {
-    background-color: #ffffff;
-    border: 2px solid #c2613b;
-    color: #c2613b;
+    background-color: #d73240;
+    border: 1px solid #d73240;
+    color: #ffffff;
 }
 
 /* Panels */
 .panel {
-    border-left: 4px solid #c2613b;
-    margin: 21px 0;
+    margin: 20px 0;
 }
 
 .panel-content {
-    background-color: #f0e8dc;
-    color: #1a1612;
+    background-color: #edf0f6;
+    border-radius: 14px;
+    color: #484d57;
     padding: 16px;
 }
 
 .panel-content p {
-    color: #1a1612;
+    color: #484d57;
 }
 
 .panel-item {
@@ -271,4 +301,37 @@ img {
 .panel-item p:last-of-type {
     margin-bottom: 0;
     padding-bottom: 0;
+}
+
+/* Tally card */
+.tally-card {
+    background-color: #edf0f6;
+    border-radius: 14px;
+    margin: 20px 0;
+    width: 100%;
+}
+
+.tally-card-glyph {
+    background-color: #2d69de;
+    border-radius: 11px;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 600;
+    height: 36px;
+    text-align: center;
+    width: 36px;
+}
+
+.tally-card-name {
+    color: #12161f;
+    font-size: 15.5px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin: 0;
+}
+
+.tally-card-meta {
+    color: #767a84;
+    font-size: 12px;
+    margin: 2px 0 0;
 }

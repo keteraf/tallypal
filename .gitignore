@@ -31,3 +31,4 @@ yarn-error.log
 /.verify/
 /.playwright-mcp/
 /tests/Browser/Screenshots/
+/.ssignal/

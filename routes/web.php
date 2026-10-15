@@ -9,6 +9,12 @@ use App\Http\Controllers\StatsController;
 use App\Http\Controllers\TallyController;
 use App\Http\Controllers\TallyInvitationController;
 use App\Http\Controllers\TransactionController;
+use App\Mail\TallyInvitationExistingUser;
+use App\Mail\TallyInvitationNewUser;
+use App\Models\TallyInvitation;
+use App\Models\User;
+use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -27,7 +33,7 @@ Route::get('robots.txt', function () {
 
 // Design-system showcase — dev only, never registered in production.
 if (! app()->isProduction()) {
-    Route::get('dev/design-system', fn () => Inertia::render('dev/DesignSystem'))
+    Route::get('dev/design-system', fn () => Inertia::render('dev/DesignSystem', []))
         ->name('dev.design-system');
 
     // Error-page preview — `bootstrap/app.php` only renders ErrorPage outside local/testing,
@@ -37,6 +43,21 @@ if (! app()->isProduction()) {
         ->setStatusCode($status))
         ->whereIn('status', ['403', '404', '500', '503'])
         ->name('dev.error-page');
+
+    // Email preview — renders each transactional email in the browser from the seeded demo data.
+    Route::get('dev/mail/{template}', function (string $template) {
+        $invitation = fn (): TallyInvitation => TallyInvitation::query()->latest()->firstOrFail();
+        $user = fn (): User => User::query()->firstOrFail();
+
+        return match ($template) {
+            'invitation-existing' => new TallyInvitationExistingUser($invitation())->render(),
+            'invitation-new' => new TallyInvitationNewUser($invitation())->render(),
+            'verify-email' => (new VerifyEmail)->toMail($user())->render(),
+            default => new ResetPassword('preview-token')->toMail($user())->render(),
+        };
+    })
+        ->whereIn('template', ['invitation-existing', 'invitation-new', 'verify-email', 'reset-password'])
+        ->name('dev.mail');
 }
 
 Route::get('invitations/{uuid}/accept', [TallyInvitationController::class, 'accept'])
