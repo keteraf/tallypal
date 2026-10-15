@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Contracts\Repositories\TransactionStatsRepositoryInterface;
+use App\Enums\CategoryType;
 use App\Enums\TransactionType;
 use App\Models\Currency;
 use App\Models\Tally;
@@ -26,6 +27,14 @@ use Illuminate\Support\Facades\DB;
  */
 final class TransactionStatsRepository implements TransactionStatsRepositoryInterface
 {
+    private const int FREQUENT_WINDOW_DAYS = 90; // @pest-mutate-ignore
+
+    private const int FREQUENT_MIN_USES = 2; // @pest-mutate-ignore
+
+    private const int FREQUENT_LIMIT = 5; // @pest-mutate-ignore
+
+    private const string UNCATEGORISED_NAME = 'Uncategorised'; // @pest-mutate-ignore
+
     /**
      * @param  Collection<int, int>  $tallyIds
      * @return CurrencyShape
@@ -230,21 +239,21 @@ final class TransactionStatsRepository implements TransactionStatsRepositoryInte
 
     /**
      * @param  Collection<int, int>  $tallyIds
-     * @return array<int, array{name: string, amount: float, percentage: float}>
+     * @return array<int, array{name: string, slug: string|null, is_uncategorised: bool, amount: float, percentage: float}>
      */
     public function categoriesBreakdown(Collection $tallyIds, CarbonImmutable $monthStart, CarbonImmutable $now, int $currencyId): array
     {
-        /** @var Collection<int, object{category_name: string, total: float|int|string}> $rows */
+        /** @var Collection<int, object{category_name: string|null, category_slug: string|null, total: float|int|string}> $rows */
         $rows = DB::table(Transaction::TABLE_NAME)
             ->join('currencies', 'transactions.currency_id', '=', 'currencies.currency_id')
             ->leftJoin('categories', 'transactions.category_id', '=', 'categories.category_id')
-            ->selectRaw('COALESCE(categories.name, ?) as category_name, COALESCE(SUM(' . Transaction::NORMALIZED_AMOUNT_EXPRESSION . '), 0) as total', ['Uncategorised'])
+            ->selectRaw('categories.name as category_name, categories.slug as category_slug, COALESCE(SUM(' . Transaction::NORMALIZED_AMOUNT_EXPRESSION . '), 0) as total')
             ->whereIn('transactions.tally_id', $tallyIds->all())
             ->where('transactions.type', TransactionType::EXPENSE->value)
             ->where('transactions.currency_id', $currencyId)
             ->where('transactions.transaction_date', '>=', $monthStart->toDateString())
             ->where('transactions.transaction_date', '<=', $now->toDateString())
-            ->groupBy('categories.category_id', 'categories.name')
+            ->groupBy('categories.category_id', 'categories.name', 'categories.slug')
             ->orderByDesc('total')
             ->get();
 
@@ -255,11 +264,36 @@ final class TransactionStatsRepository implements TransactionStatsRepositoryInte
             $amount = (float) $row->total;
 
             return [
-                'name' => $row->category_name,
+                'name' => $row->category_name ?? self::UNCATEGORISED_NAME,
+                'slug' => $row->category_slug,
+                'is_uncategorised' => $row->category_name === null,
                 'amount' => $amount,
                 'percentage' => $totalSum > 0 ? round(($amount / $totalSum) * 100, 1) : 0.0,
             ];
         })->all();
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function frequentCategories(int $userId, CategoryType $type, CarbonImmutable $now): array
+    {
+        /** @var list<string> $frequent */
+        $frequent = DB::table(Transaction::TABLE_NAME)
+            ->join('categories', 'transactions.category_id', '=', 'categories.category_id')
+            ->where('transactions.party_id', $userId)
+            ->where('transactions.type', $type->value)
+            ->whereBetween('transactions.transaction_date', [$now->subDays(self::FREQUENT_WINDOW_DAYS)->toDateString(), $now->toDateString()])
+            ->groupBy('categories.category_id', 'categories.slug')
+            ->havingRaw('COUNT(*) >= ?', [self::FREQUENT_MIN_USES])
+            ->orderByRaw('COUNT(*) DESC')
+            ->orderByRaw('MAX(transactions.transaction_date) DESC')
+            ->orderBy('categories.category_id')
+            ->limit(self::FREQUENT_LIMIT)
+            ->pluck('categories.slug')
+            ->all();
+
+        return array_slice(array_values(array_unique([...$frequent, ...$type->defaultSlugs()])), 0, self::FREQUENT_LIMIT);
     }
 
     /**

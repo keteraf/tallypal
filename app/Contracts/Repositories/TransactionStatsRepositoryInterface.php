@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Contracts\Repositories;
 
+use App\Enums\CategoryType;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
@@ -64,8 +65,10 @@ interface TransactionStatsRepositoryInterface
      * Return every expense category in the given currency for the range, largest first, with its
      * percentage of the range's total. Callers fold the tail into "Other" with `CategoryBars`.
      *
+     * Uncategorised spending is one row with a null slug and `is_uncategorised` set; its label is the caller's to translate.
+     *
      * @param  Collection<int, int>  $tallyIds
-     * @return array<int, array{name: string, amount: float, percentage: float}>
+     * @return array<int, array{name: string, slug: string|null, is_uncategorised: bool, amount: float, percentage: float}>
      */
     public function categoriesBreakdown(Collection $tallyIds, CarbonImmutable $monthStart, CarbonImmutable $now, int $currencyId): array;
 
@@ -109,4 +112,13 @@ interface TransactionStatsRepositoryInterface
      * @return array<int, CurrencyTotalShape>
      */
     public function otherCurrencyExpenses(Collection $tallyIds, CarbonImmutable $start, CarbonImmutable $end, int $excludedCurrencyId): array;
+
+    /**
+     * Return the slugs of the categories the user entered at least twice in the last 90 days for the type,
+     * most used first then most recent, up to five, topped up with the type's default slugs. A transaction
+     * counts for the user in `party_id` (the payer, or the receiver of an income), the only user column it has.
+     *
+     * @return list<string>
+     */
+    public function frequentCategories(int $userId, CategoryType $type, CarbonImmutable $now): array;
 }

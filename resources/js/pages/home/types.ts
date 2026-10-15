@@ -100,6 +100,9 @@ export interface WeekHistory {
 /** A By category row: the top five plus one "Other" remainder, each with its bar fill (0–100) already scaled by the server (FP-04, FP-09). */
 export interface CategoryBreakdown {
     name: string;
+    slug: string | null;
+    /** Spending with no category: shown as "Uncategorised" with a ◌ in place of the dot (C-D1). */
+    is_uncategorised: boolean;
     amount: number;
     percentage: number;
     bar_fill: number;

@@ -25,7 +25,7 @@ const rows = computed(() => {
 
     return props.categories.map((cat, index) => ({
         ...cat,
-        name: cat.is_other ? t('home.categories.other') : cat.name,
+        name: cat.is_other ? t('home.categories.other') : cat.is_uncategorised ? t('categories.uncategorised') : cat.name,
         colors: colors[index],
     }));
 });
@@ -41,7 +41,8 @@ const rows = computed(() => {
 
         <div>
             <div v-for="cat in rows" :key="cat.name" class="flex items-center gap-3 border-t border-line py-3 first:border-t-0">
-                <Dot :color="cat.colors.dot" />
+                <span v-if="cat.is_uncategorised" class="w-2 shrink-0 text-center text-[13px] leading-none text-text-3" aria-hidden="true">◌</span>
+                <Dot v-else :color="cat.colors.dot" />
                 <span class="min-w-0 flex-1">
                     <span class="block truncate text-[14px] text-text">{{ cat.name }}</span>
                     <MiniBar class="mt-[7px]" :value="cat.bar_fill" :color="cat.colors.bar" />

@@ -603,6 +603,7 @@ export default {
     },
     /** Category labels by slug (`Tallypal Categories.html`); the DB `name` is only the English fallback. */
     categories: {
+        uncategorised: 'Uncategorised',
         bills: 'Bills',
         clothing: 'Clothing',
         dining_out: 'Dining Out',

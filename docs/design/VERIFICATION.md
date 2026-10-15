@@ -3168,7 +3168,10 @@ wrong).
   without changing the category → 422; same on the API routes (`Api\TransactionController`).
 
 **B-15 — Frequent categories per type** (C-D6)
-- **Status: PLANNED**
+- **Status: DONE (R3)** — keyed on `transactions.party_id` (no creator column exists; `party_id` is the payer, or the receiver of an
+  income). The repository also pads with `CategoryType::defaultSlugs()`, so `frequent_categories` is always 5 slugs per type (the
+  picker shows 4 on phones); sent with the Add/Edit/Create form data. Two queries, no cache (query-count test in
+  `WebTransactionControllerTest`).
 - `TransactionStatsRepository::frequentCategories(int $userId, CategoryType $type, CarbonImmutable $now): list<string>`
   — slugs used ≥ 2 times by the user's tallies in the last 90 days (`transaction_date`), most used first, ties by most
   recent. Sent with the form data as `frequent_categories: {expense: string[], income: string[]}`; the picker pads it
@@ -3176,7 +3179,8 @@ wrong).
 - Tests: window edges (day 90 in, day 91 out), the ≥ 2 threshold, per-type split, another user's tallies excluded.
 
 **B-16 — Breakdowns: no income, and an "Uncategorised" row** (audit: already filtered by type; C-D1)
-- **Status: PLANNED**
+- **Status: DONE (R3) backend + row UI** — rows carry `slug` and `is_uncategorised`; `KEY_VERSION` v13; `categories.uncategorised` EN/IT;
+  the ◌ row is in `HomeCategoriesBreakdown.vue` and `StatsCategoryBreakdown.vue` (not yet screenshotted: CA-19/CA-22 open).
 - Income: tests only, unless they fail. `HomeControllerTest` and `StatsControllerTest`: a user with an income in an
   income category (and a large amount) in the range → its category never appears in `categories_breakdown` /
   `categories`, and the totals equal the expenses only.
@@ -3241,6 +3245,9 @@ coverage, mutation score 100.00%).
   a reference one is never deleted).
 - **After this branch — unique `currencies.code`.** First fix the test fixtures that create duplicate currency codes
   (see B-13: ~66 tests create a second EUR/USD/GBP/JPY row), then add a unique index on `currencies.code`.
+
+**R3 done (2026-10-15).** `TransactionStatsRepository::frequentCategories()` (+ `CategoryType::defaultSlugs()`), `frequent_categories`
+in the form data; `categoriesBreakdown()` returns `slug` / `is_uncategorised` (label from i18n), `CategoryBars` adds them to Other.
 
 R1 comes before everything; R2–R4 only need R1; R5 needs R1 (slugs, colours, labels) and R3 (frequency shape); R6–R7
 need R5 and R2.

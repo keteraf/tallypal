@@ -26,7 +26,7 @@ final readonly class HomeCacheService
      * changes: entries written by the previous release are then never read again (they expire on
      * their own TTL), so a deploy never needs a `cache:clear`.
      */
-    public const string KEY_VERSION = 'v12';
+    public const string KEY_VERSION = 'v13';
 
     public function __construct(
         private TallyRepositoryInterface $tallyRepository,

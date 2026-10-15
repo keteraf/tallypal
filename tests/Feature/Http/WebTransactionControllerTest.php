@@ -12,6 +12,7 @@ use App\Models\Tally;
 use App\Models\Transaction;
 use App\Models\User;
 use Database\Seeders\ReferenceDataSeeder;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 
 covers(TransactionController::class);
@@ -204,4 +205,59 @@ it('does not update a transaction of someone outside the tally', function () {
         ->assertForbidden();
 
     $this->assertDatabaseHas(Transaction::TABLE_NAME, ['transaction_id' => $transaction->transaction_id, 'title' => 'Original']);
+});
+
+it('sends the frequent categories of each type with the transaction form data', function () {
+    $this->travelTo('2026-10-15 12:00:00');
+    $this->seed(ReferenceDataSeeder::class);
+    $owner = User::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
+    $tally->users()->attach($owner->id, ['default_share_percentage' => 100]);
+
+    foreach (['healthcare' => TransactionType::EXPENSE, 'bonus' => TransactionType::INCOME] as $slug => $type) {
+        Transaction::factory()->forTally($tally)->forParty($owner)->withType($type)
+            ->withCategory(Category::query()->where('slug', $slug)->firstOrFail())
+            ->count(2)->create(['transaction_date' => '2026-10-10']);
+    }
+
+    $expected = [
+        'expense' => ['healthcare', 'groceries', 'dining_out', 'transportation', 'bills'],
+        'income' => ['bonus', 'salary', 'side_work', 'refunds_returns', 'gifts_received'],
+    ];
+
+    $this->actingAs($owner)->getJson(route('tallies.transactions.form-data', $tally))
+        ->assertOk()
+        ->assertJsonPath('frequent_categories', $expected);
+
+    $transaction = Transaction::factory()->forTally($tally)->forParty($owner)->create();
+    $this->actingAs($owner)
+        ->get(route('tallies.transactions.edit', [$tally, $transaction]))
+        ->assertInertia(fn (Assert $page) => $page->where('frequent_categories.expense.0', fn ($slug): bool => is_string($slug)));
+    $this->actingAs($owner)
+        ->get(route('tallies.transactions.create', $tally))
+        ->assertInertia(fn (Assert $page) => $page->where('frequent_categories', $expected));
+});
+
+it('computes the frequent categories with two queries however many transactions there are', function () {
+    $this->travelTo('2026-10-15 12:00:00');
+    $this->seed(ReferenceDataSeeder::class);
+    $owner = User::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
+    $tally->users()->attach($owner->id, ['default_share_percentage' => 100]);
+    $countQueries = function () use ($owner, $tally): int {
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        $this->actingAs($owner)->getJson(route('tallies.transactions.form-data', $tally))->assertOk();
+        $queries = array_column(DB::getQueryLog(), 'query');
+        DB::disableQueryLog();
+
+        return count(array_filter($queries, fn (string $sql): bool => mb_stripos($sql, 'having') !== false));
+    };
+
+    $frequencyBefore = $countQueries();
+    Transaction::factory()->forTally($tally)->forParty($owner)->count(40)->create(['transaction_date' => '2026-10-10']);
+    $frequencyAfter = $countQueries();
+
+    expect($frequencyBefore)->toBe(2)
+        ->and($frequencyAfter)->toBe(2);
 });
