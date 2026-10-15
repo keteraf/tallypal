@@ -454,7 +454,9 @@ Legend for **Replaces**:
   styles for the filter, `IconButton` for close, `ui/sheet` `side="bottom"` for the phone panel.
 - **Props/slots:** `v-model` (`number | null` category id), `type: 'expense' | 'income'`, `categories:
   {category_id, slug, type, color}[]`, `frequent: {expense: string[], income: string[]}`; emits `cleared(slug)`.
-  Labels via `t('categories.<slug>')`.
+  Labels via `t('categories.<slug>')`. **Built (R5):** also `v-model:open`, `v-model:query` (optional) and
+  `layout: 'auto' | 'inline' | 'sheet'` (`auto` follows md; the others pin a shape for `/dev/design-system`). `CategoryTile`
+  takes `preview: 'hover' | 'focus'` for static state swatches only. Rules in `ui/category-picker/pickerLogic.ts`.
 - **Used by:** Categories batch R6 (Add transaction), R7 (Edit). Checklist CA-01..CA-15.
 
 ---

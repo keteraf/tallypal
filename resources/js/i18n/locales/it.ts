@@ -603,6 +603,22 @@ export default {
         logout: 'Esci',
         language: 'Lingua',
     },
+    /** `CategoryPicker` (COMPONENT_INVENTORY E7, `Tallypal Categories.html`). */
+    category_picker: {
+        all: 'Tutte {count}',
+        none: 'Nessuna categoria',
+        cleared: '{name} è una categoria di {type}: rimossa.',
+        type: {
+            expense: 'uscita',
+            income: 'entrata',
+        },
+        search: 'Cerca tra {count} categorie di {type}',
+        sheet_title: {
+            expense: 'Categorie di uscita',
+            income: 'Categorie di entrata',
+        },
+        no_match: 'Nessun risultato per “{query}”',
+    },
     /** Category labels by slug (`Tallypal Categories.html`); the DB `name` is only the English fallback. */
     categories: {
         uncategorised: 'Senza categoria',

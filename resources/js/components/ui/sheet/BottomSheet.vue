@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { cn } from '@/lib/utils';
 import { X } from 'lucide-vue-next';
+import type { HTMLAttributes } from 'vue';
 import Sheet from './Sheet.vue';
 import SheetContent from './SheetContent.vue';
 import SheetDescription from './SheetDescription.vue';
@@ -10,18 +12,27 @@ import SheetTitle from './SheetTitle.vue';
  * corners (`--radius-lg` = 28px) and `max-h-[88%]` — the `.sheet` pattern from the
  * mobile design source. Reka (via the underlying Dialog) provides the focus trap
  * and scroll lock. Pair with `ui/dialog` at `≥ md` (see `ResponsiveModal`).
+ * `contentClass` adjusts the panel (the category picker's second sheet is `max-h-[80%]`);
+ * `closeAutoFocus` lets the opener choose where focus lands once the sheet has closed.
  */
-withDefaults(defineProps<{ title?: string; description?: string }>(), {
+withDefaults(defineProps<{ title?: string; description?: string; contentClass?: HTMLAttributes['class'] }>(), {
     title: '',
     description: '',
+    contentClass: undefined,
 });
+
+const emit = defineEmits<{ closeAutoFocus: [event: Event] }>();
 
 const open = defineModel<boolean>('open', { default: false });
 </script>
 
 <template>
     <Sheet v-model:open="open">
-        <SheetContent side="bottom" class="max-h-[88%] gap-0 rounded-t-lg border-line bg-surface p-0 [&>button]:hidden">
+        <SheetContent
+            side="bottom"
+            :class="cn('max-h-[88%] gap-0 rounded-t-lg border-line bg-surface p-0 [&>button]:hidden', contentClass)"
+            @close-auto-focus="emit('closeAutoFocus', $event)"
+        >
             <div class="mx-auto mt-2.5 mb-1 h-1 w-9.5 shrink-0 rounded-full bg-surface-3" />
 
             <div class="flex shrink-0 items-center justify-between px-5 pt-2.5 pb-3.5">

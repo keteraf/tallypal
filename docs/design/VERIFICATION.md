@@ -3257,6 +3257,18 @@ The uncategorised total is sized (184.50) to rank in the top five, otherwise it 
 Seen while screenshotting, not changed: an uncategorised expense in Home Recent / Stats activity shows the sub-line "expense" (the type)
 instead of a label such as "Uncategorised".
 
+**R5 done (2026-10-15).** Vitest + `@vue/test-utils` (happy-dom) run by `npm run test`, in `composer check` before the PHP steps.
+`ui/category-picker`: `CategoryPicker` + `CategoryTile`; rules in `pickerLogic.ts` (alias search over EN + IT labels and the C-D7
+catalogue `categoryCatalogue.ts`, case/accent-insensitive; frequent row padded with the defaults, deduplicated, selection pinned
+first; clear rule; keyboard model), 40 unit tests written first and run red, plus 8 component tests. Extends `CategoryGlyph`
+(`size="tile"`, `color` optional) and `BottomSheet` (`contentClass`, `closeAutoFocus`); `nudge` / `drop` keyframes in `app.css`;
+`category_picker.*` EN/IT. `/dev/design-system` shows every state for both types in a dialog frame and a phone-sheet frame, plus
+a live picker in `ResponsiveModal`. A Playwright keyboard-only run passed 38/38 checks (row ← → Home End Space, Enter on All → filter focused,
+grid ↑ ↓ ← →, ↑ from the top → filter, Enter picks the first match, Esc → All with the dialog kept open; phone: second sheet,
+filter not focused, Esc closes only it). Notes: the scrim is the app's `--color-scrim` (.55 + blur), not the design's .45;
+radius 14px is `var(--radius)` because the app's `rounded-sm` resolves to 12px; the phone sheet keeps the design's second close
+button beside the filter. Not adopted anywhere yet (R6/R7). Screens: `{desktop,mobile}/r5-picker-*`.
+
 **Follow-up (record only): `transactions.created_by`.** Frequent categories count on `transactions.party_id` (the payer, or the
 receiver of an income), because no column records who created a row. Add `created_by` and switch `frequentCategories()` to it.
 
@@ -3275,10 +3287,10 @@ responsive rule (inline panel ≥ md, second sheet < md).
 
 | ID | Vp | Item | Design ref | State | Result |
 |---|---|---|---|---|---|
-| CA-01 | D | Glyph map row in `/dev/design-system`: 16 expense + 11 income + ↓ + ◌, each tinted by its `--cN`, none a colour emoji | `section-s1` (table, strip) | default | [ ] |
-| CA-01 | M | same | `mobile-*-section-s1` | default | [ ] |
-| CA-02 | D | Tile states: default, hover, focus, selected, selected + focus, "All N", "All N" open | `tile-states` | all | [ ] |
-| CA-02 | M | same, tile ≥ 65 × 76 | `mobile-*-tile-states` | all | [ ] |
+| CA-01 | D | Glyph map row in `/dev/design-system`: 16 expense + 11 income + ↓ + ◌, each tinted by its `--cN`, none a colour emoji | `section-s1` (table, strip) | default | [x] PASS (R5, dark + light): tinted by the §7.1 colour (was an index cycle), ↓ `--pos`, ◌ `--text-3`; `desktop/r5-picker-glyph-map-{dark,light}-1440.png` |
+| CA-01 | M | same | `mobile-*-section-s1` | default | [x] PASS (R5): `mobile/r5-picker-glyph-map-{dark,light}-375.png` |
+| CA-02 | D | Tile states: default, hover, focus, selected, selected + focus, "All N", "All N" open | `tile-states` | all | [x] PASS (R5, dark + light): measured 76 min-height, r14, `9px 4px 8px`, 30/r10/14px square, 10.5/500/−.015em label, 1.5px inset accent ring, 2px accent outline offset 2; `desktop/r5-picker-tile-states-{dark,light}-1440.png` |
+| CA-02 | M | same, tile ≥ 65 × 76 | `mobile-*-tile-states` | all | [x] PASS with a gap (R5): states identical; at 375 a 5-column row inside the 20px sheet gutter is **62 px** wide (design drawn at 393 → 65); `mobile/r5-picker-tile-states-{dark,light}-375.png` |
 | CA-03 | D | Add · Expense · Groceries selected, 5 frequent + All | `frame-01-dark-expense-selected` | selected | [ ] |
 | CA-03 | M | Add · Expense · selected, 4 frequent + All | `frame-05-dark-expense-selected` | selected | [ ] |
 | CA-04 | D | Add · switched to Income · pick cleared, `--neg` notice, nudge | `frame-02-dark-switched-to-income-cleared` | cleared | [ ] |

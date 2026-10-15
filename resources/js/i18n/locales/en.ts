@@ -601,6 +601,22 @@ export default {
         logout: 'Log out',
         language: 'Language',
     },
+    /** `CategoryPicker` (COMPONENT_INVENTORY E7, `Tallypal Categories.html`). */
+    category_picker: {
+        all: 'All {count}',
+        none: 'No category',
+        cleared: '{name} is an {type} category — cleared.',
+        type: {
+            expense: 'expense',
+            income: 'income',
+        },
+        search: 'Search {count} {type} categories',
+        sheet_title: {
+            expense: 'Expense categories',
+            income: 'Income categories',
+        },
+        no_match: 'No match for “{query}”',
+    },
     /** Category labels by slug (`Tallypal Categories.html`); the DB `name` is only the English fallback. */
     categories: {
         uncategorised: 'Uncategorised',

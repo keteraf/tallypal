@@ -148,6 +148,36 @@
     --shadow-float: 0 24px 60px -18px rgba(0, 0, 0, 0.5);
     --shadow-device: 0 50px 110px -30px rgba(0, 0, 0, 0.7), 0 0 0 1px var(--line), 0 0 0 10px color-mix(in oklch, var(--surface) 70%, transparent);
 
+    /* Category picker (§7.2): the cleared notice's nudge and the inline panel's drop-in. */
+    --animate-nudge: nudge 0.35s ease-out;
+    --animate-drop: drop 0.2s ease-out;
+
+    @keyframes nudge {
+        0% {
+            transform: translateX(0);
+        }
+        30% {
+            transform: translateX(-4px);
+        }
+        60% {
+            transform: translateX(3px);
+        }
+        100% {
+            transform: none;
+        }
+    }
+
+    @keyframes drop {
+        from {
+            opacity: 0;
+            transform: translateY(-4px);
+        }
+        to {
+            opacity: 1;
+            transform: none;
+        }
+    }
+
     /* Marketing device frame (§8.6) — hero phone mock. */
     --radius-device: 40px;
     --radius-device-inner: 31px;

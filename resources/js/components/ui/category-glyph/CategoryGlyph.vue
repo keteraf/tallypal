@@ -3,12 +3,13 @@ import type { GlyphColor } from "@/lib/category"
 import { computed } from "vue"
 import { asTextGlyph } from "./categoryGlyphs"
 
-type CategoryGlyphSize = "xs" | "sm" | "md" | "lg" | "table" | "header" | "xl"
+type CategoryGlyphSize = "xs" | "tile" | "sm" | "md" | "lg" | "table" | "header" | "xl"
 
 const props = withDefaults(
   defineProps<{
-    color: GlyphColor
-    /** `xs` = sidebar tally row (22, r7, 11px), `sm` = rail glyph (34), `md` = tx icon (42), `lg` = list glyph (44), `table` = DataTable cell (40), `header` = mobile detail header (40, r13, 17px), `xl` = desktop detail header (48, r16, 20px). */
+    /** Tint token; omit it to colour the square with classes instead (the picker's "All" tile). */
+    color?: GlyphColor
+    /** `xs` = sidebar tally row (22, r7, 11px), `tile` = category picker tile (30, r10, 14px), `sm` = rail glyph (34), `md` = tx icon (42), `lg` = list glyph (44), `table` = DataTable cell (40), `header` = mobile detail header (40, r13, 17px), `xl` = desktop detail header (48, r16, 20px). */
     size?: CategoryGlyphSize
     /** Soft-fill opacity percentage; defaults per size (glyph 22, tx 20). */
     fill?: number
@@ -22,6 +23,7 @@ const props = withDefaults(
 
 const dims: Record<CategoryGlyphSize, string> = {
   xs: "h-[22px] w-[22px] rounded-[7px] text-[11px]",
+  tile: "h-[30px] w-[30px] rounded-[10px] text-[14px]",
   sm: "h-[34px] w-[34px] rounded-[11px] text-[15px]",
   md: "h-[42px] w-[42px] rounded-[14px] text-[15px]",
   lg: "h-[44px] w-[44px] rounded-[15px] text-[18px]",
@@ -30,12 +32,16 @@ const dims: Record<CategoryGlyphSize, string> = {
   xl: "h-12 w-12 rounded-[16px] text-[20px]",
 }
 
-const defaultFill: Record<CategoryGlyphSize, number> = { xs: 22, sm: 22, md: 20, lg: 22, table: 20, header: 22, xl: 22 }
+const defaultFill: Record<CategoryGlyphSize, number> = { xs: 22, tile: 20, sm: 22, md: 20, lg: 22, table: 20, header: 22, xl: 22 }
 
-const style = computed(() => ({
-  background: `color-mix(in oklch, var(--${props.color}) ${props.fill ?? defaultFill[props.size]}%, transparent)`,
-  color: `var(--${props.color})`,
-}))
+const style = computed(() =>
+  props.color === undefined
+    ? undefined
+    : {
+        background: `color-mix(in oklch, var(--${props.color}) ${props.fill ?? defaultFill[props.size]}%, transparent)`,
+        color: `var(--${props.color})`,
+      },
+)
 </script>
 
 <template>
