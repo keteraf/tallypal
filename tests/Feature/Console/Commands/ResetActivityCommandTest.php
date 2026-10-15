@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Console\Commands\ResetActivityCommand;
 use App\Models\Category;
 use App\Models\Currency;
 use App\Models\Tally;
@@ -12,6 +13,8 @@ use App\Services\HomeCacheService;
 use Database\Seeders\ReferenceDataSeeder;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+
+covers(ResetActivityCommand::class);
 
 function seedActivity(): User
 {

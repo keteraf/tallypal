@@ -3373,6 +3373,14 @@ the Vite dev server fails "Failed to fetch dynamically imported module"), Debugb
 **Follow-up (record only): `transactions.created_by`.** Frequent categories count on `transactions.party_id` (the payer, or the
 receiver of an income), because no column records who created a row. Add `created_by` and switch `frequentCategories()` to it.
 
+**Follow-up (record only) — FIRST task of the next branch: mutation scope.** 37 of the 97 classes in `app/` are never mutated, because
+`test:mutate` mutates only classes named in `covers()` / `mutates()` and does not use `--everything`. (`ResetActivityCommand` was one of the
+37; it is now covered by its existing test: 24 mutations, 100.00 %, so 36 remain.) Priorities: `GetTallyPerPersonAction`, `TallyObserver`,
+`TallyUserObserver`, `TransactionObserver`, `PreferencesController`, `DeleteUserAccountAction`, `TallyService`. Fix: add `covers()` where
+tests exist, plus an architecture test that fails when any class in `app/Actions`, `app/Rules`, `app/Services`, `app/Observers` or
+`app/Console` is named by no `covers()` / `mutates()`. Caveat: Pest's matcher may not match enum files (`CategoryType`), so check that
+`covers()` on an enum actually produces mutants before relying on it, and exempt enums explicitly if it does not.
+
 **R3 done (2026-10-15).** `TransactionStatsRepository::frequentCategories()` (+ `CategoryType::defaultSlugs()`), `frequent_categories`
 in the form data; `categoriesBreakdown()` returns `slug` / `is_uncategorised` (label from i18n), `CategoryBars` adds them to Other.
 
