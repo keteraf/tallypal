@@ -19,7 +19,6 @@
         "laravel/nightwatch": "^1.24",
         "laravel/pulse": "^1.4",
         "laravel/sanctum": "^4.0",
-        "laravel/telescope": "^5.15",
         "laravel/tinker": "^3.0",
         "laravel/wayfinder": "^0.1.12",
         "nunomaduro/essentials": "^1.0",
@@ -35,6 +34,7 @@
         "laravel/pao": "^1.1",
         "laravel/pint": "^1.18",
         "laravel/sail": "^1.41",
+        "laravel/telescope": "^5.15",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.6",
         "pestphp/pest": "^5",
@@ -119,7 +119,9 @@
     },
     "extra": {
         "laravel": {
-            "dont-discover": []
+            "dont-discover": [
+                "laravel/telescope"
+            ]
         }
     },
     "config": {
