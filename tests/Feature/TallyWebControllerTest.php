@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\TallyController;
 use App\Models\Currency;
+use App\Models\Tally;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -32,7 +33,7 @@ it('shows tallies where the user is a collaborator on the index page', function 
     $owner = User::factory()->create();
     $collaborator = User::factory()->create();
 
-    $tally = App\Models\Tally::factory()->create([
+    $tally = Tally::factory()->create([
         'owner_id' => $owner->id,
         'name' => 'Shared Tally',
     ]);
@@ -50,10 +51,10 @@ it('shows only owned and shared tallies on index', function (): void {
     $me = User::factory()->create();
     $owner = User::factory()->create();
 
-    $owned = App\Models\Tally::factory()->create(['owner_id' => $me->id, 'name' => 'Owned']);
-    $shared = App\Models\Tally::factory()->create(['owner_id' => $owner->id, 'name' => 'Shared']);
+    $owned = Tally::factory()->create(['owner_id' => $me->id, 'name' => 'Owned']);
+    $shared = Tally::factory()->create(['owner_id' => $owner->id, 'name' => 'Shared']);
     $shared->users()->attach($me->id, ['default_share_percentage' => 50]);
-    App\Models\Tally::factory()->create(['owner_id' => $owner->id, 'name' => 'Unrelated']);
+    Tally::factory()->create(['owner_id' => $owner->id, 'name' => 'Unrelated']);
 
     actingAs($me)
         ->get(route('tallies.index'))
@@ -73,7 +74,7 @@ it('shows only owned and shared tallies on index', function (): void {
 
 it('converts income and expense totals from cents to decimals on index', function (): void {
     $me = User::factory()->create();
-    $tally = App\Models\Tally::factory()->create(['owner_id' => $me->id, 'name' => 'Totals']);
+    $tally = Tally::factory()->create(['owner_id' => $me->id, 'name' => 'Totals']);
     $currency = Currency::factory()->create(['decimals' => 2]);
 
     Transaction::factory()->forTally($tally)->create(['currency_id' => $currency->currency_id, 'type' => 'income', 'amount' => 12.34]);
@@ -120,7 +121,7 @@ it('validates the tally name is required', function (): void {
 
 it('renders the edit page', function (): void {
     $user = User::factory()->create();
-    $tally = App\Models\Tally::factory()->create(['owner_id' => $user->id]);
+    $tally = Tally::factory()->create(['owner_id' => $user->id]);
 
     actingAs($user)
         ->get(route('tallies.edit', $tally))
@@ -134,7 +135,7 @@ it('renders the edit page', function (): void {
 
 it('counts the other members of a shared tally on the edit page', function (): void {
     $owner = User::factory()->create();
-    $tally = App\Models\Tally::factory()->create(['owner_id' => $owner->id]);
+    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
     $tally->users()->attach(User::factory()->count(2)->create()->pluck('id')->all(), ['default_share_percentage' => 50]);
 
     actingAs($owner)
@@ -145,7 +146,7 @@ it('counts the other members of a shared tally on the edit page', function (): v
 it('forbids editing tally for non-owner', function (): void {
     $owner = User::factory()->create();
     $stranger = User::factory()->create();
-    $tally = App\Models\Tally::factory()->create(['owner_id' => $owner->id]);
+    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
 
     actingAs($stranger)
         ->get(route('tallies.edit', $tally))
@@ -154,7 +155,7 @@ it('forbids editing tally for non-owner', function (): void {
 
 it('updates a tally and redirects to transactions index', function (): void {
     $user = User::factory()->create();
-    $tally = App\Models\Tally::factory()->create(['owner_id' => $user->id]);
+    $tally = Tally::factory()->create(['owner_id' => $user->id]);
 
     actingAs($user)
         ->put(route('tallies.update', $tally), [
@@ -172,7 +173,7 @@ it('updates a tally and redirects to transactions index', function (): void {
 
 it('accepts the unchanged legacy glyph when updating a tally', function (): void {
     $user = User::factory()->create();
-    $tally = App\Models\Tally::factory()->create(['owner_id' => $user->id, 'glyph' => '🏠']);
+    $tally = Tally::factory()->create(['owner_id' => $user->id, 'glyph' => '🏠']);
 
     actingAs($user)
         ->put(route('tallies.update', $tally), ['name' => 'Renamed', 'glyph' => '🏠'])
@@ -184,7 +185,7 @@ it('accepts the unchanged legacy glyph when updating a tally', function (): void
 
 it('rejects changing the glyph to one outside the picker set', function (): void {
     $user = User::factory()->create();
-    $tally = App\Models\Tally::factory()->create(['owner_id' => $user->id, 'glyph' => '🏠']);
+    $tally = Tally::factory()->create(['owner_id' => $user->id, 'glyph' => '🏠']);
 
     actingAs($user)
         ->put(route('tallies.update', $tally), ['name' => 'Renamed', 'glyph' => '🚀'])
@@ -195,7 +196,7 @@ it('rejects changing the glyph to one outside the picker set', function (): void
 
 it('accepts changing the glyph to one in the picker set', function (): void {
     $user = User::factory()->create();
-    $tally = App\Models\Tally::factory()->create(['owner_id' => $user->id, 'glyph' => '🏠']);
+    $tally = Tally::factory()->create(['owner_id' => $user->id, 'glyph' => '🏠']);
 
     actingAs($user)
         ->put(route('tallies.update', $tally), ['name' => 'Renamed', 'glyph' => '✈'])
@@ -206,7 +207,7 @@ it('accepts changing the glyph to one in the picker set', function (): void {
 
 it('deletes a tally and redirects to index', function (): void {
     $user = User::factory()->create();
-    $tally = App\Models\Tally::factory()->create(['owner_id' => $user->id]);
+    $tally = Tally::factory()->create(['owner_id' => $user->id]);
 
     actingAs($user)
         ->delete(route('tallies.destroy', $tally))
@@ -221,7 +222,7 @@ it('deletes a tally and redirects to index', function (): void {
 it('forbids a member who is not the owner from deleting the tally', function (): void {
     $owner = User::factory()->create();
     $member = User::factory()->create();
-    $tally = App\Models\Tally::factory()->create(['owner_id' => $owner->id]);
+    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
     $tally->users()->syncWithoutDetaching([$owner->id, $member->id]);
 
     actingAs($member)
@@ -232,7 +233,7 @@ it('forbids a member who is not the owner from deleting the tally', function ():
 });
 
 it('forbids a stranger from deleting the tally', function (): void {
-    $tally = App\Models\Tally::factory()->create();
+    $tally = Tally::factory()->create();
 
     actingAs(User::factory()->create())
         ->delete(route('tallies.destroy', $tally))
@@ -248,4 +249,57 @@ it('passes the delete flash to the index page once', function (): void {
         ->withSession(['status' => 'tally-deleted'])
         ->get(route('tallies.index'))
         ->assertInertia(fn (AssertableInertia $page): AssertableInertia => $page->where('status', 'tally-deleted'));
+});
+
+it('hands the create form every currency with its identity columns and the user default', function () {
+    $currency = Currency::factory()->create();
+    $user = User::factory()->create(['default_currency_id' => $currency->getKey()]);
+
+    $this->actingAs($user)->get(route('tallies.create'))
+        ->assertInertia(fn ($page) => $page
+            ->where('default_currency_uuid', $currency->uuid)
+            ->where('currencies', fn ($rows): bool => collect($rows)->firstWhere('uuid', $currency->uuid) === [
+                'currency_id' => $currency->getKey(),
+                'uuid' => $currency->uuid,
+                'name' => $currency->name,
+                'code' => $currency->code,
+                'symbol' => $currency->symbol,
+            ])
+        );
+});
+
+it('hands the edit form the tally columns, its default currency, every currency and the other member count', function () {
+    $currency = Currency::factory()->create();
+    $owner = User::factory()->create();
+    $member = User::factory()->create();
+    $tally = Tally::factory()->create([
+        'owner_id' => $owner->id,
+        'default_currency_id' => $currency->getKey(),
+        'description' => 'About',
+        'color' => 'c3',
+        'glyph' => 'house',
+    ]);
+    $tally->users()->attach($member->id, ['default_share_percentage' => 50]);
+
+    $this->actingAs($owner)->get(route('tallies.edit', $tally))
+        ->assertInertia(fn ($page) => $page
+            ->where('tally', [
+                'tally_id' => $tally->tally_id,
+                'uuid' => $tally->uuid,
+                'name' => $tally->name,
+                'description' => 'About',
+                'owner_id' => $owner->id,
+                'color' => 'c3',
+                'glyph' => 'house',
+                'default_currency_uuid' => $currency->uuid,
+            ])
+            ->where('other_members_count', 1)
+            ->where('currencies', fn ($rows): bool => collect($rows)->firstWhere('uuid', $currency->uuid) === [
+                'currency_id' => $currency->getKey(),
+                'uuid' => $currency->uuid,
+                'name' => $currency->name,
+                'code' => $currency->code,
+                'symbol' => $currency->symbol,
+            ])
+        );
 });
