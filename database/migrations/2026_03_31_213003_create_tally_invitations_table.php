@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Models\Tally;
-use App\Models\TallyInvitation;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -15,18 +13,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create(TallyInvitation::TABLE_NAME, function (Blueprint $table): void {
-            $table->id(TallyInvitation::PRIMARY_KEY);
+        Schema::create('tally_invitations', function (Blueprint $table): void {
+            $table->id('tally_invitation_id');
             $table->uuid('uuid')->unique();
-            $table->foreignId(Tally::PRIMARY_KEY)->constrained()->references(Tally::PRIMARY_KEY)->on(Tally::TABLE_NAME)->cascadeOnDelete();
+            $table->foreignId('tally_id')->constrained()->references('tally_id')->on('tallies')->cascadeOnDelete();
             $table->foreignId('invited_by_user_id')->constrained('users', 'id')->cascadeOnDelete();
             $table->string('email');
             $table->string('token')->unique();
-            $table->enum('status', TallyInvitation::STATUSES)->default(TallyInvitation::STATUS_PENDING);
+            $table->enum('status', ['pending', 'accepted', 'declined'])->default('pending');
             $table->timestamp('expires_at')->nullable();
             $table->timestamps();
 
-            $table->index([Tally::PRIMARY_KEY, 'email']);
+            $table->index(['tally_id', 'email']);
         });
     }
 
@@ -35,6 +33,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists(TallyInvitation::TABLE_NAME);
+        Schema::dropIfExists('tally_invitations');
     }
 };

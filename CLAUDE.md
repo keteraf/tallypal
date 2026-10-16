@@ -242,6 +242,15 @@ balance, chart and KPI:
 - Home cache keys are versioned (`HomeCacheService::KEY_VERSION`): bump it whenever the shape of
   a cached value changes, instead of clearing the cache on deploy.
 
+## Database & migrations
+
+- Production is **PostgreSQL 18.6**.
+- Migrations never use models, model constants, enum cases or any `App\` class. Only literal table,
+  column and value names. `tests/Architecture/MigrationsUseLiteralNamesTest.php` fails on any `App\`
+  reference and names the file and line.
+- Where PostgreSQL and SQLite differ, write explicit per-driver SQL, branching on `DB::getDriverName()`.
+- Never rely on implicit row order. Always use `orderBy`.
+
 ## Design system
 
 The new UI is being migrated from the Claude Design source. The design system is

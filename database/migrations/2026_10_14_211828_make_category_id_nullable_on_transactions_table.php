@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Models\Category;
-use App\Models\Transaction;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -15,13 +13,13 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table(Transaction::TABLE_NAME, function (Blueprint $table): void {
-            $table->dropForeign([Category::PRIMARY_KEY]);
+        Schema::table('transactions', function (Blueprint $table): void {
+            $table->dropForeign(['category_id']);
         });
 
-        Schema::table(Transaction::TABLE_NAME, function (Blueprint $table): void {
-            $table->foreignId(Category::PRIMARY_KEY)->nullable()->change();
-            $table->foreign(Category::PRIMARY_KEY)->references(Category::PRIMARY_KEY)->on(Category::TABLE_NAME)->nullOnDelete();
+        Schema::table('transactions', function (Blueprint $table): void {
+            $table->foreignId('category_id')->nullable()->change();
+            $table->foreign('category_id')->references('category_id')->on('categories')->nullOnDelete();
         });
     }
 
@@ -30,13 +28,13 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table(Transaction::TABLE_NAME, function (Blueprint $table): void {
-            $table->dropForeign([Category::PRIMARY_KEY]);
+        Schema::table('transactions', function (Blueprint $table): void {
+            $table->dropForeign(['category_id']);
         });
 
-        Schema::table(Transaction::TABLE_NAME, function (Blueprint $table): void {
-            $table->foreignId(Category::PRIMARY_KEY)->nullable(false)->change();
-            $table->foreign(Category::PRIMARY_KEY)->references(Category::PRIMARY_KEY)->on(Category::TABLE_NAME);
+        Schema::table('transactions', function (Blueprint $table): void {
+            $table->foreignId('category_id')->nullable(false)->change();
+            $table->foreign('category_id')->references('category_id')->on('categories');
         });
     }
 };
