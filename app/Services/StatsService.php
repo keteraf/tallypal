@@ -153,7 +153,6 @@ final readonly class StatsService
         ];
     }
 
-    /** Human label of the range, e.g. "Last 12 weeks". */
     private function rangeLabel(StatsRange $range, CarbonImmutable $now): string
     {
         return match ($range) {

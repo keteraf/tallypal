@@ -327,9 +327,13 @@ Rules — these are mandatory for all UI work:
   - Relative to `master`: any change under `resources/` also runs every browser test (TIA follows PHP files
     only); `vitest related` runs on the changed front-end files; `vite build` and `vue-tsc` run only when
     `resources/`, the vite config, a tsconfig or `package.json` changed; lint, Rector and PHPStan run only
-    when PHP changed; mutation runs at 100% (on SQLite) only on the changed `app/` classes that a
-    `covers()` / `mutates()` names, and is skipped when no `app/` PHP file changed.
-  - It prints one line saying what it ran and what it skipped, and why.
+    when PHP changed, Pint and Rector on the changed PHP files only (PHPStan and Rector keep their caches in
+    `storage/framework/`); mutation runs at 100% (on SQLite), one run per changed `app/` class that a
+    `covers()` / `mutates()` names, against only the test files naming it, and is skipped when no `app/` PHP
+    file changed. "Changed" always means relative to `git merge-base HEAD master`, plus uncommitted and
+    untracked files.
+  - It prints one line saying what it ran and what it skipped, and why, then the wall-clock time of every step
+    and a total.
 - `composer check:full` is the **complete gate** (`tests/gate.php full`): build, vue-tsc, all of Vitest, lint,
   Rector, PHPStan, PHP and browser tests on PostgreSQL with coverage (`--parallel`, min 90%), and mutation at
   100% on SQLite with `covers()` enforced. CI runs it on every pull request to `dev` and `master`, against a
