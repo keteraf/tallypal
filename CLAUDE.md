@@ -250,11 +250,16 @@ balance, chart and KPI:
   reference and names the file and line.
 - Where PostgreSQL and SQLite differ, write explicit per-driver SQL, branching on `DB::getDriverName()`.
 - Never rely on implicit row order. Always use `orderBy`.
-- The PHP and browser tests run on PostgreSQL 18 (mutation testing stays on SQLite). Locally it is a
-  podman container, `tallypal-pg-test` (image `postgres:18`), on `127.0.0.1:54329`, user and password
-  `postgres`, database `tallypal_test`, its data on a tmpfs at `/var/lib/postgresql` (wiped on stop):
-  - `composer db:pgsql:up` starts it and waits until it accepts connections; it does nothing if the
-    container is already running.
+- Local development and the tests both use PostgreSQL 18 in one podman container, `tallypal-pg-test`
+  (image `postgres:18`), on `127.0.0.1:54329`, user and password `postgres`, data on a tmpfs at
+  `/var/lib/postgresql` (wiped when the container stops):
+  - database `tallypal` for local development: set `DB_CONNECTION=pgsql`, `DB_HOST=127.0.0.1`,
+    `DB_PORT=54329`, `DB_DATABASE=tallypal`, `DB_USERNAME=postgres`, `DB_PASSWORD=postgres` in `.env`.
+    After each `db:pgsql:up` on a fresh container run `php artisan migrate --seed` and the DemoSeeder.
+  - database `tallypal_test` for the tests: `phpunit.xml` sets it, so every Pest run uses PostgreSQL
+    (parallel workers get `tallypal_test_test_N`). Mutation testing alone runs on SQLite in memory.
+  - `composer db:pgsql:up` starts the container, waits until it accepts connections and creates the
+    `tallypal` database if missing; it does nothing else if the container is already running.
   - `composer db:pgsql:down` stops it (the container is `--rm`, so it is removed too).
   - Both act on that one container only. Never kill or restart any other process or container.
 
