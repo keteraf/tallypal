@@ -215,3 +215,19 @@ it('keeps payload unchanged when amount is missing', function () {
     expect($request->has('amount'))->toBeFalse();
     expect($request->input('title'))->toBe('No amount');
 });
+
+it('requires a party and still builds its rules when the route has no tally', function () {
+    $request = new UpdateTransactionRequest();
+    $request->setRouteResolver(fn () => new class
+    {
+        public function parameter(string $key): null
+        {
+            return null;
+        }
+    });
+
+    $rules = $request->rules();
+
+    expect($rules['party_id'][0])->toBe('required')
+        ->and($rules['party_id'])->toHaveCount(2);
+});
