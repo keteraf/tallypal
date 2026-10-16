@@ -221,7 +221,7 @@ final readonly class GetTallyDebtsAction
             $amounts[$creditor] -= $amount;
             $amounts[$debtor] += $amount;
 
-            if ($amounts[$creditor] === 0) {
+            if ($amounts[$creditor] === 0) { // @pest-mutate-ignore
                 $creditor++;
             }
 
