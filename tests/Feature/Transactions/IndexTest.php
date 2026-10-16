@@ -371,3 +371,18 @@ it('sends the members settled in each currency next to the unchanged debts', fun
             ->where('debts.0.settlements.0.amount', 76.3)
         );
 });
+
+it('exposes the all-time totals of the tally per type and currency', function () {
+    $owner = User::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
+    $eur = Currency::factory()->create(['code' => 'EUR', 'symbol' => '€', 'decimals' => 2]);
+    Transaction::factory()->forTally($tally)->forParty($owner)->withCurrency($eur)->withType(TransactionType::EXPENSE)->withAmount(12.5)->create();
+
+    $this->actingAs($owner)->get(route('tallies.transactions.index', $tally))
+        ->assertInertia(fn ($page) => $page
+            ->has('totals', 1)
+            ->where('totals.0.type', 'expense')
+            ->where('totals.0.total', 12.5)
+            ->where('totals.0.currency.code', 'EUR')
+        );
+});
