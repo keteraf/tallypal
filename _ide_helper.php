@@ -5,7 +5,7 @@
 
 /**
  * A helper file for Laravel, to provide autocomplete information to your IDE
- * Generated for Laravel 13.36.0.
+ * Generated for Laravel 13.37.0.
  *
  * This file should not be included in your code, only analyzed by your IDE!
  *
@@ -28601,7 +28601,7 @@ namespace  {
         /**
          * Add a "belongs to" relationship where clause to the query.
          *
-         * @param \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model> $related
+         * @param \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Eloquent\Collection<int, covariant \Illuminate\Database\Eloquent\Model> $related
          * @param string|null $relationshipName
          * @param string $boolean
          * @return \Illuminate\Database\Eloquent\Builder<static>
@@ -28618,7 +28618,7 @@ namespace  {
         /**
          * Add a "BelongsTo" relationship with an "or where" clause to the query.
          *
-         * @param \Illuminate\Database\Eloquent\Model $related
+         * @param \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Eloquent\Collection<int, covariant \Illuminate\Database\Eloquent\Model> $related
          * @param string|null $relationshipName
          * @return \Illuminate\Database\Eloquent\Builder<static>
          * @static
@@ -28632,7 +28632,7 @@ namespace  {
         /**
          * Add a "belongs to many" relationship where clause to the query.
          *
-         * @param \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model> $related
+         * @param \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Eloquent\Collection<int, covariant \Illuminate\Database\Eloquent\Model> $related
          * @param string|null $relationshipName
          * @param string $boolean
          * @return \Illuminate\Database\Eloquent\Builder<static>
@@ -28649,7 +28649,7 @@ namespace  {
         /**
          * Add a "belongs to many" relationship with an "or where" clause to the query.
          *
-         * @param \Illuminate\Database\Eloquent\Model $related
+         * @param \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Eloquent\Collection<int, covariant \Illuminate\Database\Eloquent\Model> $related
          * @param string|null $relationshipName
          * @return \Illuminate\Database\Eloquent\Builder<static>
          * @throws \RuntimeException
