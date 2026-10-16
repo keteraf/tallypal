@@ -319,7 +319,7 @@ function gateFast(): never
     if ($mutationClasses !== []) {
         $ran[] = 'mutation at 100% on ' . count($mutationClasses) . ' changed class(es)';
     } else {
-        $skipped[] = $changedClasses === [] ? 'mutation (no app/ PHP file changed)' : 'mutation (no changed app/ class is named by covers()/mutates())';
+        $skipped[] = $changedClasses === [] ? 'mutation (no app/ PHP file changed)' : 'mutation (no changed app/ class is named by covers()/mutates(): ' . implode(', ', $outOfScope) . ')';
     }
 
     if ($outOfScope !== [] && $mutationClasses !== []) {
