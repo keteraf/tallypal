@@ -106,7 +106,7 @@
         "test:fast": "rm -f vendor/pestphp/pest/.temp/only.lock && XDEBUG_MODE=coverage pest --tia --colors=always --parallel @additional_args",
         "test:browser": "rm -f vendor/pestphp/pest/.temp/only.lock && pest --no-tia --colors=always tests/Browser @additional_args",
         "test:unit": "@test:base --coverage --min=90",
-        "test:mutate": "@test:base --mutate --min=90",
+        "test:mutate": "rm -f vendor/pestphp/pest/.temp/only.lock && DB_CONNECTION=sqlite DB_DATABASE=:memory: XDEBUG_MODE=coverage pest --no-tia --colors=always --parallel --mutate --min=100 @additional_args",
         "test": [
             "@php artisan config:clear --ansi",
             "@test:lint",
@@ -114,14 +114,8 @@
             "@test:types",
             "@test:unit"
         ],
-        "check": [
-            "npm run build",
-            "npx vue-tsc --noEmit",
-            "npm run test",
-            "@test",
-            "@test:mutate",
-            "@test:browser"
-        ]
+        "check": "@php tests/gate.php fast",
+        "check:full": "@php tests/gate.php full"
     },
     "extra": {
         "laravel": {
