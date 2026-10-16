@@ -187,8 +187,8 @@ function gateRequirePostgres(): void
 }
 
 /**
- * @return array<int, string> Fully qualified names of the classes some covers() / mutates() call names:
- *                            the mutation scope of the full gate.
+ * @return array<string, array<int, string>> For every class some covers() / mutates() call names (the mutation
+ *                                           scope of the full gate): the project-relative test files naming it.
  */
 function gateMutationScope(): array
 {
@@ -211,12 +211,12 @@ function gateMutationScope(): array
         foreach ($calls[1] as $arguments) {
             preg_match_all('/\\\\?([\w\\\\]+)::class/', $arguments, $classes);
             foreach ($classes[1] as $class) {
-                $named[] = $imports[$class] ?? mb_ltrim($class, '\\');
+                $named[$imports[$class] ?? mb_ltrim($class, '\\')][] = 'tests' . mb_substr($file->getPathname(), mb_strlen(__DIR__));
             }
         }
     }
 
-    return array_values(array_unique($named));
+    return array_map(fn (array $files): array => array_values(array_unique($files)), $named);
 }
 
 /**
@@ -304,8 +304,10 @@ function gateFast(): never
     $rectorFiles = $rectorAll ? [] : gateUnder($existingPhp, ['app', 'database', 'public', 'bootstrap/app.php']);
     $changedClasses = gateChangedAppClasses($changed);
     $scope = gateMutationScope();
-    $mutationClasses = array_values(array_intersect($changedClasses, $scope));
-    $outOfScope = array_values(array_diff($changedClasses, $scope));
+    $mutationClasses = array_values(array_intersect($changedClasses, array_keys($scope)));
+    $outOfScope = array_values(array_diff($changedClasses, array_keys($scope)));
+    $mutationTestFiles = array_values(array_unique(array_merge([], ...array_map(fn (string $class): array => $scope[$class], $mutationClasses))));
+    sort($mutationTestFiles);
     $fullSuiteHash = gateFullSuiteHash();
     $forceFullSuite = gateStoredFullSuiteHash() !== $fullSuiteHash;
 
@@ -343,7 +345,7 @@ function gateFast(): never
     }
 
     if ($mutationClasses !== []) {
-        $ran[] = 'mutation at 100% on ' . count($mutationClasses) . ' changed class(es)';
+        $ran[] = 'mutation at 100% on ' . implode(', ', $mutationClasses) . ' (' . count($mutationTestFiles) . ' test file(s) that name them)';
     } else {
         $skipped[] = $changedClasses === [] ? 'mutation (no app/ PHP file changed)' : 'mutation (no changed app/ class is named by covers()/mutates(): ' . implode(', ', $outOfScope) . ')';
     }
@@ -394,7 +396,7 @@ function gateFast(): never
     if ($mutationClasses !== []) {
         gateClearPestOnlyLock();
         gateRun(
-            ['vendor/bin/pest', '--no-tia', '--colors=always', '--parallel', '--mutate', '--class=' . implode(',', $mutationClasses), '--min=100', '--ignore-min-score-on-zero-mutations'],
+            ['vendor/bin/pest', '--no-tia', '--colors=always', '--parallel', '--mutate', '--class=' . implode(',', $mutationClasses), '--min=100', '--ignore-min-score-on-zero-mutations', ...$mutationTestFiles],
             [...GATE_SQLITE_ENV, 'XDEBUG_MODE' => 'coverage'],
             'mutation (' . count($mutationClasses) . ' class(es), min 100)',
         );
