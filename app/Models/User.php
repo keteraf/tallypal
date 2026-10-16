@@ -23,7 +23,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string $name
  * @property string $email
  * @property string $password
- * @property string $email_verified_at
+ * @property \Illuminate\Support\Carbon|null $email_verified_at
  * @property int|null $default_currency_id
  * @property string|null $remember_token
  * @property-read Collection<int, Tally> $ownedTallies

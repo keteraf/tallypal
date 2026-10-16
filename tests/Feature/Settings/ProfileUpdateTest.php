@@ -3,11 +3,15 @@
 declare(strict_types=1);
 
 use App\Actions\DeleteUserAccountAction;
+use App\Http\Controllers\Settings\ProfileController;
+use App\Http\Requests\Settings\ProfileUpdateRequest;
 use App\Models\Tally;
 use App\Models\Transaction;
 use App\Models\User;
+use Illuminate\Foundation\Auth\User as PlainUser;
+use Illuminate\Http\Request;
 
-covers(DeleteUserAccountAction::class);
+covers(DeleteUserAccountAction::class, ProfileController::class);
 
 test('profile page is displayed', function () {
     $user = User::factory()->create();
@@ -234,4 +238,73 @@ test('deleting owner account cascade-deletes the tally without redistributing pe
 
     expect($owner->fresh())->toBeNull();
     expect(Tally::find($tally->getKey()))->toBeNull();
+});
+
+test('profile page tells a user who must verify their email, and passes the flashed status', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->withSession(['status' => 'profile-updated'])
+        ->get('/settings/profile')
+        ->assertInertia(fn ($page) => $page
+            ->component('settings/Profile')
+            ->where('mustVerifyEmail', true)
+            ->where('status', 'profile-updated'));
+});
+
+test('profile page does not ask a user who cannot verify their email to verify it', function () {
+    $request = Request::create('/settings/profile', 'GET');
+    $request->headers->set('X-Inertia', 'true');
+    $request->setUserResolver(fn () => new PlainUser);
+    $request->setLaravelSession(app('session.store'));
+
+    $page = json_decode(
+        (string) resolve(ProfileController::class)->edit($request)->toResponse($request)->getContent(),
+        true,
+    );
+
+    expect($page['props']['mustVerifyEmail'])->toBeFalse();
+});
+
+test('updating the profile without an authenticated user changes nothing and redirects', function () {
+    $request = ProfileUpdateRequest::create('/settings/profile', 'PATCH');
+    $request->setUserResolver(fn () => null);
+
+    $response = resolve(ProfileController::class)->update($request);
+
+    expect($response->getTargetUrl())->toBe(route('profile.edit'));
+});
+
+test('changing the email address clears the email verification date', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->patch('/settings/profile', ['name' => $user->name, 'email' => 'changed@example.com'])
+        ->assertSessionHasNoErrors();
+
+    expect($user->refresh()->email_verified_at)->toBeNull();
+});
+
+test('the password is required to delete the account', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->from('/settings/profile')
+        ->delete('/settings/profile')
+        ->assertSessionHasErrors('password');
+
+    expect($user->fresh())->not->toBeNull();
+});
+
+test('deleting the account invalidates the session and regenerates the CSRF token', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->withSession(['_token' => 'old-token', 'leftover' => 'value'])
+        ->delete('/settings/profile', ['password' => 'password'])
+        ->assertRedirect('/');
+
+    $this->assertGuest();
+    expect(session()->has('leftover'))->toBeFalse();
+    expect(session()->token())->not->toBe('old-token')->not->toBeEmpty();
 });

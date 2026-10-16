@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Models\Currency;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -11,8 +10,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create(Currency::TABLE_NAME, function (Blueprint $table): void {
-            $table->id(Currency::PRIMARY_KEY);
+        Schema::create('currencies', function (Blueprint $table): void {
+            $table->id('currency_id');
             $table->string('name');
             $table->string('code');
             $table->string('symbol');
@@ -23,7 +22,7 @@ return new class extends Migration
 
         $now = now();
 
-        DB::table(Currency::TABLE_NAME)->insert([
+        DB::table('currencies')->insert([
             [
                 'name' => 'Euro',
                 'code' => 'EUR',

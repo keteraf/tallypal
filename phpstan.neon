@@ -4,6 +4,9 @@ includes:
 
 parameters:
 
+    # Persistent result cache (storage/framework is gitignored and survives reboots, unlike /tmp).
+    tmpDir: storage/framework/phpstan
+
     paths:
         - app/
 

@@ -91,6 +91,12 @@
             "@php artisan migrate:fresh",
             "@fresh"
         ],
+        "db:pgsql:up": [
+            "podman container exists tallypal-pg-test || podman run -d --rm --name tallypal-pg-test -p 127.0.0.1:54329:5432 -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=tallypal_test --mount type=tmpfs,destination=/var/lib/postgresql,tmpfs-size=2g docker.io/library/postgres:18 -c fsync=off -c synchronous_commit=off -c full_page_writes=off -c max_connections=200",
+            "for i in $(seq 1 60); do podman exec tallypal-pg-test pg_isready -q -h 127.0.0.1 -U postgres && exit 0; sleep 0.5; done; echo 'tallypal-pg-test did not become ready' >&2; exit 1",
+            "podman exec tallypal-pg-test psql -U postgres -tAc \"select 1 from pg_database where datname = 'tallypal'\" | grep -q 1 || podman exec tallypal-pg-test createdb -U postgres tallypal"
+        ],
+        "db:pgsql:down": "podman container exists tallypal-pg-test && podman stop tallypal-pg-test || true",
         "lint": "pint",
         "refactor": "rector",
         "test:lint": "pint --test",
@@ -100,7 +106,7 @@
         "test:fast": "rm -f vendor/pestphp/pest/.temp/only.lock && XDEBUG_MODE=coverage pest --tia --colors=always --parallel @additional_args",
         "test:browser": "rm -f vendor/pestphp/pest/.temp/only.lock && pest --no-tia --colors=always tests/Browser @additional_args",
         "test:unit": "@test:base --coverage --min=90",
-        "test:mutate": "@test:base --mutate --min=90",
+        "test:mutate": "rm -f vendor/pestphp/pest/.temp/only.lock && DB_CONNECTION=sqlite DB_DATABASE=:memory: XDEBUG_MODE=coverage pest --no-tia --colors=always --parallel --mutate --min=100 @additional_args",
         "test": [
             "@php artisan config:clear --ansi",
             "@test:lint",
@@ -108,14 +114,8 @@
             "@test:types",
             "@test:unit"
         ],
-        "check": [
-            "npm run build",
-            "npx vue-tsc --noEmit",
-            "npm run test",
-            "@test",
-            "@test:mutate",
-            "@test:browser"
-        ]
+        "check": "@php tests/gate.php fast",
+        "check:full": "@php tests/gate.php full"
     },
     "extra": {
         "laravel": {

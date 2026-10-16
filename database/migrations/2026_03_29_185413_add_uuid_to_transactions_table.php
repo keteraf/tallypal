@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Models\Transaction;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -13,22 +12,22 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table(Transaction::TABLE_NAME, function (Blueprint $table): void {
-            $table->uuid('uuid')->nullable()->unique()->after(Transaction::PRIMARY_KEY);
+        Schema::table('transactions', function (Blueprint $table): void {
+            $table->uuid('uuid')->nullable()->unique()->after('transaction_id');
         });
 
-        DB::table(Transaction::TABLE_NAME)->orderBy(Transaction::PRIMARY_KEY)->each(function (object $row): void {
-            DB::table(Transaction::TABLE_NAME)->where(Transaction::PRIMARY_KEY, $row->{Transaction::PRIMARY_KEY})->update(['uuid' => (string) Str::uuid()]);
+        DB::table('transactions')->orderBy('transaction_id')->each(function (object $row): void {
+            DB::table('transactions')->where('transaction_id', $row->transaction_id)->update(['uuid' => (string) Str::uuid()]);
         });
 
-        Schema::table(Transaction::TABLE_NAME, function (Blueprint $table): void {
+        Schema::table('transactions', function (Blueprint $table): void {
             $table->uuid('uuid')->nullable(false)->change();
         });
     }
 
     public function down(): void
     {
-        Schema::table(Transaction::TABLE_NAME, function (Blueprint $table): void {
+        Schema::table('transactions', function (Blueprint $table): void {
             $table->dropColumn('uuid');
         });
     }

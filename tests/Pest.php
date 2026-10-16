@@ -13,6 +13,12 @@ declare(strict_types=1);
 |
 */
 
+/*
+| Test impact analysis: locally, a run replays the tests whose dependencies did not change since the
+| recorded baseline and runs the rest. It is skipped on CI, where `composer check:full` runs everything.
+*/
+pest()->tia()->always()->locally();
+
 pest()->extend(Tests\TestCase::class)
     ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
     ->group('feature', 'unit')

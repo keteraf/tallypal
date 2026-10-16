@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Models\Currency;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -13,22 +12,22 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table(Currency::TABLE_NAME, function (Blueprint $table): void {
-            $table->uuid('uuid')->nullable()->unique()->after(Currency::PRIMARY_KEY);
+        Schema::table('currencies', function (Blueprint $table): void {
+            $table->uuid('uuid')->nullable()->unique()->after('currency_id');
         });
 
-        DB::table(Currency::TABLE_NAME)->orderBy(Currency::PRIMARY_KEY)->each(function (object $row): void {
-            DB::table(Currency::TABLE_NAME)->where(Currency::PRIMARY_KEY, $row->{Currency::PRIMARY_KEY})->update(['uuid' => (string) Str::uuid()]);
+        DB::table('currencies')->orderBy('currency_id')->each(function (object $row): void {
+            DB::table('currencies')->where('currency_id', $row->currency_id)->update(['uuid' => (string) Str::uuid()]);
         });
 
-        Schema::table(Currency::TABLE_NAME, function (Blueprint $table): void {
+        Schema::table('currencies', function (Blueprint $table): void {
             $table->uuid('uuid')->nullable(false)->change();
         });
     }
 
     public function down(): void
     {
-        Schema::table(Currency::TABLE_NAME, function (Blueprint $table): void {
+        Schema::table('currencies', function (Blueprint $table): void {
             $table->dropColumn('uuid');
         });
     }

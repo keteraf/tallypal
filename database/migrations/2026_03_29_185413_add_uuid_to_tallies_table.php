@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Models\Tally;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -13,22 +12,22 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table(Tally::TABLE_NAME, function (Blueprint $table): void {
-            $table->uuid('uuid')->nullable()->unique()->after(Tally::PRIMARY_KEY);
+        Schema::table('tallies', function (Blueprint $table): void {
+            $table->uuid('uuid')->nullable()->unique()->after('tally_id');
         });
 
-        DB::table(Tally::TABLE_NAME)->orderBy(Tally::PRIMARY_KEY)->each(function (object $row): void {
-            DB::table(Tally::TABLE_NAME)->where(Tally::PRIMARY_KEY, $row->{Tally::PRIMARY_KEY})->update(['uuid' => (string) Str::uuid()]);
+        DB::table('tallies')->orderBy('tally_id')->each(function (object $row): void {
+            DB::table('tallies')->where('tally_id', $row->tally_id)->update(['uuid' => (string) Str::uuid()]);
         });
 
-        Schema::table(Tally::TABLE_NAME, function (Blueprint $table): void {
+        Schema::table('tallies', function (Blueprint $table): void {
             $table->uuid('uuid')->nullable(false)->change();
         });
     }
 
     public function down(): void
     {
-        Schema::table(Tally::TABLE_NAME, function (Blueprint $table): void {
+        Schema::table('tallies', function (Blueprint $table): void {
             $table->dropColumn('uuid');
         });
     }

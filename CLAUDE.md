@@ -242,6 +242,27 @@ balance, chart and KPI:
 - Home cache keys are versioned (`HomeCacheService::KEY_VERSION`): bump it whenever the shape of
   a cached value changes, instead of clearing the cache on deploy.
 
+## Database & migrations
+
+- Production is **PostgreSQL 18.6**.
+- Migrations never use models, model constants, enum cases or any `App\` class. Only literal table,
+  column and value names. `tests/Architecture/MigrationsUseLiteralNamesTest.php` fails on any `App\`
+  reference and names the file and line.
+- Where PostgreSQL and SQLite differ, write explicit per-driver SQL, branching on `DB::getDriverName()`.
+- Never rely on implicit row order. Always use `orderBy`.
+- Local development and the tests both use PostgreSQL 18 in one podman container, `tallypal-pg-test`
+  (image `postgres:18`), on `127.0.0.1:54329`, user and password `postgres`, data on a tmpfs at
+  `/var/lib/postgresql` (wiped when the container stops):
+  - database `tallypal` for local development: set `DB_CONNECTION=pgsql`, `DB_HOST=127.0.0.1`,
+    `DB_PORT=54329`, `DB_DATABASE=tallypal`, `DB_USERNAME=postgres`, `DB_PASSWORD=postgres` in `.env`.
+    After each `db:pgsql:up` on a fresh container run `php artisan migrate --seed` and the DemoSeeder.
+  - database `tallypal_test` for the tests: `phpunit.xml` sets it, so every Pest run uses PostgreSQL
+    (parallel workers get `tallypal_test_test_N`). Mutation testing alone runs on SQLite in memory.
+  - `composer db:pgsql:up` starts the container, waits until it accepts connections and creates the
+    `tallypal` database if missing; it does nothing else if the container is already running.
+  - `composer db:pgsql:down` stops it (the container is `--rm`, so it is removed too).
+  - Both act on that one container only. Never kill or restart any other process or container.
+
 ## Design system
 
 The new UI is being migrated from the Claude Design source. The design system is
@@ -294,7 +315,32 @@ Rules — these are mandatory for all UI work:
 - Any run that creates, edits or deletes data through the browser re-runs DemoSeeder at the end.
 - **No UI item may be marked verified without a screenshot of it.**
 - A finding is FIXED only after a side-by-side comparison with its .verify/design/ reference.
-- Done means `composer check; echo "exit: $?"` prints `exit: 0`. Run it exactly like that and quote the `exit:` line together with the final summary lines (test count, coverage, mutation score) in your report.
-- `npx playwright install chromium` (needed by `composer check`): run it once on a fresh machine; `composer check` ends with the
-  Pest browser tests (`test:browser`) and fails without that Chromium. CI installs it in `shared-ci.yml`.
-- Per-class mutation scores (`--class`) are informational only. The gate is the full `composer test:mutate` run.
+
+## Gate
+
+- `composer check` is the **fast local gate**: it runs only what the change affects (`tests/gate.php fast`).
+  It needs `composer db:pgsql:up` first and fails with that hint when PostgreSQL is down; it never starts it.
+  - PHP and browser tests through Pest TIA (`pest()->tia()->always()->locally()` in `tests/Pest.php`) on
+    PostgreSQL, `--parallel`. The first run records the baseline; later runs replay unaffected tests.
+  - A change since the last green run to `config/`, `composer.json`, `composer.lock`, `phpunit.xml`,
+    `tests/Pest.php`, `database/migrations/` or `.github/workflows/` forces the full PHP suite and a fresh baseline.
+  - Relative to `master`: any change under `resources/` also runs every browser test (TIA follows PHP files
+    only); `vitest related` runs on the changed front-end files; `vite build` and `vue-tsc` run only when
+    `resources/`, the vite config, a tsconfig or `package.json` changed; lint, Rector and PHPStan run only
+    when PHP changed, Pint and Rector on the changed PHP files only (PHPStan and Rector keep their caches in
+    `storage/framework/`); mutation runs at 100% (on SQLite), one run per changed `app/` class that a
+    `covers()` / `mutates()` names, against only the test files naming it, and is skipped when no `app/` PHP
+    file changed. "Changed" always means relative to `git merge-base HEAD master`, plus uncommitted and
+    untracked files.
+  - It prints one line saying what it ran and what it skipped, and why, then the wall-clock time of every step
+    and a total.
+- `composer check:full` is the **complete gate** (`tests/gate.php full`): build, vue-tsc, all of Vitest, lint,
+  Rector, PHPStan, PHP and browser tests on PostgreSQL with coverage (`--parallel`, min 90%), and mutation at
+  100% on SQLite with `covers()` enforced. CI runs it on every pull request to `dev` and `master`, against a
+  `postgres:18` service; it never uses TIA.
+- `dev` and `master` are merged only through pull requests with a green CI.
+- Run the gate once, unpiped, only after the last commit, and never filter its output.
+- Done means `composer check; echo "exit: $?"` prints `exit: 0`. Run it exactly like that and quote the `exit:`
+  line together with the gate's summary line in your report.
+- `npx playwright install chromium` (needed by the browser tests): run it once on a fresh machine. CI installs it
+  in `shared-ci.yml`.

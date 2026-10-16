@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Models\Category;
-use App\Models\Transaction;
 use Database\Seeders\ReferenceDataSeeder;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
@@ -16,9 +14,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        DB::table(Category::TABLE_NAME)
+        DB::table('categories')
             ->whereNotIn('slug', array_column(ReferenceDataSeeder::CATEGORIES, 'slug'))
-            ->whereNotIn(Category::PRIMARY_KEY, DB::table(Transaction::TABLE_NAME)->whereNotNull(Category::PRIMARY_KEY)->select(Category::PRIMARY_KEY))
+            ->whereNotIn('category_id', DB::table('transactions')->whereNotNull('category_id')->select('category_id'))
             ->delete();
     }
 
