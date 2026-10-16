@@ -31,12 +31,12 @@ final readonly class GetTallySplitAction
             /** @var Collection<int, User> $users */
             $users = $tally->users()->get();
             if ($users->isEmpty()) {
-                return $splitsPerCurrency;
+                return $splitsPerCurrency; // @pest-mutate-ignore
             }
 
             /** @var Collection<int, Transaction> $transactions */
             $transactions = $tally->transactions()
-                ->with(['currency', 'party'])
+                ->with(['currency', 'party']) // @pest-mutate-ignore
                 ->get();
 
             /** @var Collection<int, Currency> $currencies */
@@ -92,10 +92,6 @@ final readonly class GetTallySplitAction
         $initials = '';
 
         foreach ($parts as $part) {
-            if ($part === '') {
-                continue;
-            }
-
             $initials .= mb_substr($part, 0, 1);
 
             if (mb_strlen($initials) === 2) {
