@@ -3452,3 +3452,15 @@ responsive rule (inline panel ≥ md, second sheet < md).
   settle-up). It is the first real use of the notifications bell (DO-01), which stays out until then.
 - **Remove member** — **Status: ACCEPTED**. The Share dialog is the deliberate entry point; no separate
   control on Edit tally.
+
+## Postgres findings
+
+Root causes of the failures seen when the PHP and browser suites first ran on PostgreSQL 18 (2026-10-16,
+branch `chore/fast-gate`). All suites pass on PostgreSQL after these fixes.
+
+- `TransactionFactory` titles (`sentence(2)`) exceeded `transactions.title varchar(25)`; SQLite ignores lengths (47 tests). Factory now uses `text(25)`.
+- `TransactionFactory` amounts (`randomFloat(2)`) left a fractional value in the `bigint` minor-units column for 0-decimal currencies (JPY); SQLite stored a REAL (10 tests). Factory now uses whole units.
+- `ProfileController::update` set `email_verified_at = ''`; PostgreSQL rejects `''` as a timestamp, so changing the email returned 500 in production. Now `null`.
+- `ReferenceDataSeederTest` used `insertGetId()` without a sequence column; PostgreSQL's `RETURNING "id"` fails on `categories` (key `category_id`). Test passes the key name.
+- `GetTallyTotalsActionTest` used SQLite-only `PRAGMA defer_foreign_keys`; it now branches on the driver and drops the FK inside the test transaction on PostgreSQL.
+- Not fixed (computation/storage, reported): the `Transaction::amount` setter stores `amount × 10^decimals` unrounded, so an amount with more decimals than its currency (or a float like `152.60 × 100 = 15259.999…`) is not a whole number of minor units; PostgreSQL's `bigint` rejects or rounds it where SQLite kept a REAL.

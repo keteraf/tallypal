@@ -55,7 +55,7 @@ it('backfills slug, type and colour onto the pre-existing categories', function 
 it('gives a category the backfill does not know a unique slug derived from its name and id', function (): void {
     $migration = categoriesMigration();
     $migration->down();
-    $housingId = DB::table(Category::TABLE_NAME)->insertGetId(['uuid' => (string) Str::uuid(), 'name' => 'Housing', 'created_at' => now(), 'updated_at' => now()]);
+    $housingId = DB::table(Category::TABLE_NAME)->insertGetId(['uuid' => (string) Str::uuid(), 'name' => 'Housing', 'created_at' => now(), 'updated_at' => now()], Category::PRIMARY_KEY);
 
     $migration->up();
 

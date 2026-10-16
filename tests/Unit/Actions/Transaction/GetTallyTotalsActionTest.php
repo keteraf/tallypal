@@ -55,7 +55,11 @@ test('it falls back to two decimals and no currency when the currency row is gon
     $tally = Tally::factory()->create();
     $currency = Currency::factory()->create(['decimals' => 2]);
     Transaction::factory()->forTally($tally)->withCurrency($currency)->withType(TransactionType::EXPENSE)->withAmount(12.34)->create();
-    DB::statement('PRAGMA defer_foreign_keys = ON');
+    if (DB::getDriverName() === 'pgsql') {
+        DB::statement('ALTER TABLE transactions DROP CONSTRAINT transactions_currency_id_foreign');
+    } else {
+        DB::statement('PRAGMA defer_foreign_keys = ON');
+    }
     DB::table('currencies')->where('currency_id', $currency->getKey())->delete();
 
     $totals = (new GetTallyTotalsAction())->handle($tally);
