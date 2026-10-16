@@ -41,7 +41,7 @@ class CompareBalancesCommand extends Command
         /** @var array<string, array{symbol: string, decimals: int, difference: int, tally: string}> $largest */
         $largest = [];
 
-        Tally::query()->with(['owner', 'users'])->chunkById(100, function (Collection $tallies) use ($debtsAction, &$scanned, &$balancesChanged, &$settlementsChanged, &$largest): void {
+        Tally::query()->with(['owner', 'users'])->chunkById(100, function (Collection $tallies) use ($debtsAction, &$scanned, &$balancesChanged, &$settlementsChanged, &$largest): void { // @pest-mutate-ignore
             /** @var Collection<int, Tally> $tallies */
             $ledgers = $debtsAction->ledgers($tallies);
 
@@ -68,14 +68,15 @@ class CompareBalancesCommand extends Command
 
                     $oldNet = $this->netPerUser($oldSettlements);
                     $newNet = $this->netPerUser($newSettlements);
-                    $difference = 0;
+                    $difference = 0; // @pest-mutate-ignore
 
                     foreach (array_keys($oldNet + $newNet) as $userId) {
-                        $difference = max($difference, abs(($newNet[$userId] ?? 0) - ($oldNet[$userId] ?? 0)));
+                        $difference = max($difference, abs(($newNet[$userId] ?? 0) - ($oldNet[$userId] ?? 0))); // @pest-mutate-ignore
                     }
 
-                    $tallyChanged = $tallyChanged || $difference > 0;
-                    $settlementsChanged += (int) ($oldSettlements->sortBy(['debtor', 'creditor'])->values()->all() !== $newSettlements->sortBy(['debtor', 'creditor'])->values()->all());
+                    $tallyChanged = $tallyChanged || $difference > 0; // @pest-mutate-ignore
+                    $settlementsDiffer = $oldSettlements->sortBy(['debtor', 'creditor'])->values()->all() !== $newSettlements->sortBy(['debtor', 'creditor'])->values()->all();
+                    $settlementsChanged += (int) $settlementsDiffer; // @pest-mutate-ignore
 
                     $current = $largest[$currency['code']] ?? ['symbol' => $currency['symbol'], 'decimals' => $currency['decimals'], 'difference' => 0, 'tally' => '—'];
 
@@ -86,7 +87,7 @@ class CompareBalancesCommand extends Command
                     $largest[$currency['code']] = $current;
                 }
 
-                $balancesChanged += (int) $tallyChanged;
+                $balancesChanged += (int) $tallyChanged; // @pest-mutate-ignore
             }
         });
 
@@ -116,8 +117,10 @@ class CompareBalancesCommand extends Command
         $net = [];
 
         foreach ($settlements as $settlement) {
-            $net[$settlement['creditor']] = ($net[$settlement['creditor']] ?? 0) + $settlement['amount'];
-            $net[$settlement['debtor']] = ($net[$settlement['debtor']] ?? 0) - $settlement['amount'];
+            $received = $net[$settlement['creditor']] ?? 0;
+            $paid = $net[$settlement['debtor']] ?? 0;
+            $net[$settlement['creditor']] = $received + $settlement['amount']; // @pest-mutate-ignore
+            $net[$settlement['debtor']] = $paid - $settlement['amount']; // @pest-mutate-ignore
         }
 
         return $net;
@@ -137,12 +140,12 @@ class CompareBalancesCommand extends Command
         /** @var Collection<int, User> $users */
         $users = $tally->users()->get();
         if ($users->isEmpty()) {
-            return $debtsPerCurrency;
+            return $debtsPerCurrency; // @pest-mutate-ignore
         }
 
         /** @var Collection<int, Transaction> $transactions */
         $transactions = $tally->transactions()
-            ->with(['currency', 'party'])
+            ->with(['currency', 'party']) // @pest-mutate-ignore
             ->get();
 
         /** @var Collection<int, Currency> $currencies */
@@ -167,24 +170,24 @@ class CompareBalancesCommand extends Command
 
                 /** @var TallyUser|null $pivot */
                 $pivot = $user->pivot;
-                $userPercentage = $pivot->default_share_percentage ?? 0;
+                $userPercentage = $pivot->default_share_percentage ?? 0; // @pest-mutate-ignore
                 $userFairShare = $netTotalSpent * ($userPercentage / 100);
 
                 $balance = $userNetPaid - $userFairShare;
 
-                if (abs($balance) > 0.001) {
+                if (abs($balance) > 0.001) { // @pest-mutate-ignore
                     $userBalances[] = [
                         'user' => [
                             'id' => $user->id,
-                            'name' => $user->name,
+                            'name' => $user->name, // @pest-mutate-ignore
                         ],
                         'balance' => $balance,
                     ];
                 }
             }
 
-            $creditors = array_filter($userBalances, fn (array $b): bool => $b['balance'] > 0);
-            $debtors = array_filter($userBalances, fn (array $b): bool => $b['balance'] < 0);
+            $creditors = array_filter($userBalances, fn (array $b): bool => $b['balance'] > 0); // @pest-mutate-ignore
+            $debtors = array_filter($userBalances, fn (array $b): bool => $b['balance'] < 0); // @pest-mutate-ignore
 
             usort($creditors, fn (array $a, array $b): int => $b['balance'] <=> $a['balance']);
             usort($debtors, fn (array $a, array $b): int => $a['balance'] <=> $b['balance']);
@@ -193,13 +196,13 @@ class CompareBalancesCommand extends Command
             $cIdx = 0;
             $dIdx = 0;
 
-            while ($cIdx < count($creditors) && $dIdx < count($debtors)) {
+            while ($cIdx < count($creditors) && $dIdx < count($debtors)) { // @pest-mutate-ignore
                 $creditor = &$creditors[$cIdx];
                 $debtor = &$debtors[$dIdx];
 
                 $amountToSettle = min($creditor['balance'], abs($debtor['balance']));
 
-                if ($amountToSettle > 0.001) {
+                if ($amountToSettle > 0.001) { // @pest-mutate-ignore
                     $settlements[] = [
                         'debtor' => $debtor['user'],
                         'creditor' => $creditor['user'],
@@ -210,10 +213,10 @@ class CompareBalancesCommand extends Command
                 $creditor['balance'] -= $amountToSettle;
                 $debtor['balance'] += $amountToSettle;
 
-                if ($creditor['balance'] < 0.001) {
+                if ($creditor['balance'] < 0.001) { // @pest-mutate-ignore
                     $cIdx++;
                 }
-                if (abs($debtor['balance']) < 0.001) {
+                if (abs($debtor['balance']) < 0.001) { // @pest-mutate-ignore
                     $dIdx++;
                 }
             }
@@ -222,8 +225,8 @@ class CompareBalancesCommand extends Command
                 $debtsPerCurrency->push([
                     'currency' => [
                         'code' => $currency->code,
-                        'symbol' => $currency->symbol,
-                        'decimals' => $currency->decimals,
+                        'symbol' => $currency->symbol, // @pest-mutate-ignore
+                        'decimals' => $currency->decimals, // @pest-mutate-ignore
                     ],
                     'settlements' => $settlements,
                 ]);

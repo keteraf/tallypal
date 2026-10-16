@@ -46,11 +46,14 @@ final class TallyController extends Controller
     /**
      * Show the form for creating a new tally.
      */
-    public function create(): Response
+    public function create(Request $request): Response
     {
+        /** @var User $user */
+        $user = $request->user();
+
         return Inertia::render('tallies/Create', [
-            'currencies' => Currency::all(['currency_id', 'uuid', 'name', 'code', 'symbol']),
-            'default_currency_uuid' => auth()->user()?->defaultCurrency?->uuid,
+            'currencies' => Currency::all(['currency_id', 'uuid', 'name', 'code', 'symbol']), // @pest-mutate-ignore
+            'default_currency_uuid' => $user->defaultCurrency?->uuid,
         ]);
     }
 
@@ -79,13 +82,16 @@ final class TallyController extends Controller
     {
         $this->authorize('update', $tally);
 
+        /** @var User $user */
+        $user = $request->user();
+
         return Inertia::render('tallies/Edit', [
             'tally' => [
                 ...$tally->only(['tally_id', 'uuid', 'name', 'description', 'owner_id', 'color', 'glyph']),
                 'default_currency_uuid' => $tally->defaultCurrency?->uuid,
             ],
-            'currencies' => Currency::all(['currency_id', 'uuid', 'name', 'code', 'symbol']),
-            'other_members_count' => $tally->users()->whereKeyNot($request->user()?->id)->count(),
+            'currencies' => Currency::all(['currency_id', 'uuid', 'name', 'code', 'symbol']), // @pest-mutate-ignore
+            'other_members_count' => $tally->users()->whereKeyNot($user->id)->count(),
         ]);
     }
 

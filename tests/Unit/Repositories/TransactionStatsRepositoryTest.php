@@ -721,3 +721,92 @@ test('frequentCategories never counts what another user entered, even in a share
         ->toBe(['groceries', 'dining_out', 'transportation', 'bills', 'subscriptions'])
         ->and($repo->frequentCategories($other->id, CategoryType::EXPENSE, $now)[0])->toBe('healthcare');
 });
+
+function statsExpense(User $user, Tally $tally, Currency $currency, string $date, float $amount, ?Category $category = null): void
+{
+    Transaction::factory()->forTally($tally)->forParty($user)->withCurrency($currency)
+        ->create(['type' => 'expense', 'amount' => $amount, 'transaction_date' => $date, 'category_id' => $category?->getKey()]);
+}
+
+test('categoriesBreakdown rows carry the slug, the uncategorised flag and a one-decimal percentage', function (): void {
+    $user = User::factory()->create();
+    $currency = Currency::factory()->create(['decimals' => 2]);
+    $tally = Tally::factory()->create(['owner_id' => $user->id]);
+    $now = CarbonImmutable::parse('2025-05-15');
+    $groceries = Category::factory()->create(['name' => 'Groceries', 'slug' => 'groceries-x']);
+    statsExpense($user, $tally, $currency, '2025-05-10', 2.0, $groceries);
+    statsExpense($user, $tally, $currency, '2025-05-11', 1.0);
+
+    $rows = (new TransactionStatsRepository)->categoriesBreakdown(collect([$tally->tally_id]), $now->startOfMonth(), $now, (int) $currency->currency_id);
+
+    expect($rows)->toBe([
+        ['name' => 'Groceries', 'slug' => 'groceries-x', 'is_uncategorised' => false, 'amount' => 2.0, 'percentage' => 66.7],
+        ['name' => 'Uncategorised', 'slug' => null, 'is_uncategorised' => true, 'amount' => 1.0, 'percentage' => 33.3],
+    ]);
+});
+
+test('categoriesBreakdown gives a total below one its full percentage', function (): void {
+    $user = User::factory()->create();
+    $currency = Currency::factory()->create(['decimals' => 2]);
+    $tally = Tally::factory()->create(['owner_id' => $user->id]);
+    $now = CarbonImmutable::parse('2025-05-15');
+    statsExpense($user, $tally, $currency, '2025-05-10', 0.5);
+
+    $rows = (new TransactionStatsRepository)->categoriesBreakdown(collect([$tally->tally_id]), $now->startOfMonth(), $now, (int) $currency->currency_id);
+
+    expect($rows[0]['percentage'])->toBe(100.0);
+});
+
+test('dailyHistory counts the seventh day and stops there, adding up the same day', function (): void {
+    $user = User::factory()->create();
+    $currency = Currency::factory()->create(['decimals' => 2]);
+    $tally = Tally::factory()->create(['owner_id' => $user->id]);
+    $start = CarbonImmutable::parse('2025-05-12');
+    statsExpense($user, $tally, $currency, '2025-05-12', 1.0);
+    statsExpense($user, $tally, $currency, '2025-05-12', 2.0);
+    statsExpense($user, $tally, $currency, '2025-05-18', 4.0);
+    statsExpense($user, $tally, $currency, '2025-05-19', 8.0);
+
+    $days = (new TransactionStatsRepository)->dailyHistory(collect([$tally->tally_id]), $start, $start->addDays(3), (int) $currency->currency_id);
+
+    expect(array_column($days, 'amount'))->toBe([3.0, 0.0, 0.0, 0.0, 0.0, 0.0, 4.0]);
+});
+
+test('weeklyHistory adds up the transactions of one week', function (): void {
+    $user = User::factory()->create();
+    $currency = Currency::factory()->create(['decimals' => 2]);
+    $tally = Tally::factory()->create(['owner_id' => $user->id]);
+    $now = CarbonImmutable::parse('2025-05-15');
+    statsExpense($user, $tally, $currency, '2025-05-12', 1.0);
+    statsExpense($user, $tally, $currency, '2025-05-14', 2.0);
+
+    $weeks = (new TransactionStatsRepository)->weeklyHistory(collect([$tally->tally_id]), $now->startOfWeek()->subWeeks(11), $now, (int) $currency->currency_id);
+
+    expect($weeks[11]['amount'])->toBe(3.0);
+});
+
+test('monthlyHistory covers twelve months and stops at the thirteenth', function (): void {
+    $user = User::factory()->create();
+    $currency = Currency::factory()->create(['decimals' => 2]);
+    $tally = Tally::factory()->create(['owner_id' => $user->id]);
+    $start = CarbonImmutable::parse('2025-01-01');
+    statsExpense($user, $tally, $currency, '2025-12-31', 4.0);
+    statsExpense($user, $tally, $currency, '2026-01-01', 8.0);
+
+    $months = (new TransactionStatsRepository)->monthlyHistory(collect([$tally->tally_id]), $start, CarbonImmutable::parse('2025-06-15'), (int) $currency->currency_id);
+
+    expect($months[11]['amount'])->toBe(4.0)
+        ->and(array_sum(array_column($months, 'amount')))->toBe(4.0);
+});
+
+test('categoriesBreakdown gives a category whose expenses total zero a zero percentage', function (): void {
+    $user = User::factory()->create();
+    $currency = Currency::factory()->create(['decimals' => 2]);
+    $tally = Tally::factory()->create(['owner_id' => $user->id]);
+    $now = CarbonImmutable::parse('2025-05-15');
+    statsExpense($user, $tally, $currency, '2025-05-10', 0.0);
+
+    $rows = (new TransactionStatsRepository)->categoriesBreakdown(collect([$tally->tally_id]), $now->startOfMonth(), $now, (int) $currency->currency_id);
+
+    expect($rows)->toHaveCount(1)->and($rows[0]['percentage'])->toBe(0.0);
+});

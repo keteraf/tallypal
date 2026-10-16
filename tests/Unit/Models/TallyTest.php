@@ -210,3 +210,20 @@ it('never gives an owner without a pivot row a negative share', function () {
 
     expect($tally->memberShares()[$owner->id])->toBe(0.0);
 });
+
+it('counts one member for a tally that is not stored', function (): void {
+    $tally = new Tally;
+    $tally->setAttribute(Tally::PRIMARY_KEY, 999_999);
+
+    expect($tally->membersCount())->toBe(1);
+});
+
+it('lets an owner with a share row keep it whatever the other members hold', function (): void {
+    $owner = User::factory()->create();
+    $member = User::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
+    $tally->users()->attach($owner->id, ['default_share_percentage' => 10]);
+    $tally->users()->attach($member->id, ['default_share_percentage' => 90]);
+
+    expect($tally->fresh()->memberShares())->toBe([$owner->id => 10.0, $member->id => 90.0]);
+});

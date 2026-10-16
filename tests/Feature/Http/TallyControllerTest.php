@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\TallyController;
+use App\Models\Currency;
 use App\Models\Tally;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -192,6 +193,17 @@ it('updates a tally preserving owner id', function (): void {
         'name' => 'After',
         'description' => 'After description',
     ]);
+});
+
+it('keeps the default currency when an update does not send one', function (): void {
+    $owner = User::factory()->create();
+    Sanctum::actingAs($owner);
+    $currency = Currency::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $owner->id, 'default_currency_id' => $currency->getKey()]);
+
+    $this->patchJson(route('api.tallies.update', $tally), ['name' => 'Renamed'])->assertSuccessful();
+
+    expect($tally->fresh()->default_currency_id)->toBe($currency->getKey());
 });
 
 it('deletes a tally', function (): void {

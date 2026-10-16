@@ -229,3 +229,32 @@ test('a database error is reported and becomes a plain 500', function () {
 
     Exceptions::assertReported(fn (QueryException $exception): bool => $exception === $failure);
 });
+
+test('it keeps only the first two initials of a long name', function () {
+    $member = User::factory()->create(['name' => 'Anna Maria Rossi']);
+    $tally = Tally::factory()->create();
+    $tally->users()->attach($member, ['default_share_percentage' => 100.00]);
+    Transaction::factory()->forTally($tally)->forParty($member)->withCurrency($this->currency)->withCategory($this->category)->withType(TransactionType::EXPENSE)->withAmount(10.00)->create();
+
+    $split = (new GetTallySplitAction())->handle($tally);
+
+    expect($split->first()['members'][0]['initials'])->toBe('AM');
+});
+
+test('it splits a currency whose expenses total less than one and reports the currency in full', function () {
+    $member = User::factory()->create(['name' => 'Anna']);
+    $other = User::factory()->create(['name' => 'Bruno']);
+    $tally = Tally::factory()->create();
+    $tally->users()->attach($member, ['default_share_percentage' => 50.00]);
+    $tally->users()->attach($other, ['default_share_percentage' => 50.00]);
+    $dollar = Currency::factory()->create(['code' => 'USD', 'symbol' => '$', 'decimals' => 2]);
+    Transaction::factory()->forTally($tally)->forParty($member)->withCurrency($dollar)->withCategory($this->category)->withType(TransactionType::INCOME)->withAmount(5.00)->create();
+    Transaction::factory()->forTally($tally)->forParty($member)->withCurrency($this->currency)->withCategory($this->category)->withType(TransactionType::EXPENSE)->withAmount(0.01)->create();
+    Transaction::factory()->forTally($tally)->forParty($other)->withCurrency($this->currency)->withCategory($this->category)->withType(TransactionType::EXPENSE)->withAmount(0.02)->create();
+
+    $split = (new GetTallySplitAction())->handle($tally);
+
+    expect($split)->toHaveCount(1)
+        ->and($split->first()['currency'])->toBe(['code' => 'EUR', 'symbol' => '€', 'decimals' => 2])
+        ->and(array_column($split->first()['members'], 'percentage'))->toBe([33.3, 66.7]);
+});

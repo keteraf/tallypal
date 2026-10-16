@@ -6,6 +6,7 @@ use App\Actions\Transaction\GetBalanceSummaryAction;
 use App\Actions\Transaction\GetTallyDebtsAction;
 use App\Contracts\Repositories\TallyRepositoryInterface;
 use App\Contracts\Repositories\TransactionStatsRepositoryInterface;
+use App\Models\Tally;
 use App\Models\User;
 use App\Services\HomeCacheService;
 use App\Services\HomeService;
@@ -383,4 +384,66 @@ test('primaryCurrency resolves the default currency and hands out symbol, code a
     $statsRepo->shouldReceive('primaryCurrency')->once()->with($sameIds, 6)->andReturn(['symbol' => '¥', 'code' => 'JPY', 'decimals' => 0, 'currency_id' => 6]);
 
     expect(makeService($tallyRepo, $statsRepo)->primaryCurrency($user))->toBe(['symbol' => '¥', 'code' => 'JPY', 'decimals' => 0]);
+});
+
+test('the empty payload is exactly the zeroed Home shape', function (): void {
+    $user = User::factory()->make(['name' => 'Alice', 'id' => 1]);
+    $tallyRepo = mockTallyRepo();
+    $tallyRepo->shouldReceive('accessibleTallyIds')->once()->andReturn(collect());
+
+    $payload = makeService($tallyRepo, mockStatsRepo())->buildHomePayload($user, CarbonImmutable::parse('2025-05-15 12:00:00'));
+
+    expect($payload)->toBe([
+        'user_name' => 'Alice',
+        'current_month_label' => 'May 2025',
+        'current_month_start' => '2025-05-01',
+        'primary_tally' => null,
+        'tallies' => [],
+        'settle_suggestion' => null,
+        'balance' => [
+            'net' => 0.0,
+            'income' => 0.0,
+            'expense' => 0.0,
+            'currency_symbol' => '€',
+            'currency_code' => 'EUR',
+            'decimals' => 2,
+            'other_currencies' => [],
+            'previous_net' => 0.0,
+            'previous_period' => null,
+            'delta_percentage' => null,
+        ],
+        'recent_transactions' => [],
+        'weekly_history' => [],
+        'categories_breakdown' => [],
+        'categories_other_currencies' => [],
+    ]);
+});
+
+test('sidebarTallies hands out the identity and monthly totals of each tally only', function (): void {
+    $user = User::factory()->make(['id' => 90]);
+    $now = CarbonImmutable::parse('2025-05-15 12:00:00');
+    $totals = [['amount' => 12.5, 'currency_symbol' => '€', 'currency_code' => 'EUR', 'decimals' => 2]];
+    $tallyRepo = mockTallyRepo();
+    $tallyRepo->shouldReceive('accessibleTallyIds')->once()->andReturn(collect([5]));
+    $tallyRepo->shouldReceive('tallySummaries')->once()->andReturn(collect([
+        ['uuid' => 'u-1', 'name' => 'Home', 'color' => 'c2', 'glyph' => 'house', 'member_count' => 3, 'monthly_totals' => $totals],
+    ]));
+
+    expect(makeService($tallyRepo, mockStatsRepo())->sidebarTallies($user, $now))->toBe([
+        ['uuid' => 'u-1', 'name' => 'Home', 'color' => 'c2', 'glyph' => 'house', 'monthly_totals' => $totals],
+    ]);
+});
+
+test('forgetting a tally forgets each member once, the owner included', function (): void {
+    $owner = User::factory()->create();
+    $member = User::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
+    $tally->users()->attach($owner->id, ['default_share_percentage' => 50]);
+    $tally->users()->attach($member->id, ['default_share_percentage' => 50]);
+    Cache::spy();
+
+    makeService(mockTallyRepo(), mockStatsRepo())->forgetCacheForTallyMembers($tally);
+
+    Cache::shouldHaveReceived('forget')->with(HomeCacheService::key($owner->id, 'sidebar_version'))->once();
+    Cache::shouldHaveReceived('forget')->with(HomeCacheService::key($member->id, 'sidebar_version'))->once();
 });

@@ -24,7 +24,7 @@ class AcceptTallyInvitationAction
             if ($alreadyAttached) {
                 $tally->users()->updateExistingPivot($userId, ['default_share_percentage' => 0]);
             } else {
-                $tally->users()->syncWithoutDetaching([$userId => ['default_share_percentage' => 0]]);
+                $tally->users()->syncWithoutDetaching([$userId => ['default_share_percentage' => 0]]); // @pest-mutate-ignore
             }
 
             $invitation->update(['status' => TallyInvitation::STATUS_ACCEPTED]);

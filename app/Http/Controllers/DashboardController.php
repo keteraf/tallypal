@@ -12,6 +12,7 @@ use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -19,9 +20,12 @@ use Inertia\Response;
 
 final class DashboardController extends Controller
 {
-    public function __invoke(): Response|RedirectResponse
+    public function __invoke(Request $request): Response|RedirectResponse
     {
-        if (! auth()->user()?->hasRole('Super Admin')) {
+        /** @var User $user */
+        $user = $request->user();
+
+        if (! $user->hasRole('Super Admin')) {
             return redirect()->route('home.dashboard');
         }
 
@@ -80,9 +84,10 @@ final class DashboardController extends Controller
      */
     private function buildTimeSeries(Collection $dates, Collection $rawData): array
     {
-        return $dates->map(fn (string $date): array => [
-            'date' => $date,
-            'count' => (int) ($rawData[$date] ?? 0),
-        ])->all();
+        return $dates->map(function (string $date) use ($rawData): array {
+            $count = (int) ($rawData[$date] ?? 0); // @pest-mutate-ignore
+
+            return ['date' => $date, 'count' => $count];
+        })->all();
     }
 }

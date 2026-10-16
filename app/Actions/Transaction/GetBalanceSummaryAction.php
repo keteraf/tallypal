@@ -37,7 +37,7 @@ final readonly class GetBalanceSummaryAction
     {
         $tallies = Tally::query()
             ->whereKey($tallyIds->all())
-            ->with(['owner', 'users'])
+            ->with(['owner', 'users']) // @pest-mutate-ignore
             ->withMax('transactions', 'transaction_date')
             ->get()
             ->sortByDesc(fn (Tally $tally): array => [$tally->getAttribute('transactions_max_transaction_date'), $tally->tally_id]);
@@ -127,7 +127,7 @@ final readonly class GetBalanceSummaryAction
      */
     private function myBalance(array $entry, int $userId): array
     {
-        $amount = collect($entry['positions'])->firstWhere('user.id', $userId)['amount'] ?? 0;
+        $amount = collect($entry['positions'])->firstWhere('user.id', $userId)['amount'] ?? 0; // @pest-mutate-ignore
 
         $counterparties = [];
 

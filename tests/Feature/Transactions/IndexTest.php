@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\Transaction\GetTallyPerPersonAction;
 use App\Enums\TransactionType;
 use App\Http\Controllers\TransactionController;
 use App\Models\Category;
@@ -9,6 +10,8 @@ use App\Models\Currency;
 use App\Models\Tally;
 use App\Models\Transaction;
 use App\Models\User;
+
+covers(GetTallyPerPersonAction::class);
 
 covers(TransactionController::class);
 
@@ -303,6 +306,7 @@ it('computes per person as one value per currency, never summed across currencie
             ->where('per_person.0.currency_code', 'EUR')
             ->where('per_person.0.currency_symbol', '€')
             ->where('per_person.0.amount', 50)
+            ->where('per_person.0.decimals', 2)
             ->where('per_person.1.currency_code', 'USD')
             ->where('per_person.1.currency_symbol', '$')
             ->where('per_person.1.amount', 20.5)
@@ -365,5 +369,20 @@ it('sends the members settled in each currency next to the unchanged debts', fun
             ->where('debts.0.settlements.0.debtor.id', $partner->id)
             ->where('debts.0.settlements.0.creditor.id', $owner->id)
             ->where('debts.0.settlements.0.amount', 76.3)
+        );
+});
+
+it('exposes the all-time totals of the tally per type and currency', function () {
+    $owner = User::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
+    $eur = Currency::factory()->create(['code' => 'EUR', 'symbol' => '€', 'decimals' => 2]);
+    Transaction::factory()->forTally($tally)->forParty($owner)->withCurrency($eur)->withType(TransactionType::EXPENSE)->withAmount(12.5)->create();
+
+    $this->actingAs($owner)->get(route('tallies.transactions.index', $tally))
+        ->assertInertia(fn ($page) => $page
+            ->has('totals', 1)
+            ->where('totals.0.type', 'expense')
+            ->where('totals.0.total', 12.5)
+            ->where('totals.0.currency.code', 'EUR')
         );
 });

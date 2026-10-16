@@ -57,6 +57,7 @@ it('only prints the counts and exits 1 without --force', function (): void {
         ->expectsOutputToContain('Tally invitations: 1')
         ->expectsOutputToContain('Memberships: 2')
         ->expectsOutputToContain('Tallies: 1')
+        ->expectsOutputToContain('Nothing deleted. Run again with --force to delete these rows.')
         ->assertExitCode(1);
 
     expect(Tally::query()->count())->toBe(1)

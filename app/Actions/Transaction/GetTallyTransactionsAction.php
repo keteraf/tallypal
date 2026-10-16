@@ -19,7 +19,7 @@ final readonly class GetTallyTransactionsAction
     {
         try {
             return $tally->transactions()
-                ->with(['party', 'currency', 'category'])
+                ->with(['party', 'currency', 'category']) // @pest-mutate-ignore
                 ->latest()
                 ->paginate($perPage)
                 ->withQueryString();

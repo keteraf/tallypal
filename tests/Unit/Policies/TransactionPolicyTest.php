@@ -109,3 +109,10 @@ it('allows owner or party member to force delete a transaction', function () {
         ->and($this->policy->forceDelete($member, $transaction))->toBeTrue()
         ->and($this->policy->forceDelete($stranger, $transaction))->toBeFalse();
 });
+
+it('denies every transaction ability when the transaction has no tally', function (string $ability) {
+    $user = User::factory()->create();
+    $orphan = new Transaction;
+
+    expect($this->policy->{$ability}($user, $orphan))->toBeFalse();
+})->with(['view', 'update', 'delete', 'restore', 'forceDelete']);

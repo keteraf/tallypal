@@ -466,6 +466,7 @@ test('forgetForUser removes all cache keys for the user', function (): void {
         HomeCacheService::key($userId, 'primary_currency'),
         HomeCacheService::key($userId, "tallies_summary:{$monthKey}"),
         HomeCacheService::key($userId, "balance:{$dayKey}"),
+        HomeCacheService::key($userId, "previous_net:{$dayKey}"),
         HomeCacheService::key($userId, 'recent_tx'),
         HomeCacheService::key($userId, "weekly_history:{$dayKey}"),
         HomeCacheService::key($userId, "categories:{$monthKey}"),
