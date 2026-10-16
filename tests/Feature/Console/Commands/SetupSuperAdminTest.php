@@ -2,9 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Console\Commands\SetupSuperAdmin;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
+
+covers(SetupSuperAdmin::class);
 
 it('creates a super admin user and assigns the role', function () {
     // Role is already created by migration, but we verify it here

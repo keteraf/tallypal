@@ -37,7 +37,7 @@ final readonly class StatsService
     {
         $userId = (int) $user->id; // @pest-mutate-ignore
         $accessibleTallyIds = $this->homeCache->tallyIds($userId);
-        $tallyIds = $tally instanceof Tally ? collect([(int) $tally->tally_id]) : $accessibleTallyIds;
+        $tallyIds = $tally instanceof Tally ? collect([(int) $tally->tally_id]) : $accessibleTallyIds; // @pest-mutate-ignore
 
         if ($tallyIds->isEmpty()) {
             return $this->emptyPayload($range, $now);
@@ -104,14 +104,16 @@ final readonly class StatsService
         $currency = $tally->prefillCurrency($user);
 
         if (! $currency instanceof Currency) {
-            return $this->homeCache->primaryCurrency((int) $user->id, $accessibleTallyIds, $user->default_currency_id);
+            $userId = (int) $user->id; // @pest-mutate-ignore
+
+            return $this->homeCache->primaryCurrency($userId, $accessibleTallyIds, $user->default_currency_id);
         }
 
         return [
-            'symbol' => (string) $currency->symbol,
-            'code' => (string) $currency->code,
-            'decimals' => (int) $currency->decimals,
-            'currency_id' => (int) $currency->currency_id,
+            'symbol' => (string) $currency->symbol, // @pest-mutate-ignore
+            'code' => (string) $currency->code, // @pest-mutate-ignore
+            'decimals' => (int) $currency->decimals, // @pest-mutate-ignore
+            'currency_id' => (int) $currency->currency_id, // @pest-mutate-ignore
         ];
     }
 

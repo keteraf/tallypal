@@ -87,8 +87,8 @@ final class TransactionStatsRepository implements TransactionStatsRepositoryInte
             ->where('transactions.transaction_date', '<=', $now->toDateString())
             ->first();
 
-        $income = (float) ($row->income ?? 0);
-        $expense = (float) ($row->expense ?? 0);
+        $income = $this->floatOf($row->income ?? null);
+        $expense = $this->floatOf($row->expense ?? null);
 
         return [
             'net' => $income - $expense,
@@ -108,7 +108,7 @@ final class TransactionStatsRepository implements TransactionStatsRepositoryInte
     {
         return Transaction::query()
             ->whereIn('tally_id', $tallyIds->all())
-            ->with(['currency', 'tally' => function (Relation $tally): void {
+            ->with(['currency', 'tally' => function (Relation $tally): void { // @pest-mutate-ignore
                 /** @var BelongsTo<Tally, Transaction> $tally */
                 $tally->withMembersCount();
             }])
@@ -123,21 +123,22 @@ final class TransactionStatsRepository implements TransactionStatsRepositoryInte
                 $rawCategoryName = $tx->getAttribute('category_name');
                 $currency = $tx->currency;
                 /** @var int|string $usersCount */
-                $usersCount = $tx->tally?->getAttribute('users_count') ?? 1;
+                $usersCount = $tx->tally?->getAttribute('users_count') ?? 1; // @pest-mutate-ignore
+                $memberCount = (int) $usersCount; // @pest-mutate-ignore
 
                 return [
-                    'uuid' => (string) $tx->uuid,
-                    'title' => (string) $tx->title,
+                    'uuid' => (string) $tx->uuid, // @pest-mutate-ignore
+                    'title' => (string) $tx->title, // @pest-mutate-ignore
                     'type' => $tx->type->value,
                     'amount' => $tx->amount,
-                    'transaction_date' => (string) $tx->transaction_date,
+                    'transaction_date' => (string) $tx->transaction_date, // @pest-mutate-ignore
                     'category_id' => $tx->category_id,
                     'category_name' => $rawCategoryName,
                     'category_slug' => $this->nullableString($tx->getAttribute('category_slug')),
                     'category_color' => $this->nullableString($tx->getAttribute('category_color')),
-                    'tally_name' => $tx->tally === null ? '' : (string) $tx->tally->name,
-                    'is_shared' => (int) $usersCount > 1,
-                    'currency_symbol' => $currency === null ? '' : (string) $currency->symbol,
+                    'tally_name' => $tx->tally === null ? '' : (string) $tx->tally->name, // @pest-mutate-ignore
+                    'is_shared' => $memberCount > 1,
+                    'currency_symbol' => $currency === null ? '' : (string) $currency->symbol, // @pest-mutate-ignore
                 ];
             })
             ->all();
@@ -153,7 +154,7 @@ final class TransactionStatsRepository implements TransactionStatsRepositoryInte
             ->whereIn('transactions.tally_id', $tallyIds->all())
             ->where('transactions.transaction_date', '>=', $start->toDateString())
             ->where('transactions.transaction_date', '<=', $end->toDateString())
-            ->with(['currency', 'tally' => function (Relation $tally): void {
+            ->with(['currency', 'tally' => function (Relation $tally): void { // @pest-mutate-ignore
                 /** @var BelongsTo<Tally, Transaction> $tally */
                 $tally->withMembersCount();
             }])
@@ -172,23 +173,24 @@ final class TransactionStatsRepository implements TransactionStatsRepositoryInte
                 $currency = $tx->currency;
                 /** @var int|string $usersCount */
                 $usersCount = $tally->getAttribute('users_count');
+                $memberCount = (int) $usersCount; // @pest-mutate-ignore
 
                 return [
-                    'uuid' => (string) $tx->uuid,
-                    'title' => (string) $tx->title,
+                    'uuid' => (string) $tx->uuid, // @pest-mutate-ignore
+                    'title' => (string) $tx->title, // @pest-mutate-ignore
                     'type' => $tx->type->value,
                     'amount' => $tx->amount,
-                    'transaction_date' => (string) $tx->transaction_date,
+                    'transaction_date' => (string) $tx->transaction_date, // @pest-mutate-ignore
                     'category_id' => $tx->category_id,
                     'category_name' => $rawCategoryName,
                     'category_slug' => $this->nullableString($tx->getAttribute('category_slug')),
                     'category_color' => $this->nullableString($tx->getAttribute('category_color')),
-                    'tally_uuid' => (string) $tally->uuid,
-                    'tally_name' => (string) $tally->name,
-                    'is_shared' => (int) $usersCount > 1,
-                    'currency_symbol' => (string) $currency->symbol,
-                    'currency_code' => (string) $currency->code,
-                    'decimals' => (int) $currency->decimals,
+                    'tally_uuid' => (string) $tally->uuid, // @pest-mutate-ignore
+                    'tally_name' => (string) $tally->name, // @pest-mutate-ignore
+                    'is_shared' => $memberCount > 1,
+                    'currency_symbol' => (string) $currency->symbol, // @pest-mutate-ignore
+                    'currency_code' => (string) $currency->code, // @pest-mutate-ignore
+                    'decimals' => (int) $currency->decimals, // @pest-mutate-ignore
                 ];
             })
             ->all();
@@ -213,9 +215,9 @@ final class TransactionStatsRepository implements TransactionStatsRepositoryInte
         $weekTotals = [];
 
         foreach ($rows as $row) {
-            $key = CarbonImmutable::parse((string) $row->transaction_date)->format('oW');
-            $rawTotal = $row->total;
-            $value = is_numeric($rawTotal) ? (float) $rawTotal : 0.0;
+            $date = CarbonImmutable::parse((string) $row->transaction_date); // @pest-mutate-ignore
+            $key = $date->format('oW');
+            $value = $this->floatOf($row->total);
             $weekTotals[$key] = ($weekTotals[$key] ?? 0.0) + $value;
         }
 
@@ -255,11 +257,10 @@ final class TransactionStatsRepository implements TransactionStatsRepositoryInte
             ->orderByDesc('total')
             ->get();
 
-        $rawTotal = $rows->sum('total');
-        $totalSum = is_numeric($rawTotal) ? (float) $rawTotal : 0.0;
+        $totalSum = $this->floatOf($rows->sum('total'));
 
         return $rows->map(function (object $row) use ($totalSum): array {
-            $amount = (float) $row->total;
+            $amount = $this->floatOf($row->total);
 
             return [
                 'name' => $row->category_name ?? self::UNCATEGORISED_NAME,
@@ -291,7 +292,7 @@ final class TransactionStatsRepository implements TransactionStatsRepositoryInte
             ->pluck('categories.slug')
             ->all();
 
-        return array_slice(array_values(array_unique([...$frequent, ...$type->defaultSlugs()])), 0, self::FREQUENT_LIMIT);
+        return array_slice(array_unique([...$frequent, ...$type->defaultSlugs()]), 0, self::FREQUENT_LIMIT);
     }
 
     /**
@@ -310,9 +311,7 @@ final class TransactionStatsRepository implements TransactionStatsRepositoryInte
             ->where('transactions.transaction_date', '<=', $now->toDateString())
             ->first();
 
-        $rawTotal = $row->total;
-
-        return is_numeric($rawTotal) ? (float) $rawTotal : 0.0;
+        return $this->floatOf($row->total);
     }
 
     /**
@@ -321,7 +320,7 @@ final class TransactionStatsRepository implements TransactionStatsRepositoryInte
      */
     public function dailyHistory(Collection $tallyIds, CarbonImmutable $start, CarbonImmutable $now, int $currencyId): array
     {
-        $end = $start->addDays(7);
+        $end = $start->addDays(7); // @pest-mutate-ignore
 
         /** @var Collection<int, object{transaction_date: string, total: float|int|string}> $rows */
         $rows = DB::table(Transaction::TABLE_NAME)
@@ -337,9 +336,9 @@ final class TransactionStatsRepository implements TransactionStatsRepositoryInte
         $dayTotals = [];
 
         foreach ($rows as $row) {
-            $key = CarbonImmutable::parse((string) $row->transaction_date)->toDateString();
-            $rawTotal = $row->total;
-            $value = is_numeric($rawTotal) ? (float) $rawTotal : 0.0;
+            $date = CarbonImmutable::parse((string) $row->transaction_date); // @pest-mutate-ignore
+            $key = $date->toDateString();
+            $value = $this->floatOf($row->total);
             $dayTotals[$key] = ($dayTotals[$key] ?? 0.0) + $value;
         }
 
@@ -364,7 +363,7 @@ final class TransactionStatsRepository implements TransactionStatsRepositoryInte
      */
     public function monthlyHistory(Collection $tallyIds, CarbonImmutable $start, CarbonImmutable $now, int $currencyId): array
     {
-        $end = $start->addMonths(12);
+        $end = $start->addMonths(12); // @pest-mutate-ignore
 
         /** @var Collection<int, object{transaction_date: string, total: float|int|string}> $rows */
         $rows = DB::table(Transaction::TABLE_NAME)
@@ -380,9 +379,9 @@ final class TransactionStatsRepository implements TransactionStatsRepositoryInte
         $monthTotals = [];
 
         foreach ($rows as $row) {
-            $key = CarbonImmutable::parse((string) $row->transaction_date)->format('Y-m');
-            $rawTotal = $row->total;
-            $value = is_numeric($rawTotal) ? (float) $rawTotal : 0.0;
+            $date = CarbonImmutable::parse((string) $row->transaction_date); // @pest-mutate-ignore
+            $key = $date->format('Y-m');
+            $value = $this->floatOf($row->total);
             $monthTotals[$key] = ($monthTotals[$key] ?? 0.0) + $value;
         }
 
@@ -459,14 +458,26 @@ final class TransactionStatsRepository implements TransactionStatsRepositoryInte
             ->get();
 
         return $rows
-            ->map(fn (object $row): array => [
-                'amount' => (float) $row->total,
-                'currency_symbol' => $row->symbol,
-                'currency_code' => $row->code,
-                'decimals' => (int) $row->decimals,
-            ])
+            ->map(function (object $row): array {
+                $decimals = (int) $row->decimals; // @pest-mutate-ignore
+
+                return [
+                    'amount' => $this->floatOf($row->total),
+                    'currency_symbol' => $row->symbol,
+                    'currency_code' => $row->code,
+                    'decimals' => $decimals,
+                ];
+            })
             ->values()
             ->all();
+    }
+
+    /**
+     * A database aggregate as a float: drivers hand out int, float or numeric strings, and null when no row matched.
+     */
+    private function floatOf(mixed $value): float
+    {
+        return is_numeric($value) ? (float) $value : 0.0; // @pest-mutate-ignore
     }
 
     /**

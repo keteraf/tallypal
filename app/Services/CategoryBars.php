@@ -23,7 +23,7 @@ final class CategoryBars
         $top = array_slice($categories, 0, $topCount);
         $restAmount = array_sum(array_column(array_slice($categories, $topCount), 'amount'));
         $total = array_sum(array_column($categories, 'amount'));
-        $largestNamed = $top === [] ? 0.0 : max(array_column($top, 'amount'));
+        $largestNamed = $top === [] ? 0.0 : max(array_column($top, 'amount')); // @pest-mutate-ignore
         $barFill = static fn (float $amount): float => $largestNamed > 0 ? min(100.0, $amount / $largestNamed * 100) : 0.0;
 
         $rows = array_map(

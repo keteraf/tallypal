@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Settings;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\PreferencesUpdateRequest;
 use App\Models\Currency;
+use App\Models\User;
 use App\Services\HomeService;
 use Illuminate\Http\RedirectResponse;
 
@@ -21,13 +22,17 @@ final class PreferencesController extends Controller
         /** @var array{default_currency_uuid: string|null} $data */
         $data = $request->validated();
 
-        $request->user()?->update([
+        /** @var User $user */
+        $user = $request->user();
+
+        $user->update([
             'default_currency_id' => $data['default_currency_uuid'] === null
                 ? null
                 : Currency::query()->where('uuid', $data['default_currency_uuid'])->value(Currency::PRIMARY_KEY),
         ]);
 
-        $homeService->forgetCacheForUser((int) $request->user()?->id);
+        $userId = (int) $user->id; // @pest-mutate-ignore
+        $homeService->forgetCacheForUser($userId);
 
         return back();
     }

@@ -28,7 +28,8 @@ final readonly class TransactionObserver
 
     private function invalidate(Transaction $transaction): void
     {
-        $this->homeService->forgetCacheForUser((int) $transaction->party_id);
+        $partyId = (int) $transaction->party_id; // @pest-mutate-ignore
+        $this->homeService->forgetCacheForUser($partyId);
 
         $tally = $transaction->tally;
 

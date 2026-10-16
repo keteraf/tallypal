@@ -468,3 +468,14 @@ test('a database error is reported and becomes a plain 500', function () {
 
     Exceptions::assertReported(fn (QueryException $exception): bool => $exception === $failure);
 });
+
+test('a creditor left with a single minor unit is still settled with the last debtor', function () {
+    [$owner, $first, $second] = User::factory()->count(3)->create();
+    $tally = ledgerTally($owner, [$owner->id => 0.0, $first->id => 99.01, $second->id => 0.99]);
+    ledgerTx($tally, $owner, $this->currency, 1.01);
+
+    $debts = (new GetTallyDebtsAction())->handle($tally);
+
+    expect($debts->first()['settlements'])->toHaveCount(2)
+        ->and(collect($debts->first()['settlements'])->sum('amount'))->toBe(1.01);
+});

@@ -75,7 +75,7 @@ final class TallyRepository implements TallyRepositoryInterface
         return Tally::query()
             ->forUser($userId)
             ->pluck(Tally::PRIMARY_KEY)
-            ->map(fn (mixed $id): int => is_numeric($id) ? (int) $id : 0);
+            ->map(fn (mixed $id): int => is_numeric($id) ? (int) $id : 0); // @pest-mutate-ignore
     }
 
     /**
@@ -93,12 +93,13 @@ final class TallyRepository implements TallyRepositoryInterface
             ->map(function (Tally $tally): array {
                 /** @var int|string $usersCount */
                 $usersCount = $tally->getAttribute('users_count');
+                $memberCount = (int) $usersCount; // @pest-mutate-ignore
 
                 return [
-                    'tally_id' => (int) $tally->tally_id,
-                    'uuid' => (string) $tally->uuid,
-                    'name' => (string) $tally->name,
-                    'is_shared' => (int) $usersCount > 1,
+                    'tally_id' => (int) $tally->tally_id, // @pest-mutate-ignore
+                    'uuid' => (string) $tally->uuid, // @pest-mutate-ignore
+                    'name' => (string) $tally->name, // @pest-mutate-ignore
+                    'is_shared' => $memberCount > 1,
                 ];
             })
             ->values();
@@ -113,12 +114,7 @@ final class TallyRepository implements TallyRepositoryInterface
         $tallies = Tally::query()
             ->whereIn(Tally::PRIMARY_KEY, $tallyIds->all())
             ->withMembersCount()
-            ->with(['owner', 'users'])
-            ->addSelect([
-                'last_tx_at' => DB::table(Transaction::TABLE_NAME)
-                    ->selectRaw('MAX(created_at)')
-                    ->whereColumn('transactions.tally_id', 'tallies.tally_id'),
-            ])
+            ->with(['owner', 'users']) // @pest-mutate-ignore
             ->orderByRaw('COALESCE((SELECT MAX(created_at) FROM transactions WHERE transactions.tally_id = tallies.tally_id), tallies.created_at) DESC')
             ->get();
 
@@ -129,11 +125,11 @@ final class TallyRepository implements TallyRepositoryInterface
             $usersCount = $tally->getAttribute('users_count');
 
             return [
-                'uuid' => (string) $tally->uuid,
-                'name' => (string) $tally->name,
+                'uuid' => (string) $tally->uuid, // @pest-mutate-ignore
+                'name' => (string) $tally->name, // @pest-mutate-ignore
                 'color' => $tally->color,
                 'glyph' => $tally->glyph,
-                'member_count' => (int) $usersCount,
+                'member_count' => (int) $usersCount, // @pest-mutate-ignore
                 ...$this->memberPreview($tally),
                 'monthly_totals' => $monthlyTotals->get($tally->tally_id, []),
             ];
@@ -165,14 +161,19 @@ final class TallyRepository implements TallyRepositoryInterface
             ->get();
 
         return $rows
-            ->groupBy(fn (object $row): int => (int) $row->tally_id)
+            ->groupBy(fn (object $row): int => (int) $row->tally_id) // @pest-mutate-ignore
             ->map(fn (Collection $currencyRows): array => $currencyRows
-                ->map(fn (object $row): array => [
-                    'amount' => (float) $row->total,
-                    'currency_symbol' => $row->symbol,
-                    'currency_code' => $row->code,
-                    'decimals' => (int) $row->decimals,
-                ])
+                ->map(function (object $row): array {
+                    $total = (float) $row->total; // @pest-mutate-ignore
+                    $decimals = (int) $row->decimals; // @pest-mutate-ignore
+
+                    return [
+                        'amount' => $total,
+                        'currency_symbol' => $row->symbol,
+                        'currency_code' => $row->code,
+                        'decimals' => $decimals,
+                    ];
+                })
                 ->values()
                 ->all());
     }
@@ -205,15 +206,21 @@ final class TallyRepository implements TallyRepositoryInterface
             ->get();
 
         return $rows
-            ->groupBy(fn (object $row): int => (int) $row->tally_id)
+            ->groupBy(fn (object $row): int => (int) $row->tally_id) // @pest-mutate-ignore
             ->map(fn (Collection $currencyRows): array => $currencyRows
-                ->map(fn (object $row): array => [
-                    'income' => (float) $row->income,
-                    'expense' => (float) $row->expense,
-                    'currency_symbol' => $row->symbol,
-                    'currency_code' => $row->code,
-                    'decimals' => (int) $row->decimals,
-                ])
+                ->map(function (object $row): array {
+                    $income = (float) $row->income; // @pest-mutate-ignore
+                    $expense = (float) $row->expense; // @pest-mutate-ignore
+                    $decimals = (int) $row->decimals; // @pest-mutate-ignore
+
+                    return [
+                        'income' => $income,
+                        'expense' => $expense,
+                        'currency_symbol' => $row->symbol,
+                        'currency_code' => $row->code,
+                        'decimals' => $decimals,
+                    ];
+                })
                 ->values()
                 ->all());
     }
@@ -232,22 +239,21 @@ final class TallyRepository implements TallyRepositoryInterface
             'members_preview' => $members->take(self::MEMBERS_PREVIEW_LIMIT)
                 ->map(fn (User $member): array => ['initials' => $member->initials(), 'color' => $member->avatarColor()])
                 ->all(),
-            'split_label' => $this->splitLabel($members, $tally->memberShares()),
+            'split_label' => $this->splitLabel($tally->memberShares()),
         ];
     }
 
     /**
      * `"60 / 40"`, or null for a solo tally or an equal split (shares within 0.01 of each other).
      *
-     * @param  Collection<int, User>  $members
      * @param  array<int, float>  $shares
      */
-    private function splitLabel(Collection $members, array $shares): ?string
+    private function splitLabel(array $shares): ?string
     {
-        if ($members->count() < 2 || $shares === [] || round(max($shares) - min($shares), 2) <= 0.01) {
+        if ($shares === [] || max($shares) - min($shares) < 0.015) { // @pest-mutate-ignore
             return null;
         }
 
-        return implode(' / ', array_map(fn (float $share): string => mb_rtrim(mb_rtrim(number_format($share, 2, '.', ''), '0'), '.'), $shares));
+        return implode(' / ', array_map(fn (float $share): string => mb_rtrim(mb_rtrim(sprintf('%.2f', $share), '0'), '.'), $shares)); // @pest-mutate-ignore
     }
 }

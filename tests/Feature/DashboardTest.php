@@ -80,3 +80,20 @@ test('dashboard time series returns 30 data points', function () {
             ->has('transactionsOverTime', 30)
         );
 });
+
+test('the time series covers the last 30 days with each day count', function () {
+    $this->travelTo('2026-06-30 12:00:00');
+    $admin = User::factory()->create(['created_at' => now()->subDays(40)]);
+    $admin->assignRole('Super Admin');
+    User::factory()->create(['created_at' => '2026-06-30 08:00:00']);
+    User::factory()->count(2)->create(['created_at' => '2026-06-01 08:00:00']);
+    User::factory()->create(['created_at' => '2026-05-31 08:00:00']);
+
+    $this->actingAs($admin)->get('/dashboard')
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('usersOverTime.0', ['date' => '2026-06-01', 'count' => 2])
+            ->where('usersOverTime.29', ['date' => '2026-06-30', 'count' => 1])
+            ->where('usersOverTime.1', ['date' => '2026-06-02', 'count' => 0])
+            ->where('stats.new_users_30d', 3)
+        );
+});

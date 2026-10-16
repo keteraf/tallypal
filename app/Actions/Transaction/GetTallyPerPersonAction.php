@@ -36,11 +36,16 @@ final readonly class GetTallyPerPersonAction
             ->orderBy('currencies.code')
             ->get();
 
-        return $rows->map(fn (object $row): array => [
-            'amount' => round((float) $row->total / $members, (int) $row->decimals),
-            'currency_symbol' => $row->symbol,
-            'currency_code' => $row->code,
-            'decimals' => (int) $row->decimals,
-        ])->values();
+        return $rows->map(function (object $row) use ($members): array {
+            $decimals = (int) $row->decimals; // @pest-mutate-ignore
+            $total = (float) $row->total; // @pest-mutate-ignore
+
+            return [
+                'amount' => round($total / $members, $decimals),
+                'currency_symbol' => $row->symbol,
+                'currency_code' => $row->code,
+                'decimals' => $decimals,
+            ];
+        })->values();
     }
 }

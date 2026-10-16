@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use App\Services\HomeService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
-
-use function abort_unless;
 
 final class HomeController extends Controller
 {
@@ -18,8 +17,8 @@ final class HomeController extends Controller
 
     public function __invoke(Request $request): Response
     {
+        /** @var User $user */
         $user = $request->user();
-        abort_unless((bool) $user, 401);
 
         return Inertia::render('Home', $this->homeService->buildHomePayload($user, CarbonImmutable::now()));
     }
