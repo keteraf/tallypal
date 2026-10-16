@@ -25,6 +25,7 @@ declare(strict_types=1);
 const GATE_ROOT = __DIR__ . '/..';
 const GATE_STATE = GATE_ROOT . '/storage/framework/testing/gate.json';
 const GATE_BASE_BRANCH = 'master';
+const GATE_MUTATION_CONFIGURATION = 'phpunit.gate-mutation.xml';
 
 /**
  * Paths whose change forces the full PHP suite (a fresh TIA baseline) on the next fast run.
@@ -220,6 +221,24 @@ function gateMutationScope(): array
 }
 
 /**
+ * Writes a copy of phpunit.xml, next to it, whose only test suite lists the given test files, and returns its
+ * file name. Pest forwards only a path or this configuration to the process that runs each mutant: `--filter`
+ * makes it report every mutant as killed.
+ *
+ * @param  array<int, string>  $files  Project-relative test files.
+ */
+function gateMutationConfiguration(array $files): string
+{
+    $suite = '<testsuites><testsuite name="Mutation">'
+        . implode('', array_map(fn (string $file): string => '<file>' . $file . '</file>', $files))
+        . '</testsuite></testsuites>';
+    $configuration = (string) preg_replace('#<testsuites>.*?</testsuites>#s', $suite, (string) file_get_contents(GATE_ROOT . '/phpunit.xml'));
+    file_put_contents(GATE_ROOT . '/' . GATE_MUTATION_CONFIGURATION, $configuration);
+
+    return GATE_MUTATION_CONFIGURATION;
+}
+
+/**
  * @param  array<int, string>  $files  Changed project-relative paths.
  * @return array<int, string> Class names of the changed, still existing PHP files under app/.
  */
@@ -306,8 +325,6 @@ function gateFast(): never
     $scope = gateMutationScope();
     $mutationClasses = array_values(array_intersect($changedClasses, array_keys($scope)));
     $outOfScope = array_values(array_diff($changedClasses, array_keys($scope)));
-    $mutationTestFiles = array_values(array_unique(array_merge([], ...array_map(fn (string $class): array => $scope[$class], $mutationClasses))));
-    sort($mutationTestFiles);
     $fullSuiteHash = gateFullSuiteHash();
     $forceFullSuite = gateStoredFullSuiteHash() !== $fullSuiteHash;
 
@@ -345,7 +362,7 @@ function gateFast(): never
     }
 
     if ($mutationClasses !== []) {
-        $ran[] = 'mutation at 100% on ' . implode(', ', $mutationClasses) . ' (' . count($mutationTestFiles) . ' test file(s) that name them)';
+        $ran[] = 'mutation at 100%, one run per changed class: ' . implode(', ', array_map(fn (string $class): string => $class . ' against ' . count($scope[$class]) . ' test file(s) naming it', $mutationClasses));
     } else {
         $skipped[] = $changedClasses === [] ? 'mutation (no app/ PHP file changed)' : 'mutation (no changed app/ class is named by covers()/mutates(): ' . implode(', ', $outOfScope) . ')';
     }
@@ -395,13 +412,17 @@ function gateFast(): never
 
     if ($mutationClasses !== []) {
         gateClearPestOnlyLock();
-        gateRun(
-            ['vendor/bin/pest', '--no-tia', '--colors=always', '--parallel', '--mutate', '--class=' . implode(',', $mutationClasses), '--min=100', '--ignore-min-score-on-zero-mutations', '--filter=' . implode('|', array_map(fn (string $file): string => preg_quote(basename($file, '.php'), '/'), $mutationTestFiles))],
-            [...GATE_SQLITE_ENV, 'XDEBUG_MODE' => 'coverage'],
-            'mutation (' . count($mutationClasses) . ' class(es), min 100)',
-        );
+
+        foreach ($mutationClasses as $class) {
+            gateRun(
+                ['vendor/bin/pest', '--no-tia', '--colors=always', '--parallel', '--mutate', '--class=' . $class, '--min=100', '--ignore-min-score-on-zero-mutations', '--configuration=' . gateMutationConfiguration($scope[$class])],
+                [...GATE_SQLITE_ENV, 'XDEBUG_MODE' => 'coverage'],
+                'mutation ' . basename(str_replace('\\', '/', $class)),
+            );
+        }
     }
 
+    @unlink(GATE_ROOT . '/' . GATE_MUTATION_CONFIGURATION);
     fwrite(STDOUT, PHP_EOL . $summary . PHP_EOL);
     gatePrintTimings();
     exit(0);

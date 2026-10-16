@@ -32,3 +32,4 @@ yarn-error.log
 /.playwright-mcp/
 /tests/Browser/Screenshots/
 /.ssignal/
+/phpunit.gate-mutation.xml
