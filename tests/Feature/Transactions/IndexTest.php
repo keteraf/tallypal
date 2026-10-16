@@ -306,6 +306,7 @@ it('computes per person as one value per currency, never summed across currencie
             ->where('per_person.0.currency_code', 'EUR')
             ->where('per_person.0.currency_symbol', '€')
             ->where('per_person.0.amount', 50)
+            ->where('per_person.0.decimals', 2)
             ->where('per_person.1.currency_code', 'USD')
             ->where('per_person.1.currency_symbol', '$')
             ->where('per_person.1.amount', 20.5)
