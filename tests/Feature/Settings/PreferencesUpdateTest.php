@@ -2,12 +2,15 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Settings\PreferencesController;
 use App\Models\Currency;
 use App\Models\Tally;
 use App\Models\User;
 use App\Services\HomeCacheService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+
+covers(PreferencesController::class);
 
 test('guests cannot update preferences', function () {
     $this->patch(route('preferences.update'), ['default_currency_uuid' => null])

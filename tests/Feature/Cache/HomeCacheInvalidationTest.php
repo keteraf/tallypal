@@ -6,9 +6,14 @@ use App\Models\Currency;
 use App\Models\Tally;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Observers\TallyObserver;
+use App\Observers\TallyUserObserver;
+use App\Observers\TransactionObserver;
 use App\Services\HomeCacheService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
+
+covers(TallyObserver::class, TallyUserObserver::class, TransactionObserver::class);
 
 beforeEach(function (): void {
     Cache::flush();

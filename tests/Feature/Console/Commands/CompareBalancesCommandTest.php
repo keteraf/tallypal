@@ -3,12 +3,15 @@
 declare(strict_types=1);
 
 use App\Actions\TallyShare\DeleteTallyShareAction;
+use App\Console\Commands\CompareBalancesCommand;
 use App\Models\Currency;
 use App\Models\Tally;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Facades\DB;
+
+covers(CompareBalancesCommand::class);
 
 /**
  * @param  array<int, float>  $shares  user id => percentage

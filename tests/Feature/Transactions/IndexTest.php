@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\Transaction\GetTallyPerPersonAction;
 use App\Enums\TransactionType;
 use App\Http\Controllers\TransactionController;
 use App\Models\Category;
@@ -9,6 +10,8 @@ use App\Models\Currency;
 use App\Models\Tally;
 use App\Models\Transaction;
 use App\Models\User;
+
+covers(GetTallyPerPersonAction::class);
 
 covers(TransactionController::class);
 
