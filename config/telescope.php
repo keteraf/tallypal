@@ -16,9 +16,12 @@ return [
     | of their individual configuration, which simply provides a single
     | and convenient way to enable or disable Telescope data storage.
     |
+    | Telescope records only in the local environment: TelescopeServiceProvider
+    | switches this off everywhere else, whatever TELESCOPE_ENABLED is set to.
+    |
     */
 
-    'enabled' => env('TELESCOPE_ENABLED', true),
+    'enabled' => env('APP_ENV') === 'local' && env('TELESCOPE_ENABLED', true),
 
     /*
     |--------------------------------------------------------------------------
