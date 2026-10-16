@@ -91,6 +91,11 @@
             "@php artisan migrate:fresh",
             "@fresh"
         ],
+        "db:pgsql:up": [
+            "podman container exists tallypal-pg-test || podman run -d --rm --name tallypal-pg-test -p 127.0.0.1:54329:5432 -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=tallypal_test --mount type=tmpfs,destination=/var/lib/postgresql,tmpfs-size=2g docker.io/library/postgres:18 -c fsync=off -c synchronous_commit=off -c full_page_writes=off -c max_connections=200",
+            "for i in $(seq 1 60); do podman exec tallypal-pg-test pg_isready -q -h 127.0.0.1 -U postgres && exit 0; sleep 0.5; done; echo 'tallypal-pg-test did not become ready' >&2; exit 1"
+        ],
+        "db:pgsql:down": "podman container exists tallypal-pg-test && podman stop tallypal-pg-test || true",
         "lint": "pint",
         "refactor": "rector",
         "test:lint": "pint --test",
