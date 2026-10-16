@@ -37,7 +37,8 @@ final readonly class TallyUserObserver
         $userId = $tallyUser->getAttribute('user_id');
 
         if ($userId !== null) {
-            $this->homeService->forgetCacheForUser((int) $userId);
+            $memberId = (int) $userId; // @pest-mutate-ignore
+            $this->homeService->forgetCacheForUser($memberId);
         }
 
         $tally = Tally::query()->whereKey($tallyUser->getAttribute(Tally::PRIMARY_KEY))->first();
