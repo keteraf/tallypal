@@ -396,7 +396,7 @@ function gateFast(): never
     if ($mutationClasses !== []) {
         gateClearPestOnlyLock();
         gateRun(
-            ['vendor/bin/pest', '--no-tia', '--colors=always', '--parallel', '--mutate', '--class=' . implode(',', $mutationClasses), '--min=100', '--ignore-min-score-on-zero-mutations', ...$mutationTestFiles],
+            ['vendor/bin/pest', '--no-tia', '--colors=always', '--parallel', '--mutate', '--class=' . implode(',', $mutationClasses), '--min=100', '--ignore-min-score-on-zero-mutations', '--filter=' . implode('|', array_map(fn (string $file): string => preg_quote(basename($file, '.php'), '/'), $mutationTestFiles))],
             [...GATE_SQLITE_ENV, 'XDEBUG_MODE' => 'coverage'],
             'mutation (' . count($mutationClasses) . ' class(es), min 100)',
         );
