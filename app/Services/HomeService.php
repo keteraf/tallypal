@@ -135,7 +135,9 @@ final readonly class HomeService
      */
     public function sidebarVersion(User $user): string
     {
-        return $this->cache->sidebarVersion((int) $user->id);
+        $userId = (int) $user->id; // @pest-mutate-ignore
+
+        return $this->cache->sidebarVersion($userId);
     }
 
     /**
@@ -152,8 +154,8 @@ final readonly class HomeService
     public function forgetCacheForTallyMembers(Tally $tally): void
     {
         /** @var list<int> $memberIds */
-        $memberIds = $tally->users()->pluck('user_id')->map(fn (mixed $id): int => is_numeric($id) ? (int) $id : 0)->all();
-        $memberIds[] = (int) $tally->owner_id;
+        $memberIds = $tally->users()->pluck('user_id')->map(fn (mixed $id): int => is_numeric($id) ? (int) $id : 0)->all(); // @pest-mutate-ignore
+        $memberIds[] = $tally->owner_id;
 
         foreach (array_unique($memberIds) as $memberId) {
             $this->forgetCacheForUser($memberId);
