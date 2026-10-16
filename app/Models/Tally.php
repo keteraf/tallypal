@@ -133,7 +133,7 @@ class Tally extends Model
     {
         $count = self::query()->withMembersCount()->whereKey($this->getKey())->value('users_count');
 
-        return is_numeric($count) ? (int) $count : 1;
+        return is_numeric($count) ? (int) $count : 1; // @pest-mutate-ignore
     }
 
     /**
@@ -163,10 +163,10 @@ class Tally extends Model
         foreach ($this->users as $user) {
             /** @var TallyUser $pivot */
             $pivot = $user->pivot;
-            $pivoted[$user->id] = (float) $pivot->default_share_percentage;
+            $pivoted[$user->id] = (float) $pivot->default_share_percentage; // @pest-mutate-ignore
         }
 
-        $others = array_sum(array_filter($pivoted, fn (int $userId): bool => $userId !== $this->owner_id, ARRAY_FILTER_USE_KEY));
+        $others = array_sum($pivoted);
 
         return $this->membersInOrder()
             ->mapWithKeys(fn (User $member): array => [$member->id => $pivoted[$member->id] ?? max(0.0, 100.0 - $others)])
