@@ -19,6 +19,7 @@ return RectorConfig::configure()
         __DIR__ . '/database',
         __DIR__ . '/public',
     ])
+    ->withCache(__DIR__ . '/storage/framework/rector')
     ->withSkip([
         AddOverrideAttributeToOverriddenMethodsRector::class,
     ])

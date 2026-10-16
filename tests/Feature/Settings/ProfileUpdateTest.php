@@ -3,11 +3,12 @@
 declare(strict_types=1);
 
 use App\Actions\DeleteUserAccountAction;
+use App\Http\Controllers\Settings\ProfileController;
 use App\Models\Tally;
 use App\Models\Transaction;
 use App\Models\User;
 
-covers(DeleteUserAccountAction::class);
+covers(DeleteUserAccountAction::class, ProfileController::class);
 
 test('profile page is displayed', function () {
     $user = User::factory()->create();

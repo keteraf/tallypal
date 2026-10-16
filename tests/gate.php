@@ -53,17 +53,35 @@ const GATE_SQLITE_ENV = ['DB_CONNECTION' => 'sqlite', 'DB_DATABASE' => ':memory:
  * @param  array<int, string>  $command
  * @param  array<string, string>  $env
  */
-function gateRun(array $command, array $env = []): void
+function gateRun(array $command, array $env = [], ?string $label = null): void
 {
+    $label ??= implode(' ', array_slice($command, 0, 3));
     fwrite(STDOUT, PHP_EOL . "\033[1m> " . implode(' ', array_map(escapeshellarg(...), $command)) . "\033[0m" . PHP_EOL);
 
+    $started = hrtime(true);
     $process = proc_open($command, [STDIN, STDOUT, STDERR], $pipes, GATE_ROOT, [...getenv(), ...$env]);
     $exitCode = is_resource($process) ? proc_close($process) : 1;
+    $GLOBALS['gateTimings'][] = [$label, (hrtime(true) - $started) / 1e9];
 
     if ($exitCode !== 0) {
         fwrite(STDERR, PHP_EOL . 'gate: failed (exit ' . $exitCode . ') at: ' . implode(' ', $command) . PHP_EOL);
+        gatePrintTimings();
         exit($exitCode);
     }
+}
+
+/** Prints the wall-clock time of every step run so far, plus the total. */
+function gatePrintTimings(): void
+{
+    $total = 0.0;
+    fwrite(STDOUT, PHP_EOL . 'gate timings:' . PHP_EOL);
+
+    foreach ($GLOBALS['gateTimings'] ?? [] as [$label, $seconds]) {
+        $total += $seconds;
+        fwrite(STDOUT, sprintf('  %7.1fs  %s', $seconds, $label) . PHP_EOL);
+    }
+
+    fwrite(STDOUT, sprintf('  %7.1fs  total (sum of steps)', $total) . PHP_EOL);
 }
 
 /**
@@ -244,19 +262,20 @@ function gateFull(): never
     $summary = gateSummary('full', ['build', 'vue-tsc', 'all Vitest', 'lint', 'rector', 'phpstan', 'PHP + browser tests on PostgreSQL (coverage)', 'mutation on SQLite at 100%'], []);
     fwrite(STDOUT, $summary . PHP_EOL);
 
-    gateRun(['npm', 'run', 'build']);
-    gateRun(['npx', 'vue-tsc', '--noEmit']);
-    gateRun(['npm', 'run', 'test']);
+    gateRun(['npm', 'run', 'build'], label: 'build');
+    gateRun(['npx', 'vue-tsc', '--noEmit'], label: 'vue-tsc');
+    gateRun(['npm', 'run', 'test'], label: 'vitest (all)');
     gateRun(['php', 'artisan', 'config:clear', '--ansi']);
-    gateRun(['composer', 'test:lint']);
-    gateRun(['composer', 'test:refactor']);
-    gateRun(['composer', 'test:types']);
+    gateRun(['composer', 'test:lint'], label: 'pint');
+    gateRun(['composer', 'test:refactor'], label: 'rector');
+    gateRun(['composer', 'test:types'], label: 'phpstan');
     gateClearPestOnlyLock();
-    gateRun(['vendor/bin/pest', '--no-tia', '--colors=always', '--parallel', '--coverage', '--min=90'], ['XDEBUG_MODE' => 'coverage']);
+    gateRun(['vendor/bin/pest', '--no-tia', '--colors=always', '--parallel', '--coverage', '--min=90'], ['XDEBUG_MODE' => 'coverage'], 'pest (all, coverage)');
     gateClearPestOnlyLock();
-    gateRun(['vendor/bin/pest', '--no-tia', '--colors=always', '--parallel', '--mutate', '--min=100'], [...GATE_SQLITE_ENV, 'XDEBUG_MODE' => 'coverage']);
+    gateRun(['vendor/bin/pest', '--no-tia', '--colors=always', '--parallel', '--mutate', '--min=100'], [...GATE_SQLITE_ENV, 'XDEBUG_MODE' => 'coverage'], 'mutation (all, min 100)');
 
     fwrite(STDOUT, PHP_EOL . $summary . PHP_EOL);
+    gatePrintTimings();
     exit(0);
 }
 
@@ -278,6 +297,11 @@ function gateFast(): never
         $changed,
         fn (string $file): bool => str_ends_with($file, '.php') || in_array($file, ['composer.lock', 'pint.json', 'rector.php', 'phpstan.neon'], true),
     ));
+    $existingPhp = array_values(array_filter($phpChanged, fn (string $file): bool => str_ends_with($file, '.php') && is_file(GATE_ROOT . '/' . $file)));
+    $pintAll = array_intersect($changed, ['composer.lock', 'pint.json']) !== [];
+    $rectorAll = array_intersect($changed, ['composer.lock', 'rector.php']) !== [];
+    $lintFiles = $pintAll ? ['.'] : $existingPhp;
+    $rectorFiles = $rectorAll ? [] : gateUnder($existingPhp, ['app', 'database', 'public', 'bootstrap/app.php']);
     $changedClasses = gateChangedAppClasses($changed);
     $scope = gateMutationScope();
     $mutationClasses = array_values(array_intersect($changedClasses, $scope));
@@ -301,9 +325,11 @@ function gateFast(): never
     }
 
     if ($phpChanged !== []) {
-        $ran[] = 'lint + rector + phpstan (PHP changed)';
+        $ran[] = 'pint (' . ($pintAll ? 'whole project' : count($lintFiles) . ' changed PHP file(s)') . ')';
+        $ran[] = $rectorAll || $rectorFiles !== [] ? 'rector (' . ($rectorAll ? 'whole project' : count($rectorFiles) . ' changed PHP file(s)') . ')' : 'rector (none of the changed PHP files is in its paths)';
+        $ran[] = 'phpstan (whole app/, result cache)';
     } else {
-        $skipped[] = 'lint + rector + phpstan (no PHP change)';
+        $skipped[] = 'pint, rector, phpstan (no PHP file, composer.lock, pint.json, rector.php or phpstan.neon changed)';
     }
 
     $ran[] = $forceFullSuite
@@ -330,31 +356,39 @@ function gateFast(): never
     fwrite(STDOUT, $summary . PHP_EOL);
 
     if ($buildInputs !== [] || ! is_file(GATE_ROOT . '/public/build/manifest.json')) {
-        gateRun(['npm', 'run', 'build']);
-        gateRun(['npx', 'vue-tsc', '--noEmit']);
+        gateRun(['npm', 'run', 'build'], label: 'build');
+        gateRun(['npx', 'vue-tsc', '--noEmit'], label: 'vue-tsc');
     }
 
     if ($frontEndFiles !== []) {
-        gateRun(['npx', 'vitest', 'related', '--run', '--passWithNoTests', ...$frontEndFiles]);
+        gateRun(['npx', 'vitest', 'related', '--run', '--passWithNoTests', ...$frontEndFiles], label: 'vitest related');
     }
 
     if ($phpChanged !== []) {
-        gateRun(['php', 'artisan', 'config:clear', '--ansi']);
-        gateRun(['composer', 'test:lint']);
-        gateRun(['composer', 'test:refactor']);
-        gateRun(['composer', 'test:types']);
+        gateRun(['php', 'artisan', 'config:clear', '--ansi'], label: 'config:clear');
+
+        if ($lintFiles !== []) {
+            gateRun(['vendor/bin/pint', '--test', ...$lintFiles], label: 'pint (' . ($pintAll ? 'all' : count($lintFiles) . ' file(s)') . ')');
+        }
+
+        if ($rectorAll || $rectorFiles !== []) {
+            gateRun(['vendor/bin/rector', '--dry-run', ...$rectorFiles], label: 'rector (' . ($rectorAll ? 'all' : count($rectorFiles) . ' file(s)') . ')');
+        }
+
+        gateRun(['vendor/bin/phpstan', 'analyse', '--memory-limit', '512M'], label: 'phpstan');
     }
 
     gateClearPestOnlyLock();
     gateRun(
         ['vendor/bin/pest', '--tia', ...($forceFullSuite ? ['--fresh'] : []), '--colors=always', '--parallel'],
         ['XDEBUG_MODE' => 'coverage'],
+        'pest tia',
     );
     gateStoreFullSuiteHash($fullSuiteHash);
 
     if ($resources !== []) {
         gateClearPestOnlyLock();
-        gateRun(['vendor/bin/pest', '--no-tia', '--colors=always', '--parallel', 'tests/Browser']);
+        gateRun(['vendor/bin/pest', '--no-tia', '--colors=always', '--parallel', 'tests/Browser'], label: 'pest browser');
     }
 
     if ($mutationClasses !== []) {
@@ -362,10 +396,12 @@ function gateFast(): never
         gateRun(
             ['vendor/bin/pest', '--no-tia', '--colors=always', '--parallel', '--mutate', '--class=' . implode(',', $mutationClasses), '--min=100', '--ignore-min-score-on-zero-mutations'],
             [...GATE_SQLITE_ENV, 'XDEBUG_MODE' => 'coverage'],
+            'mutation (' . count($mutationClasses) . ' class(es), min 100)',
         );
     }
 
     fwrite(STDOUT, PHP_EOL . $summary . PHP_EOL);
+    gatePrintTimings();
     exit(0);
 }
 
