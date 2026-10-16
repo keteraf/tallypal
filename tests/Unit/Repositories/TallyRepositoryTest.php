@@ -283,3 +283,58 @@ test('filterOptions lists the given tallies by name and flags those with more th
         ['tally_id' => $zoo->tally_id, 'uuid' => $zoo->uuid, 'name' => 'Zoo', 'is_shared' => false],
     ]);
 });
+
+test('accessibleTalliesWithTotals exposes each total with its currency symbol, code and decimals', function (): void {
+    $user = User::factory()->create();
+    $currency = Currency::factory()->create(['code' => 'EUR', 'symbol' => '€', 'decimals' => 2]);
+    $tally = Tally::factory()->create(['owner_id' => $user->id]);
+    Transaction::factory()->forTally($tally)->forParty($user)->withCurrency($currency)->create(['type' => 'income', 'amount' => 10.0]);
+
+    $found = (new TallyRepository)->accessibleTalliesWithTotals((int) $user->id)->firstWhere('tally_id', $tally->tally_id);
+
+    expect($found['totals'])->toBe([
+        ['income' => 10.0, 'expense' => 0.0, 'currency_symbol' => '€', 'currency_code' => 'EUR', 'decimals' => 2],
+    ]);
+});
+
+test('tallySummaries hands out the member preview and the split label of each tally', function (): void {
+    $owner = User::factory()->create(['name' => 'Anna Bianchi']);
+    $member = User::factory()->create(['name' => 'Bruno Neri']);
+    $tally = Tally::factory()->create(['owner_id' => $owner->id, 'color' => 'c2', 'glyph' => 'house']);
+    $tally->users()->attach($owner->id, ['default_share_percentage' => 60]);
+    $tally->users()->attach($member->id, ['default_share_percentage' => 40]);
+
+    $summary = (new TallyRepository)->tallySummaries((int) $owner->id, collect([$tally->tally_id]), CarbonImmutable::now()->startOfMonth(), CarbonImmutable::now())->first();
+
+    expect($summary['members_preview'])->toBe([
+        ['initials' => 'AB', 'color' => $owner->avatarColor()],
+        ['initials' => 'BN', 'color' => $member->avatarColor()],
+    ])
+        ->and($summary['split_label'])->toBe('60 / 40')
+        ->and($summary['color'])->toBe('c2')
+        ->and($summary['glyph'])->toBe('house');
+});
+
+test('the split label', function (array $shares, ?string $label): void {
+    $owner = User::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
+
+    foreach ($shares as $position => $share) {
+        $user = $position === 0 ? $owner : User::factory()->create();
+        $tally->users()->attach($user->id, ['default_share_percentage' => $share]);
+    }
+
+    $summary = (new TallyRepository)->tallySummaries((int) $owner->id, collect([$tally->tally_id]), CarbonImmutable::now()->startOfMonth(), CarbonImmutable::now())->first();
+
+    expect($summary['split_label'])->toBe($label);
+})->with([
+    'solo' => [[100], null],
+    'equal two' => [[50, 50], null],
+    'within a hundredth' => [[33.33, 33.33, 33.34], null],
+    'just over a hundredth' => [[33.33, 33.30, 33.37], '33.33 / 33.3 / 33.37'],
+    'one decimal' => [[62.5, 37.5], '62.5 / 37.5'],
+    'with a zero share' => [[100, 0], '100 / 0'],
+    'unequal' => [[70, 30], '70 / 30'],
+    'a few hundredths apart' => [[50.02, 49.98], '50.02 / 49.98'],
+    'a point apart' => [[50.5, 49.5], '50.5 / 49.5'],
+]);
