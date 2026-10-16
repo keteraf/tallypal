@@ -88,12 +88,17 @@ environment.
 
 ### Clear Telescope entries (once, after the release that stops Telescope recording)
 
-Telescope now records in the local environment only, but the entries it stored earlier stay in `telescope_entries`.
-On **each** environment (production and dev), once the release is live:
+Telescope is a dev dependency and records in the local environment only, but the entries it stored earlier stay in
+`telescope_entries`. On **each** environment (production and dev), once the release is live (`telescope:clear` no
+longer exists there):
 
-1. In the command runner: `php artisan telescope:clear`.
-2. Confirm with `php artisan db:show --counts` that `telescope_entries` is near-empty (a handful of rows at most;
-   `telescope:prune --hours=48` runs daily as a safety net).
+1. Confirm recording has stopped. In `php artisan tinker` (command runner) run `DB::table('telescope_entries')->count()`,
+   wait a few minutes, run it again: the count must not grow between the two checks. If it grows, stop: something is
+   still recording.
+2. Empty the three tables in one statement:
+   `DB::statement('TRUNCATE telescope_entries, telescope_entries_tags, telescope_monitoring')`.
+3. Check with `DB::table('telescope_entries')->count()` (expect `0`) and `php artisan db:show --counts`. On PostgreSQL
+   `DELETE` does not shrink tables, so `db:show` size alone cannot confirm a clear: trust the counts.
 
 ## 4. Release flow
 
@@ -109,8 +114,11 @@ On **each** environment (production and dev), once the release is live:
 
    Plus the dev-route check: `curl -s -o /dev/null -w '%{http_code}\n'` against `<url>/dev/design-system` and
    `<url>/dev/error-page` must print `404` for both.
-4. **Mirror the configuration on production.** Compare dev and production side by side in the dashboard: environment
+4. **Boot check on dev.** After the dev deploy, in the dev command runner: `php artisan about` boots without errors
+   (production installs with `composer install --no-dev`, so Telescope is not there) and `php artisan schedule:list`
+   runs cleanly. Do this before merging to `master`.
+5. **Mirror the configuration on production.** Compare dev and production side by side in the dashboard: environment
    variables (section 1), build commands and deploy commands (section 2), and the SSR process. Any change made on dev
    while testing is applied to production **before** the push.
-5. **Merge `dev` into `master` and push `master`.** Production deploys. Watch the deployment until it is green.
-6. **Repeat the smoke test on https://tallypal.it**, including the `/dev/design-system` and `/dev/error-page` 404 check.
+6. **Merge `dev` into `master` and push `master`.** Production deploys. Watch the deployment until it is green.
+7. **Repeat the smoke test on https://tallypal.it**, including the `/dev/design-system` and `/dev/error-page` 404 check.

@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+use Laravel\Telescope\TelescopeServiceProvider as TelescopePackageServiceProvider;
 
 final class AppServiceProvider extends ServiceProvider
 {
@@ -31,6 +32,8 @@ final class AppServiceProvider extends ServiceProvider
     {
         $this->app->bind(TallyRepositoryInterface::class, TallyRepository::class);
         $this->app->bind(TransactionStatsRepositoryInterface::class, TransactionStatsRepository::class);
+
+        $this->registerTelescope();
     }
 
     /**
@@ -45,6 +48,19 @@ final class AppServiceProvider extends ServiceProvider
         TallyUser::observe(TallyUserObserver::class);
 
         $this->configureRateLimiters();
+    }
+
+    /**
+     * Telescope is a dev dependency: register it in the local environment only, and only when installed.
+     */
+    private function registerTelescope(): void
+    {
+        if (! $this->app->environment('local') || ! class_exists(TelescopePackageServiceProvider::class)) {
+            return;
+        }
+
+        $this->app->register(TelescopePackageServiceProvider::class);
+        $this->app->register(TelescopeServiceProvider::class);
     }
 
     private function configureRateLimiters(): void
