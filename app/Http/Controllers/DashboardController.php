@@ -29,7 +29,6 @@ final class DashboardController extends Controller
             return redirect()->route('home.dashboard');
         }
 
-
         $since = now()->subDays(29)->startOfDay();
         $dates = $this->buildDates();
 
