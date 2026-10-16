@@ -63,3 +63,24 @@ test('exactly five categories fill the named rows and a sixth is the first to fa
         ->and(array_column($sixRows, 'name'))->toBe(['Cat1', 'Cat2', 'Cat3', 'Cat4', 'Cat5', 'Other'])
         ->and($sixRows[5])->toMatchArray(['amount' => 5.0, 'is_other' => true]);
 });
+
+test('categories that are all zero get empty bars without dividing by zero', function (): void {
+    $rows = CategoryBars::build(categoriesOf([0.0, 0.0]));
+
+    expect(array_column($rows, 'bar_fill'))->toBe([0.0, 0.0]);
+});
+
+test('amounts below one still scale to a full top bar and still get an Other row', function (): void {
+    $rows = CategoryBars::build(categoriesOf([0.5, 0.4, 0.3, 0.2, 0.1, 0.5]));
+
+    expect($rows[0]['bar_fill'])->toBe(100.0)
+        ->and($rows)->toHaveCount(6)
+        ->and($rows[5]['is_other'])->toBeTrue()
+        ->and($rows[5]['amount'])->toBe(0.5);
+});
+
+test('the Other percentage is its share of the true total', function (): void {
+    $rows = CategoryBars::build(categoriesOf([30.0, 20.0, 15.0, 10.0, 5.0, 25.0, 15.0]));
+
+    expect($rows[5]['percentage'])->toBe(33.3);
+});
