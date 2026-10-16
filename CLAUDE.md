@@ -315,7 +315,28 @@ Rules — these are mandatory for all UI work:
 - Any run that creates, edits or deletes data through the browser re-runs DemoSeeder at the end.
 - **No UI item may be marked verified without a screenshot of it.**
 - A finding is FIXED only after a side-by-side comparison with its .verify/design/ reference.
-- Done means `composer check; echo "exit: $?"` prints `exit: 0`. Run it exactly like that and quote the `exit:` line together with the final summary lines (test count, coverage, mutation score) in your report.
-- `npx playwright install chromium` (needed by `composer check`): run it once on a fresh machine; `composer check` ends with the
-  Pest browser tests (`test:browser`) and fails without that Chromium. CI installs it in `shared-ci.yml`.
-- Per-class mutation scores (`--class`) are informational only. The gate is the full `composer test:mutate` run.
+
+## Gate
+
+- `composer check` is the **fast local gate**: it runs only what the change affects (`tests/gate.php fast`).
+  It needs `composer db:pgsql:up` first and fails with that hint when PostgreSQL is down; it never starts it.
+  - PHP and browser tests through Pest TIA (`pest()->tia()->always()->locally()` in `tests/Pest.php`) on
+    PostgreSQL, `--parallel`. The first run records the baseline; later runs replay unaffected tests.
+  - A change since the last green run to `config/`, `composer.json`, `composer.lock`, `phpunit.xml`,
+    `tests/Pest.php`, `database/migrations/` or `.github/workflows/` forces the full PHP suite and a fresh baseline.
+  - Relative to `master`: any change under `resources/` also runs every browser test (TIA follows PHP files
+    only); `vitest related` runs on the changed front-end files; `vite build` and `vue-tsc` run only when
+    `resources/`, the vite config, a tsconfig or `package.json` changed; lint, Rector and PHPStan run only
+    when PHP changed; mutation runs at 100% (on SQLite) only on the changed `app/` classes that a
+    `covers()` / `mutates()` names, and is skipped when no `app/` PHP file changed.
+  - It prints one line saying what it ran and what it skipped, and why.
+- `composer check:full` is the **complete gate** (`tests/gate.php full`): build, vue-tsc, all of Vitest, lint,
+  Rector, PHPStan, PHP and browser tests on PostgreSQL with coverage (`--parallel`, min 90%), and mutation at
+  100% on SQLite with `covers()` enforced. CI runs it on every pull request to `dev` and `master`, against a
+  `postgres:18` service; it never uses TIA.
+- `dev` and `master` are merged only through pull requests with a green CI.
+- Run the gate once, unpiped, only after the last commit, and never filter its output.
+- Done means `composer check; echo "exit: $?"` prints `exit: 0`. Run it exactly like that and quote the `exit:`
+  line together with the gate's summary line in your report.
+- `npx playwright install chromium` (needed by the browser tests): run it once on a fresh machine. CI installs it
+  in `shared-ci.yml`.
