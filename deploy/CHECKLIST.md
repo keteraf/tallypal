@@ -86,6 +86,15 @@ environment.
 3. In the command runner: `php artisan tallypal:reset-activity --force`.
 4. **Remove `ALLOW_ACTIVITY_RESET` from the environment right after** and redeploy.
 
+### Clear Telescope entries (once, after the release that stops Telescope recording)
+
+Telescope now records in the local environment only, but the entries it stored earlier stay in `telescope_entries`.
+On **each** environment (production and dev), once the release is live:
+
+1. In the command runner: `php artisan telescope:clear`.
+2. Confirm with `php artisan db:show --counts` that `telescope_entries` is near-empty (a handful of rows at most;
+   `telescope:prune --hours=48` runs daily as a safety net).
+
 ## 4. Release flow
 
 1. **Gate.** `composer check; echo "exit: $?"` prints `exit: 0` on the branch to release.
