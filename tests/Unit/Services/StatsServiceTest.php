@@ -247,3 +247,106 @@ test('week and year ranges pass the primary currency to their series', function 
     'week' => [StatsRange::WEEK, 'dailyHistory'],
     'year' => [StatsRange::YEAR, 'monthlyHistory'],
 ]);
+
+test('the empty payload is exactly the zeroed Stats shape', function (): void {
+    $user = User::factory()->make(['id' => 1]);
+    $tallyRepo = mockStatsTallyRepo();
+    $tallyRepo->shouldReceive('accessibleTallyIds')->once()->andReturn(collect());
+
+    $payload = makeStatsService($tallyRepo, mockStatsStatsRepo())->buildStatsPayload($user, StatsRange::MONTH, CarbonImmutable::parse('2025-05-15 10:00:00'));
+
+    expect($payload)->toBe([
+        'range' => 'month',
+        'range_label' => 'May 2025',
+        'total_out' => 0.0,
+        'currency_symbol' => '€',
+        'currency_code' => 'EUR',
+        'decimals' => 2,
+        'series' => [],
+        'categories' => [],
+        'other_currencies' => [],
+        'daily_average' => 0.0,
+        'previous_total_out' => 0.0,
+        'previous_daily_average' => 0.0,
+        'previous_period' => null,
+        'delta_percentage' => null,
+        'shared_total_out' => 0.0,
+        'shared_percentage' => null,
+        'owed_to_me' => ['amount_minor' => 0, 'open_balances' => 0, 'other_currencies' => []],
+        'activity' => [],
+        'filter' => ['tally_uuid' => null],
+        'tallies' => [],
+    ]);
+});
+
+test('the activity feed is limited to twenty rows', function (): void {
+    $user = User::factory()->make(['id' => 6]);
+    $tallyRepo = mockStatsTallyRepo();
+    $statsRepo = mockStatsStatsRepo();
+    $tallyRepo->shouldReceive('accessibleTallyIds')->once()->andReturn(collect([7]));
+    $tallyRepo->shouldReceive('filterOptions')->once()->andReturn(collect());
+    $statsRepo->shouldReceive('primaryCurrency')->once()->andReturn(['symbol' => '€', 'code' => 'EUR', 'decimals' => 2, 'currency_id' => 1]);
+    $statsRepo->shouldReceive('weeklyHistory')->once()->andReturn([]);
+    $statsRepo->shouldReceive('expenseTotal')->times(3)->andReturn(0.0);
+    $statsRepo->shouldReceive('categoriesBreakdown')->once()->andReturn([]);
+    $statsRepo->shouldReceive('otherCurrencyExpenses')->once()->andReturn([]);
+    $statsRepo->shouldReceive('activity')->once()->withArgs(fn ($ids, $start, $end, int $limit): bool => $limit === 20)->andReturn([]);
+
+    makeStatsService($tallyRepo, $statsRepo)->buildStatsPayload($user, StatsRange::MONTH, CarbonImmutable::parse('2025-05-15 10:00:00'));
+});
+
+test('owed to me totals each other currency once, however many debts it has', function (): void {
+    $user = User::factory()->make(['id' => 8]);
+    $debt = fn (int $currencyId, string $code, string $symbol, int $amount): array => [
+        'tally_uuid' => 't-1',
+        'currency_id' => $currencyId,
+        'currency' => ['code' => $code, 'symbol' => $symbol, 'decimals' => 2],
+        'amount' => $amount,
+    ];
+    Cache::put(HomeCacheService::key(8, 'balances'), ['my_balances' => [], 'owed_to_me' => [
+        $debt(1, 'EUR', '€', 1000),
+        $debt(2, 'USD', '$', 300),
+        $debt(2, 'USD', '$', 450),
+        $debt(3, 'GBP', '£', 20),
+    ]], 60);
+    $tallyRepo = mockStatsTallyRepo();
+    $statsRepo = mockStatsStatsRepo();
+    $tallyRepo->shouldReceive('accessibleTallyIds')->once()->andReturn(collect([7]));
+    $tallyRepo->shouldReceive('filterOptions')->once()->andReturn(collect());
+    $statsRepo->shouldReceive('primaryCurrency')->once()->andReturn(['symbol' => '€', 'code' => 'EUR', 'decimals' => 2, 'currency_id' => 1]);
+    $statsRepo->shouldReceive('weeklyHistory')->once()->andReturn([]);
+    $statsRepo->shouldReceive('expenseTotal')->times(3)->andReturn(0.0);
+    $statsRepo->shouldReceive('categoriesBreakdown')->once()->andReturn([]);
+    $statsRepo->shouldReceive('otherCurrencyExpenses')->once()->andReturn([]);
+    $statsRepo->shouldReceive('activity')->once()->andReturn([]);
+
+    $payload = makeStatsService($tallyRepo, $statsRepo)->buildStatsPayload($user, StatsRange::MONTH, CarbonImmutable::parse('2025-05-15 10:00:00'));
+
+    expect($payload['owed_to_me'])->toBe([
+        'amount_minor' => 1000,
+        'open_balances' => 1,
+        'other_currencies' => [
+            ['amount_minor' => 750, 'currency_symbol' => '$', 'currency_code' => 'USD', 'decimals' => 2],
+            ['amount_minor' => 20, 'currency_symbol' => '£', 'currency_code' => 'GBP', 'decimals' => 2],
+        ],
+    ]);
+});
+
+test('the shared percentage is the shared share of the total to one decimal', function (): void {
+    $user = User::factory()->make(['id' => 9]);
+    $tallyRepo = mockStatsTallyRepo();
+    $statsRepo = mockStatsStatsRepo();
+    $tallyRepo->shouldReceive('accessibleTallyIds')->once()->andReturn(collect([7]));
+    $tallyRepo->shouldReceive('filterOptions')->once()->andReturn(collect([['tally_id' => 7, 'uuid' => 'u-7', 'name' => 'Home', 'is_shared' => true]]));
+    $statsRepo->shouldReceive('primaryCurrency')->once()->andReturn(['symbol' => '€', 'code' => 'EUR', 'decimals' => 2, 'currency_id' => 1]);
+    $statsRepo->shouldReceive('weeklyHistory')->once()->andReturn([]);
+    $statsRepo->shouldReceive('expenseTotal')->times(3)->andReturn(3.0, 0.0, 1.0);
+    $statsRepo->shouldReceive('categoriesBreakdown')->once()->andReturn([]);
+    $statsRepo->shouldReceive('otherCurrencyExpenses')->once()->andReturn([]);
+    $statsRepo->shouldReceive('activity')->once()->andReturn([]);
+
+    $payload = makeStatsService($tallyRepo, $statsRepo)->buildStatsPayload($user, StatsRange::MONTH, CarbonImmutable::parse('2025-05-15 10:00:00'));
+
+    expect($payload['shared_percentage'])->toBe(33.3)
+        ->and($payload['tallies'])->toBe([['uuid' => 'u-7', 'name' => 'Home', 'is_shared' => true]]);
+});
