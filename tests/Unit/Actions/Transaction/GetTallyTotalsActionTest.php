@@ -8,6 +8,7 @@ use App\Models\Currency;
 use App\Models\Tally;
 use App\Models\Transaction;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Exceptions;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
@@ -48,4 +49,18 @@ test('it totals per type and currency in major units', function (): void {
             'symbol' => $jpy->symbol,
             'decimals' => 0,
         ]);
+});
+
+test('it falls back to two decimals and no currency when the currency row is gone', function (): void {
+    $tally = Tally::factory()->create();
+    $currency = Currency::factory()->create(['decimals' => 2]);
+    Transaction::factory()->forTally($tally)->withCurrency($currency)->withType(TransactionType::EXPENSE)->withAmount(12.34)->create();
+    DB::statement('PRAGMA defer_foreign_keys = ON');
+    DB::table('currencies')->where('currency_id', $currency->getKey())->delete();
+
+    $totals = (new GetTallyTotalsAction())->handle($tally);
+
+    expect($totals)->toHaveCount(1)
+        ->and($totals->first()['total'])->toBe(12.34)
+        ->and($totals->first()['currency'])->toBeNull();
 });
