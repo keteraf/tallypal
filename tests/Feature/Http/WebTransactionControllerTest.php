@@ -261,3 +261,40 @@ it('computes the frequent categories with two queries however many transactions 
     expect($frequencyBefore)->toBe(2)
         ->and($frequencyAfter)->toBe(2);
 });
+
+it('keeps the new transaction form to members and exposes only the tally identity', function () {
+    $owner = User::factory()->create();
+    $outsider = User::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
+
+    $this->actingAs($outsider)->get(route('tallies.transactions.create', $tally))->assertForbidden();
+
+    $this->actingAs($owner)->get(route('tallies.transactions.create', $tally))
+        ->assertInertia(fn (Assert $page) => $page->where('tally', [
+            'tally_id' => $tally->tally_id,
+            'uuid' => $tally->uuid,
+            'name' => $tally->name,
+        ]));
+});
+
+it('tells the edit page whether the viewer can delete the transaction', function () {
+    $owner = User::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
+    $transaction = Transaction::factory()->forTally($tally)->forParty($owner)->create();
+
+    $this->actingAs($owner)->get(route('tallies.transactions.edit', [$tally, $transaction]))
+        ->assertInertia(fn (Assert $page) => $page->where('can_delete', true));
+});
+
+it('refuses an update from someone outside the tally', function () {
+    $owner = User::factory()->create();
+    $outsider = User::factory()->create();
+    $tally = Tally::factory()->create(['owner_id' => $owner->id]);
+    $transaction = Transaction::factory()->forTally($tally)->forParty($owner)->create(['title' => 'Original']);
+
+    $this->actingAs($outsider)
+        ->put(route('tallies.transactions.update', [$tally, $transaction]), ['title' => 'Hijacked'])
+        ->assertForbidden();
+
+    expect($transaction->fresh()->title)->toBe('Original');
+});

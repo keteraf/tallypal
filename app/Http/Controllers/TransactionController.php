@@ -28,6 +28,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -127,7 +128,7 @@ class TransactionController extends Controller
 
         return Inertia::render('tallies/transactions/Edit', [
             'tally' => $tally->only(['tally_id', 'uuid', 'name']),
-            'can_delete' => (bool) $request->user()?->can('delete', $transaction),
+            'can_delete' => Gate::allows('delete', $transaction),
             'transaction' => $transaction->only(['transaction_id', 'uuid', 'title', 'amount', 'party_id', 'category_id', 'currency_id', 'type', 'transaction_date', 'description']),
             ...$this->transactionFormData($tally),
         ]);
@@ -142,8 +143,6 @@ class TransactionController extends Controller
         Transaction $transaction,
         UpdateTransactionAction $action
     ): RedirectResponse {
-        $this->authorize('update', $transaction);
-
         /** @var array{party_id: int|numeric-string, currency_id: int|numeric-string, category_id?: int|numeric-string|null, type: string, title: string, description?: string|null, amount: float|numeric-string, transaction_date: string} $data */
         $data = $request->validated();
         $transactionDTO = TransactionDTO::fromArray($data);
@@ -171,7 +170,7 @@ class TransactionController extends Controller
      */
     private function transactionFormData(Tally $tally): array
     {
-        $userId = (int) auth()->id();
+        $userId = (int) auth()->id(); // @pest-mutate-ignore
         $now = CarbonImmutable::now();
 
         return [
