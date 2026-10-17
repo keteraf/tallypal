@@ -27,6 +27,8 @@ const GATE_STATE = GATE_ROOT . '/storage/framework/testing/gate.json';
 const GATE_BASE_BRANCH = 'master';
 const GATE_MUTATION_CONFIGURATION = 'phpunit.gate-mutation.xml';
 
+$GLOBALS['gateStarted'] = hrtime(true);
+
 /**
  * Paths whose change forces the full PHP suite (a fresh TIA baseline) on the next fast run.
  *
@@ -71,7 +73,7 @@ function gateRun(array $command, array $env = [], ?string $label = null): void
     }
 }
 
-/** Prints the wall-clock time of every step run so far, plus the total. */
+/** Prints the wall-clock time of every step run so far, plus the total wall-clock time of the gate. */
 function gatePrintTimings(): void
 {
     $total = 0.0;
@@ -82,7 +84,8 @@ function gatePrintTimings(): void
         fwrite(STDOUT, sprintf('  %7.1fs  %s', $seconds, $label) . PHP_EOL);
     }
 
-    fwrite(STDOUT, sprintf('  %7.1fs  total (sum of steps)', $total) . PHP_EOL);
+    fwrite(STDOUT, sprintf('  %7.1fs  steps', $total) . PHP_EOL);
+    fwrite(STDOUT, sprintf('  %7.1fs  total wall-clock', (hrtime(true) - $GLOBALS['gateStarted']) / 1e9) . PHP_EOL);
 }
 
 /**
