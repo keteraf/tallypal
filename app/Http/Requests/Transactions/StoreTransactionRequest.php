@@ -12,6 +12,8 @@ use Illuminate\Validation\Rule;
 
 class StoreTransactionRequest extends FormRequest
 {
+    use ValidatesAmountDecimals;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -37,7 +39,7 @@ class StoreTransactionRequest extends FormRequest
             'type' => 'required|in:income,expense',
             'title' => 'required|string|max:25',
             'description' => 'nullable|string',
-            'amount' => 'required|numeric',
+            'amount' => $this->amountRule(),
             'transaction_date' => 'required|date',
         ];
     }
