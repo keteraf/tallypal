@@ -82,3 +82,33 @@ it('only applies the base rules when no currency can be resolved', function (Clo
         ->assertJsonValidationErrors('currency_id')
         ->assertJsonMissingValidationErrors('amount');
 })->with('endpoints');
+
+it('only applies the base rules when the route carries no tally', function (): void {
+    $request = new StoreTransactionRequest();
+    $request->setRouteResolver(fn () => new class
+    {
+        public function parameter(string $key): null
+        {
+            return null;
+        }
+    });
+
+    expect($request->rules()['amount'])->toBe('required|numeric');
+});
+
+it('uses the tally default currency decimals when no currency is submitted', function (): void {
+    $this->tally->update(['default_currency_id' => $this->jpy->getKey()]);
+
+    $request = new StoreTransactionRequest();
+    $request->setRouteResolver(fn () => new class($this->tally)
+    {
+        public function __construct(private readonly Tally $tally) {}
+
+        public function parameter(string $key): Tally
+        {
+            return $this->tally;
+        }
+    });
+
+    expect($request->rules()['amount'])->toBe('required|numeric|decimal:0,0');
+});
