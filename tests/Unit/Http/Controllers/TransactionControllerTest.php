@@ -30,7 +30,7 @@ it('stores a transaction', function () {
     $tally = Tally::factory()->create(['owner_id' => $user->id]);
     $party = User::factory()->create();
     $tally->users()->attach($party->id, ['default_share_percentage' => 50]);
-    $currency = Currency::query()->inRandomOrder()->first();
+    $currency = Currency::query()->where('decimals', '>=', 2)->inRandomOrder()->first();
     $category = Category::query()->ofType(CategoryType::INCOME)->inRandomOrder()->first();
 
     $data = [
@@ -67,7 +67,7 @@ it('updates a transaction', function () {
     $transaction = Transaction::factory()->forTally($tally)->create();
     $party = User::factory()->create();
     $tally->users()->attach($party->id, ['default_share_percentage' => 50]);
-    $currency = Currency::query()->inRandomOrder()->first();
+    $currency = Currency::query()->where('decimals', '>=', 2)->inRandomOrder()->first();
     $category = Category::query()->inRandomOrder()->first();
 
     $data = [
